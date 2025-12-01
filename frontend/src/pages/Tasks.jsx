@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import TaskCard from '../components/TaskCard';
-import { Plus, Filter, Sparkles, X } from 'lucide-react';
-import { format } from 'date-fns';
+import MiniCalendar from '../components/MiniCalendar';
+import { Plus, Filter, Sparkles, X, Calendar, RotateCcw } from 'lucide-react';
+import { format, isToday } from 'date-fns';
 
 const CATEGORIES = ['Work', 'Study', 'Health', 'Personal'];
 const PRIORITIES = ['Low', 'Medium', 'High'];
@@ -17,6 +18,8 @@ const Tasks = () => {
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -29,12 +32,12 @@ const Tasks = () => {
   useEffect(() => {
     fetchTasks();
     fetchEmotions();
-    fetchTodayEmotion();
-  }, [filter]);
+    fetchDateEmotion();
+  }, [filter, selectedDate]);
 
   const fetchTasks = async () => {
     try {
-      const params = {};
+      const params = { date: format(selectedDate, 'yyyy-MM-dd') };
       if (filter.status !== 'all') params.status = filter.status;
       if (filter.category !== 'all') params.category = filter.category;
 
@@ -56,14 +59,18 @@ const Tasks = () => {
     }
   };
 
-  const fetchTodayEmotion = async () => {
+  const fetchDateEmotion = async () => {
     try {
-      const response = await api.get('/emotions/today');
-      if (response.data) {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const response = await api.get(`/emotions/diary/${dateStr}`);
+      if (response.data && response.data.emotion) {
         setSelectedEmotion(response.data.emotion);
+      } else {
+        setSelectedEmotion(null);
       }
     } catch (error) {
-      console.error('Failed to fetch today emotion:', error);
+      console.error('Failed to fetch date emotion:', error);
+      setSelectedEmotion(null);
     }
   };
 
@@ -82,10 +89,15 @@ const Tasks = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const taskData = {
+        ...formData,
+        task_date: format(selectedDate, 'yyyy-MM-dd')
+      };
+      
       if (editingTask) {
-        await api.put(`/tasks/${editingTask.id}`, formData);
+        await api.put(`/tasks/${editingTask.id}`, taskData);
       } else {
-        await api.post('/tasks', formData);
+        await api.post('/tasks', taskData);
       }
       setShowModal(false);
       resetForm();
@@ -133,6 +145,7 @@ const Tasks = () => {
         title: suggestion.title,
         category: suggestion.category,
         priority: suggestion.priority,
+        task_date: format(selectedDate, 'yyyy-MM-dd'),
         recommended_for_emotion: selectedEmotion?.name
       });
       fetchTasks();
@@ -157,6 +170,17 @@ const Tasks = () => {
     setShowModal(true);
   };
 
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
+    setShowCalendar(false);
+    setLoading(true);
+  };
+
+  const handleBackToToday = () => {
+    setSelectedDate(new Date());
+    setLoading(true);
+  };
+
   const incompleteTasks = tasks.filter(t => !t.is_completed);
   const completedTasks = tasks.filter(t => t.is_completed);
 
@@ -167,7 +191,24 @@ const Tasks = () => {
   return (
     <div className="tasks-page">
       <header className="page-header">
-        <h1>My Tasks</h1>
+        <div className="header-title-row">
+          <h1>My Tasks</h1>
+          <div className="date-selector">
+            <button 
+              className="date-picker-btn"
+              onClick={() => setShowCalendar(!showCalendar)}
+            >
+              <Calendar size={18} />
+              {format(selectedDate, 'MMM d, yyyy')}
+            </button>
+            {!isToday(selectedDate) && (
+              <button className="back-today-btn" onClick={handleBackToToday}>
+                <RotateCcw size={16} />
+                Back to Today
+              </button>
+            )}
+          </div>
+        </div>
         <div className="header-actions">
           <button 
             className="btn-secondary"
@@ -183,6 +224,15 @@ const Tasks = () => {
           </button>
         </div>
       </header>
+
+      {showCalendar && (
+        <div className="calendar-dropdown card">
+          <MiniCalendar 
+            onDateSelect={handleDateSelect}
+            selectedDate={selectedDate}
+          />
+        </div>
+      )}
 
       <div className="filters-bar">
         <div className="filter-group">
@@ -244,7 +294,7 @@ const Tasks = () => {
               ))}
             </div>
           ) : (
-            <p className="empty-state">No pending tasks. Great job!</p>
+            <p className="empty-state">No pending tasks for this date.</p>
           )}
         </section>
 
@@ -257,7 +307,7 @@ const Tasks = () => {
               ))}
             </div>
           ) : (
-            <p className="empty-state">No completed tasks yet.</p>
+            <p className="empty-state">No completed tasks for this date.</p>
           )}
         </section>
       </div>
