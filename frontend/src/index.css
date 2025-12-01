@@ -873,6 +873,16 @@ body {
   background: var(--primary-light);
 }
 
+.calendar-day.future-date {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: var(--secondary);
+}
+
+.calendar-day.future-date:hover {
+  background: var(--secondary);
+}
+
 .day-emotion {
   font-size: 10px;
 }

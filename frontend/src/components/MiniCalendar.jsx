@@ -28,12 +28,23 @@ const MiniCalendar = ({ onDateSelect, selectedDate }) => {
   const calendarEnd = endOfWeek(monthEnd);
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
+  const today = new Date();
+  const isCurrentMonth = currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
+
+  const isFutureDate = (date) => {
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return dateStart > todayStart;
+  };
+
   const prevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   };
 
   const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    if (!isCurrentMonth) {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    }
   };
 
   return (
@@ -43,7 +54,11 @@ const MiniCalendar = ({ onDateSelect, selectedDate }) => {
           <ChevronLeft size={18} />
         </button>
         <h3>{format(currentDate, 'MMMM yyyy')}</h3>
-        <button onClick={nextMonth} className="nav-btn">
+        <button 
+          onClick={nextMonth} 
+          className={`nav-btn ${isCurrentMonth ? 'disabled' : ''}`}
+          disabled={isCurrentMonth}
+        >
           <ChevronRight size={18} />
         </button>
       </div>
@@ -58,13 +73,14 @@ const MiniCalendar = ({ onDateSelect, selectedDate }) => {
         {days.map(day => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const emotion = emotionData[dateStr];
+          const isFuture = isFutureDate(day);
           
           return (
             <div
               key={dateStr}
-              className={`calendar-day ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${selectedDate && isSameDay(day, selectedDate) ? 'selected' : ''}`}
-              onClick={() => onDateSelect && onDateSelect(day)}
-              style={emotion ? { backgroundColor: `${emotion.color}20` } : {}}
+              className={`calendar-day ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${selectedDate && isSameDay(day, selectedDate) ? 'selected' : ''} ${isFuture ? 'future-date' : ''}`}
+              onClick={() => !isFuture && onDateSelect && onDateSelect(day)}
+              style={isFuture ? { cursor: 'not-allowed' } : (emotion ? { backgroundColor: `${emotion.color}20` } : {})}
             >
               <span className="day-number">{format(day, 'd')}</span>
               {emotion && (
