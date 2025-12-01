@@ -1,0 +1,127 @@
+Title: Emotion-Based Productivity Dashboard Website
+
+Description:
+I want to build a modern web application similar in style to a clean dashboard UI (like the example image).
+The website should recommend tasks and music based on the user’s emotional state.
+Use HTML, CSS, React for the frontend, Python (FastAPI or Flask) for the backend, and MySQL for the database.
+
+Please generate the full project with the following requirements:
+
+1. Main Features
+Dashboard (Home)
+
+Show greeting with user name
+
+Detect or select today's emotion (Happy, Sad, Tired, Angry, Stressed, Neutral)
+
+Recommend tasks based on today’s emotion
+
+Recommend music based on emotion (link to YouTube/Spotify)
+
+Display a monthly calendar widget
+
+Show today’s tasks summary
+
+Show simple mood statistics
+
+2. Navigation (only 4 menu items)
+
+Use a left-side navigation bar with only these 4 items:
+
+Dashboard
+
+Tasks
+
+Calendar
+
+Profile
+
+No more items. Keep it minimal and clean.
+
+3. Tasks Page
+
+CRUD tasks
+
+Option to generate “Emotion-based tasks”
+
+Toggle between completed / incomplete
+
+Categories: Work, Study, Health, Personal
+
+Priority levels: Low, Medium, High
+
+4. Calendar Page
+
+Add/edit/delete schedule
+
+Record emotion per day
+
+Show emotion icons on each day
+
+Display emotion pattern (weekly/monthly)
+
+5. Profile Page
+
+User info
+
+Past emotion history
+
+Personalization settings for recommendation algorithm
+
+6. Emotion-Based Algorithm Requirements
+
+Please implement an intermediate-level recommendation algorithm including:
+
+Weighted mood mapping
+
+Task category matching
+
+Priority scoring
+
+Personalized user preference learning
+
+Simple collaborative filtering for music
+
+7. UI/UX Requirements
+
+Very clean, modern dashboard layout
+
+Similar to the sample image I provided
+
+Soft colors, rounded cards, subtle shadows
+
+Calendar on the right side
+
+Recommended tasks/music shown as cards
+
+Responsive design
+
+8. Database (MySQL)
+
+Create tables for:
+
+users
+
+tasks
+
+emotions
+
+emotion_history
+
+calendar_events
+
+music_recommendations (optional)
+
+Include foreign keys and sample seed data.
+
+9. Additional
+
+Include API endpoints for all features
+
+Add login/authentication system
+
+Provide sample React components
+
+Provide folder structure for both frontend and backend
+
+Provide clear README with setup instructions
