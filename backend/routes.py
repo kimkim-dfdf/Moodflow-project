@@ -288,11 +288,9 @@ def register_routes(app, db):
     def get_recommended_tasks():
         emotion_name = request.args.get('emotion', 'Neutral')
         limit = request.args.get('limit', 5, type=int)
-        energy_level = request.args.get('energy', 3, type=int)
-        energy_level = max(1, min(5, energy_level))
         
         recommendations = EmotionRecommendationEngine.get_recommended_tasks(
-            db, current_user.id, emotion_name, limit, energy_level
+            db, current_user.id, emotion_name, limit
         )
         return jsonify(recommendations)
     

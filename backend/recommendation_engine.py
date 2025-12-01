@@ -40,22 +40,6 @@ class EmotionRecommendationEngine:
     
     PRIORITY_SCORES = {'High': 3, 'Medium': 2, 'Low': 1}
     
-    ENERGY_CATEGORY_WEIGHTS = {
-        1: {'Personal': 1.0, 'Health': 0.6, 'Study': 0.3, 'Work': 0.2},
-        2: {'Personal': 0.9, 'Health': 0.7, 'Study': 0.5, 'Work': 0.4},
-        3: {'Personal': 0.7, 'Health': 0.8, 'Study': 0.7, 'Work': 0.7},
-        4: {'Work': 0.9, 'Study': 0.9, 'Health': 0.8, 'Personal': 0.6},
-        5: {'Work': 1.0, 'Study': 1.0, 'Health': 0.9, 'Personal': 0.5},
-    }
-    
-    ENERGY_PRIORITY_PREFERENCE = {
-        1: 'Low',
-        2: 'Low',
-        3: 'Medium',
-        4: 'High',
-        5: 'High',
-    }
-    
     EMOTION_TASK_SUGGESTIONS = {
         'Happy': [
             {'title': 'Start a new creative project', 'category': 'Personal', 'priority': 'High'},
@@ -102,21 +86,14 @@ class EmotionRecommendationEngine:
     }
     
     @classmethod
-    def calculate_task_score(cls, task, emotion_name, user=None, energy_level=3):
+    def calculate_task_score(cls, task, emotion_name, user=None):
         weights = cls.EMOTION_TASK_WEIGHTS.get(emotion_name, cls.EMOTION_TASK_WEIGHTS['Neutral'])
-        energy_weights = cls.ENERGY_CATEGORY_WEIGHTS.get(energy_level, cls.ENERGY_CATEGORY_WEIGHTS[3])
         
-        emotion_category_score = weights.get(task.category, 0.5)
-        energy_category_score = energy_weights.get(task.category, 0.5)
-        combined_category_score = (emotion_category_score * 0.5 + energy_category_score * 0.5) * 40
+        category_score = weights.get(task.category, 0.5) * 40
         
-        emotion_priority_pref = weights.get('priority_preference', 'Medium')
-        energy_priority_pref = cls.ENERGY_PRIORITY_PREFERENCE.get(energy_level, 'Medium')
-        
-        emotion_priority_match = 1.0 if task.priority == emotion_priority_pref else 0.7
-        energy_priority_match = 1.0 if task.priority == energy_priority_pref else 0.7
-        combined_priority_match = (emotion_priority_match + energy_priority_match) / 2
-        priority_score = cls.PRIORITY_SCORES.get(task.priority, 2) * combined_priority_match * 20
+        priority_pref = weights.get('priority_preference', 'Medium')
+        priority_match = 1.0 if task.priority == priority_pref else 0.7
+        priority_score = cls.PRIORITY_SCORES.get(task.priority, 2) * priority_match * 20
         
         urgency_score = 0
         if task.due_date:
@@ -136,46 +113,12 @@ class EmotionRecommendationEngine:
             if task.category in preferred:
                 personal_preference_score = 10 * (1 + preferred.index(task.category) * -0.1)
         
-        total_score = combined_category_score + priority_score + urgency_score + personal_preference_score
+        total_score = category_score + priority_score + urgency_score + personal_preference_score
         
         return min(100, max(0, total_score))
     
     @classmethod
-    def get_recommendation_reason(cls, task, emotion_name, energy_level=3):
-        reasons = []
-        
-        weights = cls.EMOTION_TASK_WEIGHTS.get(emotion_name, cls.EMOTION_TASK_WEIGHTS['Neutral'])
-        energy_weights = cls.ENERGY_CATEGORY_WEIGHTS.get(energy_level, cls.ENERGY_CATEGORY_WEIGHTS[3])
-        
-        if energy_level <= 2:
-            if task.priority == 'Low':
-                reasons.append("Low energy → Light task recommended")
-            if task.category == 'Personal':
-                reasons.append("Low energy → Personal activity suits you")
-        elif energy_level >= 4:
-            if task.priority == 'High':
-                reasons.append("High energy → Challenge yourself!")
-            if task.category in ['Work', 'Study']:
-                reasons.append("High energy → Great for focused work")
-        
-        emotion_cat_score = weights.get(task.category, 0.5)
-        if emotion_cat_score >= 0.8:
-            reasons.append(f"{emotion_name} mood → {task.category} tasks fit well")
-        
-        if task.due_date:
-            days_until_due = (task.due_date - datetime.now().date()).days
-            if days_until_due <= 1:
-                reasons.append("Due soon!")
-            elif days_until_due <= 3:
-                reasons.append("Coming up in a few days")
-        
-        if not reasons:
-            reasons.append("Balanced choice for your current state")
-        
-        return reasons
-    
-    @classmethod
-    def get_recommended_tasks(cls, db, user_id, emotion_name, limit=5, energy_level=3):
+    def get_recommended_tasks(cls, db, user_id, emotion_name, limit=5):
         from models import Task, User
         
         tasks = Task.query.filter_by(
@@ -187,13 +130,12 @@ class EmotionRecommendationEngine:
         
         scored_tasks = []
         for task in tasks:
-            score = cls.calculate_task_score(task, emotion_name, user, energy_level)
-            reasons = cls.get_recommendation_reason(task, emotion_name, energy_level)
-            scored_tasks.append((task, score, reasons))
+            score = cls.calculate_task_score(task, emotion_name, user)
+            scored_tasks.append((task, score))
         
         scored_tasks.sort(key=lambda x: x[1], reverse=True)
         
-        return [{'task': task.to_dict(), 'score': score, 'reasons': reasons} for task, score, reasons in scored_tasks[:limit]]
+        return [{'task': task.to_dict(), 'score': score} for task, score in scored_tasks[:limit]]
     
     @classmethod
     def get_suggested_tasks(cls, emotion_name, limit=3):
