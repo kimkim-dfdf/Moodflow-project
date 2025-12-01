@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek, isAfter, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight, X, Camera, Image, Trash2 } from 'lucide-react';
 import api from '../api/axios';
-import SeedIcon from '../components/SeedIcon';
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -211,9 +210,7 @@ const Calendar = () => {
                 </div>
                 {emotion && (
                   <div className="day-emotion-display" style={{ backgroundColor: emotion.color + '20' }}>
-                    <span className="emotion-emoji-large">
-                      <SeedIcon color={emotion.color} size={24} />
-                    </span>
+                    <span className="emotion-emoji-large">{emotion.emoji}</span>
                     {emotion.has_photo && <Camera size={12} className="photo-indicator" />}
                   </div>
                 )}
@@ -255,9 +252,7 @@ const Calendar = () => {
                         }}
                         onClick={() => setFormData(prev => ({ ...prev, emotion_id: emotion.id }))}
                       >
-                        <span className="emotion-emoji">
-                          <SeedIcon color={formData.emotion_id === emotion.id ? '#ffffff' : emotion.color} size={24} />
-                        </span>
+                        <span className="emotion-emoji">{emotion.emoji}</span>
                         <span className="emotion-name">{emotion.name}</span>
                       </button>
                     ))}

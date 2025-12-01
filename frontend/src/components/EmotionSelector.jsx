@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
-import SeedIcon from './SeedIcon';
 
 const EmotionSelector = ({ selectedEmotion, onSelect }) => {
   const [emotions, setEmotions] = useState([]);
@@ -48,9 +47,7 @@ const EmotionSelector = ({ selectedEmotion, onSelect }) => {
             }}
             onClick={() => handleSelect(emotion)}
           >
-            <span className="emotion-emoji">
-              <SeedIcon color={emotion.color} size={28} />
-            </span>
+            <span className="emotion-emoji">{emotion.emoji}</span>
             <span className="emotion-name">{emotion.name}</span>
           </button>
         ))}
