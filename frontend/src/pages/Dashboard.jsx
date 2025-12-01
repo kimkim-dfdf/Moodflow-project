@@ -19,6 +19,7 @@ const Dashboard = () => {
   const [taskSummary, setTaskSummary] = useState({ total: 0, completed: 0, pending: 0 });
   const [moodStats, setMoodStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dateLoading, setDateLoading] = useState(false);
   const [addedTasks, setAddedTasks] = useState(new Set());
   const [allTasks, setAllTasks] = useState([]);
 
@@ -29,6 +30,7 @@ const Dashboard = () => {
   useEffect(() => {
     let isCancelled = false;
     
+    setDateLoading(true);
     setSelectedEmotion(null);
     setRecommendedTasks([]);
     setSuggestedTasks([]);
@@ -47,6 +49,10 @@ const Dashboard = () => {
       } catch (error) {
         if (!isCancelled) {
           console.error('Failed to fetch date emotion:', error);
+        }
+      } finally {
+        if (!isCancelled) {
+          setDateLoading(false);
         }
       }
     };
@@ -199,7 +205,11 @@ const Dashboard = () => {
             />
           </section>
 
-          {selectedEmotion && (
+          {dateLoading ? (
+            <div className="card loading-card">
+              <p>날짜 데이터를 불러오는 중...</p>
+            </div>
+          ) : selectedEmotion ? (
             <>
               <section className="card recommendations-section">
                 <div className="section-header">
@@ -258,7 +268,7 @@ const Dashboard = () => {
                 </div>
               </section>
             </>
-          )}
+          ) : null}
         </div>
 
         <aside className="dashboard-sidebar">
