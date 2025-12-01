@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { format, isToday } from 'date-fns';
 import api from '../api/axios';
 
-const EmotionSelector = ({ selectedEmotion, onSelect, selectedDate, onEmotionRecorded }) => {
+const EmotionSelector = ({ selectedEmotion, onSelect }) => {
   const [emotions, setEmotions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,25 +22,11 @@ const EmotionSelector = ({ selectedEmotion, onSelect, selectedDate, onEmotionRec
 
   const handleSelect = async (emotion) => {
     try {
-      const dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-      await api.post('/emotions/record', { 
-        emotion_id: emotion.id,
-        date: dateStr
-      });
+      await api.post('/emotions/record', { emotion_id: emotion.id });
       onSelect(emotion);
-      if (onEmotionRecorded) {
-        onEmotionRecorded();
-      }
     } catch (error) {
       console.error('Failed to record emotion:', error);
     }
-  };
-
-  const getDateLabel = () => {
-    if (!selectedDate || isToday(selectedDate)) {
-      return 'How are you feeling today?';
-    }
-    return `${format(selectedDate, 'M월 d일')}의 기분은 어땠나요?`;
   };
 
   if (loading) {
@@ -50,7 +35,7 @@ const EmotionSelector = ({ selectedEmotion, onSelect, selectedDate, onEmotionRec
 
   return (
     <div className="emotion-selector">
-      <h3>{getDateLabel()}</h3>
+      <h3>How are you feeling today?</h3>
       <div className="emotion-grid">
         {emotions.map((emotion) => (
           <button

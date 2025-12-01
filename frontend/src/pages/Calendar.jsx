@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek, isFuture } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek } from 'date-fns';
 import { ChevronLeft, ChevronRight, X, Camera, Image, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 
@@ -181,13 +181,12 @@ const Calendar = () => {
           {days.map(day => {
             const dateStr = format(day, 'yyyy-MM-dd');
             const emotion = emotionData[dateStr];
-            const isFutureDate = isFuture(day) && !isToday(day);
 
             return (
               <div
                 key={dateStr}
-                className={`calendar-day-full diary-mode ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${emotion ? 'has-emotion' : ''} ${isFutureDate ? 'future-disabled' : ''}`}
-                onClick={() => !isFutureDate && handleDateClick(day)}
+                className={`calendar-day-full diary-mode ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${emotion ? 'has-emotion' : ''}`}
+                onClick={() => handleDateClick(day)}
               >
                 <div className="day-header">
                   <span className="day-number">{format(day, 'd')}</span>
@@ -198,7 +197,7 @@ const Calendar = () => {
                     {emotion.has_photo && <Camera size={12} className="photo-indicator" />}
                   </div>
                 )}
-                {!emotion && isSameMonth(day, currentDate) && !isFutureDate && (
+                {!emotion && isSameMonth(day, currentDate) && (
                   <div className="day-empty">
                     <span className="add-diary-hint">+</span>
                   </div>
