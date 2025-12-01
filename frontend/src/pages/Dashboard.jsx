@@ -65,13 +65,23 @@ const Dashboard = () => {
         setSelectedEmotion(response.data.emotion);
       } else {
         setSelectedEmotion(null);
+        setRecommendedTasks([]);
+        setSuggestedTasks([]);
+        setMusicRecommendations([]);
       }
     } catch (error) {
       setSelectedEmotion(null);
+      setRecommendedTasks([]);
+      setSuggestedTasks([]);
+      setMusicRecommendations([]);
     }
   };
 
   const handleDateSelect = (date) => {
+    setSelectedEmotion(null);
+    setRecommendedTasks([]);
+    setSuggestedTasks([]);
+    setMusicRecommendations([]);
     setSelectedDate(date);
   };
 
