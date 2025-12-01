@@ -24,18 +24,6 @@ const MusicCard = ({ music }) => {
             YouTube
           </a>
         )}
-        {music.spotify_url && (
-          <a 
-            href={music.spotify_url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="music-link spotify"
-            title="Play on Spotify"
-          >
-            <ExternalLink size={16} />
-            Spotify
-          </a>
-        )}
       </div>
     </div>
   );
