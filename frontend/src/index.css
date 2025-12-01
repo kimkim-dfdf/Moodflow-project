@@ -406,6 +406,30 @@ body {
   color: var(--text-secondary);
 }
 
+.selected-date {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-to-today-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-to-today-btn:hover {
+  background: var(--primary-dark);
+}
+
 .task-summary-badges {
   display: flex;
   gap: 12px;
@@ -818,6 +842,15 @@ body {
 .calendar-day.today {
   background: var(--primary);
   color: white;
+}
+
+.calendar-day.selected {
+  outline: 3px solid var(--primary);
+  outline-offset: -3px;
+}
+
+.calendar-day.selected:not(.today) {
+  background: var(--primary-light);
 }
 
 .day-emotion {

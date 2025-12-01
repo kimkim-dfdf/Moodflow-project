@@ -6,11 +6,12 @@ import MusicCard from '../components/MusicCard';
 import MiniCalendar from '../components/MiniCalendar';
 import MoodStats from '../components/MoodStats';
 import api from '../api/axios';
-import { format } from 'date-fns';
-import { Sparkles, Music, CheckCircle2 } from 'lucide-react';
+import { format, isToday } from 'date-fns';
+import { Sparkles, Music, CheckCircle2, RotateCcw } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [recommendedTasks, setRecommendedTasks] = useState([]);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
@@ -26,6 +27,10 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
+    fetchDateEmotion();
+  }, [selectedDate]);
+
+  useEffect(() => {
     if (selectedEmotion) {
       fetchRecommendations(selectedEmotion.name);
     }
@@ -33,9 +38,8 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [summaryRes, todayEmotionRes, tasksRes] = await Promise.all([
+      const [summaryRes, tasksRes] = await Promise.all([
         api.get('/dashboard/summary'),
-        api.get('/emotions/today'),
         api.get('/tasks')
       ]);
 
@@ -46,15 +50,33 @@ const Dashboard = () => {
       
       const existingTitles = new Set(tasksRes.data.map(t => t.title));
       setAddedTasks(existingTitles);
-
-      if (todayEmotionRes.data) {
-        setSelectedEmotion(todayEmotionRes.data.emotion);
-      }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchDateEmotion = async () => {
+    try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const response = await api.get(`/emotions/diary/${dateStr}`);
+      if (response.data && response.data.emotion) {
+        setSelectedEmotion(response.data.emotion);
+      } else {
+        setSelectedEmotion(null);
+      }
+    } catch (error) {
+      setSelectedEmotion(null);
+    }
+  };
+
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
+  };
+
+  const handleBackToToday = () => {
+    setSelectedDate(new Date());
   };
 
   const fetchRecommendations = async (emotionName) => {
@@ -126,7 +148,15 @@ const Dashboard = () => {
       <header className="dashboard-header">
         <div className="greeting">
           <h1>{getGreeting()}, {user?.username}!</h1>
-          <p>{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+          <p className="selected-date">
+            {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+            {!isToday(selectedDate) && (
+              <button className="back-to-today-btn" onClick={handleBackToToday}>
+                <RotateCcw size={14} />
+                오늘로 돌아가기
+              </button>
+            )}
+          </p>
         </div>
         <div className="task-summary-badges">
           <div className="badge total">
@@ -150,7 +180,9 @@ const Dashboard = () => {
           <section className="card emotion-section">
             <EmotionSelector 
               selectedEmotion={selectedEmotion} 
-              onSelect={setSelectedEmotion} 
+              onSelect={setSelectedEmotion}
+              selectedDate={selectedDate}
+              onEmotionRecorded={fetchDateEmotion}
             />
           </section>
 
@@ -218,7 +250,7 @@ const Dashboard = () => {
 
         <aside className="dashboard-sidebar">
           <section className="card calendar-section">
-            <MiniCalendar />
+            <MiniCalendar onDateSelect={handleDateSelect} selectedDate={selectedDate} />
           </section>
 
           <section className="card stats-section">

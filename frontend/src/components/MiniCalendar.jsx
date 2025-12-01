@@ -3,7 +3,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isTod
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../api/axios';
 
-const MiniCalendar = ({ onDateSelect }) => {
+const MiniCalendar = ({ onDateSelect, selectedDate }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [emotionData, setEmotionData] = useState({});
 
@@ -58,11 +58,12 @@ const MiniCalendar = ({ onDateSelect }) => {
         {days.map(day => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const emotion = emotionData[dateStr];
+          const isSelected = selectedDate && isSameDay(day, selectedDate);
           
           return (
             <div
               key={dateStr}
-              className={`calendar-day ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''}`}
+              className={`calendar-day ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
               onClick={() => onDateSelect && onDateSelect(day)}
               style={emotion ? { backgroundColor: `${emotion.color}20` } : {}}
             >
