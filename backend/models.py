@@ -71,13 +71,6 @@ class EmotionHistory(db.Model):
     notes = db.Column(db.Text)
     photo_url = db.Column(db.String(500))
     
-    sleep_quality = db.Column(db.Integer)
-    mood_rating = db.Column(db.Integer)
-    energy_level = db.Column(db.Integer)
-    stress_level = db.Column(db.Integer)
-    concentration = db.Column(db.Integer)
-    motivation = db.Column(db.Integer)
-    
     emotion = db.relationship('Emotion', backref='history_entries')
     
     def to_dict(self):
@@ -89,13 +82,7 @@ class EmotionHistory(db.Model):
             'recorded_at': self.recorded_at.isoformat() if self.recorded_at else None,
             'date': self.date.isoformat() if self.date else None,
             'notes': self.notes,
-            'photo_url': self.photo_url,
-            'sleep_quality': self.sleep_quality,
-            'mood_rating': self.mood_rating,
-            'energy_level': self.energy_level,
-            'stress_level': self.stress_level,
-            'concentration': self.concentration,
-            'motivation': self.motivation
+            'photo_url': self.photo_url
         }
 
 
