@@ -69,6 +69,7 @@ class EmotionHistory(db.Model):
     recorded_at = db.Column(db.DateTime, default=datetime.utcnow)
     date = db.Column(db.Date, nullable=False)
     notes = db.Column(db.Text)
+    photo_url = db.Column(db.String(500))
     
     emotion = db.relationship('Emotion', backref='history_entries')
     
@@ -80,7 +81,8 @@ class EmotionHistory(db.Model):
             'emotion': self.emotion.to_dict() if self.emotion else None,
             'recorded_at': self.recorded_at.isoformat() if self.recorded_at else None,
             'date': self.date.isoformat() if self.date else None,
-            'notes': self.notes
+            'notes': self.notes,
+            'photo_url': self.photo_url
         }
 
 

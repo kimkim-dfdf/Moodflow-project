@@ -1,46 +1,30 @@
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek, isSameDay } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek } from 'date-fns';
+import { ChevronLeft, ChevronRight, X, Camera, Image, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [events, setEvents] = useState([]);
   const [emotionData, setEmotionData] = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [editingEvent, setEditingEvent] = useState(null);
   const [emotions, setEmotions] = useState([]);
-  const [showEmotionModal, setShowEmotionModal] = useState(false);
+  const [showDiaryModal, setShowDiaryModal] = useState(false);
+  const [diaryEntry, setDiaryEntry] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    start_date: '',
-    end_date: '',
-    all_day: true,
-    color: '#6366f1'
+    emotion_id: null,
+    notes: '',
+    photo_url: ''
   });
 
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
   useEffect(() => {
-    fetchEvents();
     fetchEmotionData();
     fetchEmotions();
   }, [currentDate]);
-
-  const fetchEvents = async () => {
-    try {
-      const response = await api.get('/calendar/events', {
-        params: {
-          month: currentDate.getMonth() + 1,
-          year: currentDate.getFullYear()
-        }
-      });
-      setEvents(response.data);
-    } catch (error) {
-      console.error('Failed to fetch events:', error);
-    }
-  };
 
   const fetchEmotionData = async () => {
     try {
@@ -60,85 +44,90 @@ const Calendar = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const fetchDiaryEntry = async (date) => {
     try {
-      const eventData = {
-        ...formData,
-        start_date: new Date(formData.start_date).toISOString(),
-        end_date: formData.end_date ? new Date(formData.end_date).toISOString() : null
-      };
-
-      if (editingEvent) {
-        await api.put(`/calendar/events/${editingEvent.id}`, eventData);
+      setIsLoading(true);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const response = await api.get(`/emotions/diary/${dateStr}`);
+      if (response.data) {
+        setDiaryEntry(response.data);
+        setFormData({
+          emotion_id: response.data.emotion_id,
+          notes: response.data.notes || '',
+          photo_url: response.data.photo_url || ''
+        });
+        setPhotoPreview(response.data.photo_url ? `${api.defaults.baseURL}${response.data.photo_url}` : null);
       } else {
-        await api.post('/calendar/events', eventData);
+        setDiaryEntry(null);
+        setFormData({ emotion_id: null, notes: '', photo_url: '' });
+        setPhotoPreview(null);
       }
-      setShowModal(false);
-      resetForm();
-      fetchEvents();
     } catch (error) {
-      console.error('Failed to save event:', error);
+      console.error('Failed to fetch diary entry:', error);
+      setDiaryEntry(null);
+      setFormData({ emotion_id: null, notes: '', photo_url: '' });
+      setPhotoPreview(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDelete = async (eventId) => {
-    if (window.confirm('Are you sure you want to delete this event?')) {
-      try {
-        await api.delete(`/calendar/events/${eventId}`);
-        fetchEvents();
-      } catch (error) {
-        console.error('Failed to delete event:', error);
-      }
+  const handleDateClick = (date) => {
+    setSelectedDate(date);
+    fetchDiaryEntry(date);
+    setShowDiaryModal(true);
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    setUploadingPhoto(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('photo', file);
+      const response = await api.post('/upload/photo', formDataUpload, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setFormData(prev => ({ ...prev, photo_url: response.data.photo_url }));
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+      alert('사진 업로드에 실패했습니다.');
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
-  const handleRecordEmotion = async (emotion) => {
-    if (!selectedDate) return;
+  const handleRemovePhoto = () => {
+    setPhotoPreview(null);
+    setFormData(prev => ({ ...prev, photo_url: '' }));
+  };
+
+  const handleSaveDiary = async () => {
+    if (!formData.emotion_id) {
+      alert('기분을 선택해주세요.');
+      return;
+    }
+
     try {
       await api.post('/emotions/record', {
-        emotion_id: emotion.id,
-        date: format(selectedDate, 'yyyy-MM-dd')
+        emotion_id: formData.emotion_id,
+        date: format(selectedDate, 'yyyy-MM-dd'),
+        notes: formData.notes,
+        photo_url: formData.photo_url
       });
-      setShowEmotionModal(false);
+      setShowDiaryModal(false);
       fetchEmotionData();
     } catch (error) {
-      console.error('Failed to record emotion:', error);
+      console.error('Failed to save diary:', error);
+      alert('저장에 실패했습니다.');
     }
-  };
-
-  const resetForm = () => {
-    setEditingEvent(null);
-    setFormData({
-      title: '',
-      description: '',
-      start_date: '',
-      end_date: '',
-      all_day: true,
-      color: '#6366f1'
-    });
-  };
-
-  const openNewEventModal = (date) => {
-    resetForm();
-    setFormData(prev => ({
-      ...prev,
-      start_date: format(date, "yyyy-MM-dd'T'HH:mm")
-    }));
-    setShowModal(true);
-  };
-
-  const openEditEventModal = (event) => {
-    setEditingEvent(event);
-    setFormData({
-      title: event.title,
-      description: event.description || '',
-      start_date: event.start_date.slice(0, 16),
-      end_date: event.end_date ? event.end_date.slice(0, 16) : '',
-      all_day: event.all_day,
-      color: event.color
-    });
-    setShowModal(true);
   };
 
   const monthStart = startOfMonth(currentDate);
@@ -146,13 +135,6 @@ const Calendar = () => {
   const calendarStart = startOfWeek(monthStart);
   const calendarEnd = endOfWeek(monthEnd);
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-
-  const getEventsForDay = (day) => {
-    return events.filter(event => {
-      const eventDate = new Date(event.start_date);
-      return isSameDay(eventDate, day);
-    });
-  };
 
   const prevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
@@ -162,14 +144,15 @@ const Calendar = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
+  const getSelectedEmotion = () => {
+    return emotions.find(e => e.id === formData.emotion_id);
+  };
+
   return (
     <div className="calendar-page">
       <header className="page-header">
-        <h1>Calendar</h1>
-        <button className="btn-primary" onClick={() => openNewEventModal(new Date())}>
-          <Plus size={18} />
-          Add Event
-        </button>
+        <h1>기분 일기</h1>
+        <p className="page-subtitle">날짜를 클릭하여 오늘의 기분과 사진을 기록하세요</p>
       </header>
 
       <div className="calendar-container card">
@@ -177,14 +160,14 @@ const Calendar = () => {
           <button onClick={prevMonth} className="nav-btn">
             <ChevronLeft size={24} />
           </button>
-          <h2>{format(currentDate, 'MMMM yyyy')}</h2>
+          <h2>{format(currentDate, 'yyyy년 M월')}</h2>
           <button onClick={nextMonth} className="nav-btn">
             <ChevronRight size={24} />
           </button>
         </div>
 
         <div className="calendar-weekdays">
-          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+          {['일', '월', '화', '수', '목', '금', '토'].map(day => (
             <div key={day} className="weekday">{day}</div>
           ))}
         </div>
@@ -193,197 +176,124 @@ const Calendar = () => {
           {days.map(day => {
             const dateStr = format(day, 'yyyy-MM-dd');
             const emotion = emotionData[dateStr];
-            const dayEvents = getEventsForDay(day);
 
             return (
               <div
                 key={dateStr}
-                className={`calendar-day-full ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''}`}
-                onClick={() => {
-                  setSelectedDate(day);
-                }}
+                className={`calendar-day-full diary-mode ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${emotion ? 'has-emotion' : ''}`}
+                onClick={() => handleDateClick(day)}
               >
                 <div className="day-header">
                   <span className="day-number">{format(day, 'd')}</span>
-                  {emotion && (
-                    <span 
-                      className="day-emotion-badge" 
-                      style={{ backgroundColor: emotion.color }}
-                      title={emotion.emotion}
-                    >
-                      {emotion.emoji}
-                    </span>
-                  )}
-                  <button
-                    className="record-emotion-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedDate(day);
-                      setShowEmotionModal(true);
-                    }}
-                    title="Record emotion for this day"
-                  >
-                    {emotion ? 'Change' : '+'}
-                  </button>
                 </div>
-                <div className="day-events">
-                  {dayEvents.slice(0, 3).map(event => (
-                    <div
-                      key={event.id}
-                      className="event-pill"
-                      style={{ backgroundColor: event.color }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditEventModal(event);
-                      }}
-                    >
-                      {event.title}
-                    </div>
-                  ))}
-                  {dayEvents.length > 3 && (
-                    <span className="more-events">+{dayEvents.length - 3} more</span>
-                  )}
-                </div>
-                <button
-                  className="add-event-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openNewEventModal(day);
-                  }}
-                >
-                  +
-                </button>
+                {emotion && (
+                  <div className="day-emotion-display" style={{ backgroundColor: emotion.color + '20' }}>
+                    <span className="emotion-emoji-large">{emotion.emoji}</span>
+                    {emotion.has_photo && <Camera size={12} className="photo-indicator" />}
+                  </div>
+                )}
+                {!emotion && isSameMonth(day, currentDate) && (
+                  <div className="day-empty">
+                    <span className="add-diary-hint">+</span>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+      {showDiaryModal && selectedDate && (
+        <div className="modal-overlay" onClick={() => setShowDiaryModal(false)}>
+          <div className="modal diary-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{editingEvent ? 'Edit Event' : 'New Event'}</h2>
-              <button className="close-btn" onClick={() => setShowModal(false)}>
+              <h2>{format(selectedDate, 'yyyy년 M월 d일')} 기분 일기</h2>
+              <button className="close-btn" onClick={() => setShowDiaryModal(false)}>
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="title">Title</label>
-                <input
-                  type="text"
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Event title"
-                  required
-                />
-              </div>
 
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Event description (optional)"
-                  rows={3}
-                />
-              </div>
+            {isLoading ? (
+              <div className="modal-loading">불러오는 중...</div>
+            ) : (
+              <div className="diary-content">
+                <div className="diary-section">
+                  <label className="section-label">오늘의 기분</label>
+                  <div className="emotion-grid-diary">
+                    {emotions.map((emotion) => (
+                      <button
+                        key={emotion.id}
+                        className={`emotion-btn-diary ${formData.emotion_id === emotion.id ? 'selected' : ''}`}
+                        style={{ 
+                          backgroundColor: formData.emotion_id === emotion.id ? emotion.color : emotion.color + '30',
+                          borderColor: emotion.color
+                        }}
+                        onClick={() => setFormData(prev => ({ ...prev, emotion_id: emotion.id }))}
+                      >
+                        <span className="emotion-emoji">{emotion.emoji}</span>
+                        <span className="emotion-name">{emotion.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="start_date">Start Date & Time</label>
-                  <input
-                    type="datetime-local"
-                    id="start_date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    required
+                <div className="diary-section">
+                  <label className="section-label">오늘의 사진</label>
+                  <div className="photo-upload-area">
+                    {photoPreview ? (
+                      <div className="photo-preview-container">
+                        <img src={photoPreview} alt="Diary" className="photo-preview" />
+                        <button className="remove-photo-btn" onClick={handleRemovePhoto}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="photo-upload-box">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                          style={{ display: 'none' }}
+                        />
+                        {uploadingPhoto ? (
+                          <span>업로드 중...</span>
+                        ) : (
+                          <>
+                            <Image size={32} />
+                            <span>사진 추가하기</span>
+                          </>
+                        )}
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                <div className="diary-section">
+                  <label className="section-label">오늘의 일기</label>
+                  <textarea
+                    className="diary-notes"
+                    placeholder="오늘 하루는 어땠나요? 기분을 자유롭게 적어보세요..."
+                    value={formData.notes}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    rows={4}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="end_date">End Date & Time</label>
-                  <input
-                    type="datetime-local"
-                    id="end_date"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group checkbox-group">
-                  <input
-                    type="checkbox"
-                    id="all_day"
-                    checked={formData.all_day}
-                    onChange={(e) => setFormData({ ...formData, all_day: e.target.checked })}
-                  />
-                  <label htmlFor="all_day">All day event</label>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="color">Color</label>
-                  <input
-                    type="color"
-                    id="color"
-                    value={formData.color}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="modal-actions">
-                {editingEvent && (
+                <div className="modal-actions">
+                  <button type="button" className="btn-secondary" onClick={() => setShowDiaryModal(false)}>
+                    취소
+                  </button>
                   <button 
                     type="button" 
-                    className="btn-danger" 
-                    onClick={() => {
-                      handleDelete(editingEvent.id);
-                      setShowModal(false);
-                    }}
+                    className="btn-primary" 
+                    onClick={handleSaveDiary}
+                    disabled={!formData.emotion_id}
                   >
-                    Delete
+                    저장하기
                   </button>
-                )}
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary">
-                  {editingEvent ? 'Update Event' : 'Create Event'}
-                </button>
+                </div>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showEmotionModal && (
-        <div className="modal-overlay" onClick={() => setShowEmotionModal(false)}>
-          <div className="modal emotion-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>How did you feel on {selectedDate && format(selectedDate, 'MMMM d, yyyy')}?</h2>
-              <button className="close-btn" onClick={() => setShowEmotionModal(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="emotion-grid-modal">
-              {emotions.map((emotion) => (
-                <button
-                  key={emotion.id}
-                  className="emotion-btn-large"
-                  style={{ backgroundColor: emotion.color }}
-                  onClick={() => handleRecordEmotion(emotion)}
-                >
-                  <span className="emotion-emoji">{emotion.emoji}</span>
-                  <span className="emotion-name">{emotion.name}</span>
-                </button>
-              ))}
-            </div>
+            )}
           </div>
         </div>
       )}

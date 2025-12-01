@@ -1,7 +1,16 @@
-from flask import request, jsonify
+from flask import request, jsonify, send_from_directory
 from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
 from recommendation_engine import EmotionRecommendationEngine
+from werkzeug.utils import secure_filename
+import os
+import uuid
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def register_routes(app, db):
@@ -83,18 +92,68 @@ def register_routes(app, db):
         if existing:
             existing.emotion_id = data['emotion_id']
             existing.notes = data.get('notes', existing.notes)
+            if data.get('photo_url'):
+                existing.photo_url = data['photo_url']
             existing.recorded_at = datetime.utcnow()
+            entry = existing
         else:
-            history = EmotionHistory(
+            entry = EmotionHistory(
                 user_id=current_user.id,
                 emotion_id=data['emotion_id'],
                 date=date,
-                notes=data.get('notes')
+                notes=data.get('notes'),
+                photo_url=data.get('photo_url')
             )
-            db.session.add(history)
+            db.session.add(entry)
         
         db.session.commit()
-        return jsonify({'message': 'Emotion recorded successfully'})
+        return jsonify({'message': 'Emotion recorded successfully', 'entry': entry.to_dict()})
+    
+    @app.route('/api/emotions/diary/<date_str>', methods=['GET'])
+    @login_required
+    def get_diary_entry(date_str):
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'error': 'Invalid date format'}), 400
+        
+        entry = EmotionHistory.query.filter_by(
+            user_id=current_user.id,
+            date=date
+        ).first()
+        
+        if entry:
+            return jsonify(entry.to_dict())
+        return jsonify(None)
+    
+    @app.route('/api/upload/photo', methods=['POST'])
+    @login_required
+    def upload_photo():
+        if 'photo' not in request.files:
+            return jsonify({'error': 'No photo provided'}), 400
+        
+        file = request.files['photo']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            unique_filename = f"{uuid.uuid4().hex}_{filename}"
+            
+            if not os.path.exists(UPLOAD_FOLDER):
+                os.makedirs(UPLOAD_FOLDER)
+            
+            file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+            file.save(file_path)
+            
+            photo_url = f"/api/uploads/{unique_filename}"
+            return jsonify({'photo_url': photo_url, 'filename': unique_filename})
+        
+        return jsonify({'error': 'Invalid file type'}), 400
+    
+    @app.route('/api/uploads/<filename>')
+    def serve_upload(filename):
+        return send_from_directory(UPLOAD_FOLDER, filename)
     
     @app.route('/api/emotions/today', methods=['GET'])
     @login_required

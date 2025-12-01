@@ -178,7 +178,9 @@ class EmotionRecommendationEngine:
             daily_emotions[date_str] = {
                 'emotion': emotion_name,
                 'emoji': entry.emotion.emoji if entry.emotion else '😐',
-                'color': entry.emotion.color if entry.emotion else '#95A5A6'
+                'color': entry.emotion.color if entry.emotion else '#95A5A6',
+                'has_photo': bool(entry.photo_url),
+                'notes': entry.notes
             }
         
         total = sum(emotion_counts.values())
