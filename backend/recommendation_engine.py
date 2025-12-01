@@ -89,31 +89,33 @@ class EmotionRecommendationEngine:
     def calculate_task_score(cls, task, emotion_name, user=None):
         weights = cls.EMOTION_TASK_WEIGHTS.get(emotion_name, cls.EMOTION_TASK_WEIGHTS['Neutral'])
         
-        category_weight = weights.get(task.category, 0.5)
+        category_score = weights.get(task.category, 0.5) * 40
+        
         priority_pref = weights.get('priority_preference', 'Medium')
-        priority_weight = cls.PRIORITY_SCORES.get(task.priority, 2) / 3.0
+        priority_match = 1.0 if task.priority == priority_pref else 0.7
+        priority_score = cls.PRIORITY_SCORES.get(task.priority, 2) * priority_match * 20
         
-        priority_match = 1.0 if task.priority == priority_pref else 0.6
-        
-        urgency_weight = 0
+        urgency_score = 0
         if task.due_date:
             days_until_due = (task.due_date - datetime.now().date()).days
             if days_until_due <= 0:
-                urgency_weight = 1.0
+                urgency_score = 30
             elif days_until_due <= 1:
-                urgency_weight = 0.9
+                urgency_score = 25
             elif days_until_due <= 3:
-                urgency_weight = 0.6
+                urgency_score = 15
             elif days_until_due <= 7:
-                urgency_weight = 0.3
+                urgency_score = 5
         
-        weighted_score = (
-            category_weight * 50 +
-            priority_weight * priority_match * 30 +
-            urgency_weight * 20
-        )
+        personal_preference_score = 0
+        if user and user.preferred_categories:
+            preferred = user.preferred_categories.split(',')
+            if task.category in preferred:
+                personal_preference_score = 10 * (1 + preferred.index(task.category) * -0.1)
         
-        return min(100, max(0, weighted_score))
+        total_score = category_score + priority_score + urgency_score + personal_preference_score
+        
+        return min(100, max(0, total_score))
     
     @classmethod
     def get_recommended_tasks(cls, db, user_id, emotion_name, limit=5):
@@ -136,35 +138,10 @@ class EmotionRecommendationEngine:
         return [{'task': task.to_dict(), 'score': score} for task, score in scored_tasks[:limit]]
     
     @classmethod
-    def get_suggested_tasks(cls, emotion_name, user_id=None, limit=3):
-        from models import Task
-        
+    def get_suggested_tasks(cls, emotion_name, limit=3):
         suggestions = cls.EMOTION_TASK_SUGGESTIONS.get(emotion_name, cls.EMOTION_TASK_SUGGESTIONS['Neutral'])
-        weights = cls.EMOTION_TASK_WEIGHTS.get(emotion_name, cls.EMOTION_TASK_WEIGHTS['Neutral'])
-        
-        existing_titles = set()
-        if user_id:
-            user_tasks = Task.query.filter_by(user_id=user_id).all()
-            existing_titles = {task.title.lower().strip() for task in user_tasks}
-            print(f"[DEBUG] User {user_id} has {len(user_tasks)} tasks")
-            print(f"[DEBUG] Existing titles: {existing_titles}")
-        
-        available_suggestions = [
-            s for s in suggestions 
-            if s['title'].lower().strip() not in existing_titles
-        ]
-        print(f"[DEBUG] Available suggestions after filter: {[s['title'] for s in available_suggestions]}")
-        
-        def suggestion_score(suggestion):
-            cat_weight = weights.get(suggestion['category'], 0.5)
-            priority_pref = weights.get('priority_preference', 'Medium')
-            priority_match = 1.0 if suggestion['priority'] == priority_pref else 0.7
-            return cat_weight * 50 + cls.PRIORITY_SCORES.get(suggestion['priority'], 2) * priority_match * 20
-        
-        scored_suggestions = [(s, suggestion_score(s)) for s in available_suggestions]
-        scored_suggestions.sort(key=lambda x: x[1], reverse=True)
-        
-        return [s[0] for s in scored_suggestions[:limit]]
+        selected = random.sample(suggestions, min(limit, len(suggestions)))
+        return selected
     
     @classmethod
     def get_music_recommendations(cls, db, emotion_name, user_id=None, limit=4):
@@ -245,26 +222,3 @@ class EmotionRecommendationEngine:
             })
         
         return pattern
-    
-    @classmethod
-    def analyze_mood_factors(cls, sleep_quality, energy_level, stress_level, concentration, motivation, mood_rating):
-        """Analyze six factors and determine appropriate emotion"""
-        
-        norm_sleep = sleep_quality * 2
-        norm_energy = energy_level * 2
-        norm_stress = (6 - stress_level) * 2
-        norm_concentration = concentration * 2
-        norm_motivation = motivation * 2
-        norm_mood = mood_rating * 2
-        
-        emotion_scores = {}
-        
-        emotion_scores['Happy'] = (norm_sleep * 0.15 + norm_energy * 0.2 + norm_stress * 0.15 + norm_concentration * 0.15 + norm_motivation * 0.2 + norm_mood * 0.15) / 10
-        emotion_scores['Sad'] = ((10 - norm_mood) * 0.3 + (10 - norm_motivation) * 0.3 + (10 - norm_energy) * 0.2 + (10 - norm_sleep) * 0.2) / 10
-        emotion_scores['Tired'] = ((10 - norm_sleep) * 0.4 + (10 - norm_energy) * 0.4 + (10 - norm_motivation) * 0.2) / 10
-        emotion_scores['Angry'] = ((10 - norm_stress) * 0.2 + (10 - norm_mood) * 0.2 + (10 - norm_concentration) * 0.3 + norm_energy * 0.3) / 10
-        emotion_scores['Stressed'] = ((10 - norm_stress) * 0.1 + (10 - norm_concentration) * 0.3 + norm_sleep * 0.25 + norm_mood * 0.2 + norm_energy * 0.15) / 10
-        emotion_scores['Neutral'] = 1 - (abs(norm_energy - 6) + abs(norm_mood - 6) + abs(norm_stress - 6)) / 24
-        
-        best_emotion = max(emotion_scores, key=emotion_scores.get)
-        return best_emotion

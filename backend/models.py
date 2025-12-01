@@ -71,13 +71,6 @@ class EmotionHistory(db.Model):
     notes = db.Column(db.Text)
     photo_url = db.Column(db.String(500))
     
-    sleep_quality = db.Column(db.Integer)
-    energy_level = db.Column(db.Integer)
-    stress_level = db.Column(db.Integer)
-    concentration = db.Column(db.Integer)
-    motivation = db.Column(db.Integer)
-    mood_rating = db.Column(db.Integer)
-    
     emotion = db.relationship('Emotion', backref='history_entries')
     
     def to_dict(self):
@@ -89,13 +82,7 @@ class EmotionHistory(db.Model):
             'recorded_at': self.recorded_at.isoformat() if self.recorded_at else None,
             'date': self.date.isoformat() if self.date else None,
             'notes': self.notes,
-            'photo_url': self.photo_url,
-            'sleep_quality': self.sleep_quality,
-            'energy_level': self.energy_level,
-            'stress_level': self.stress_level,
-            'concentration': self.concentration,
-            'motivation': self.motivation,
-            'mood_rating': self.mood_rating
+            'photo_url': self.photo_url
         }
 
 
@@ -168,6 +155,7 @@ class MusicRecommendation(db.Model):
     title = db.Column(db.String(200), nullable=False)
     artist = db.Column(db.String(100))
     genre = db.Column(db.String(50))
+    spotify_url = db.Column(db.String(500))
     youtube_url = db.Column(db.String(500))
     thumbnail_url = db.Column(db.String(500))
     popularity_score = db.Column(db.Float, default=0.0)
@@ -182,6 +170,7 @@ class MusicRecommendation(db.Model):
             'title': self.title,
             'artist': self.artist,
             'genre': self.genre,
+            'spotify_url': self.spotify_url,
             'youtube_url': self.youtube_url,
             'thumbnail_url': self.thumbnail_url,
             'popularity_score': self.popularity_score

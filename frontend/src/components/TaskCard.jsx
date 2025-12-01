@@ -14,17 +14,7 @@ const categoryColors = {
   Personal: '#f97316'
 };
 
-const getMatchLevel = (score) => {
-  if (score >= 90) return { stars: '⭐⭐⭐⭐⭐', text: 'Perfect!' };
-  if (score >= 70) return { stars: '⭐⭐⭐⭐', text: 'Great!' };
-  if (score >= 50) return { stars: '⭐⭐⭐', text: 'Good' };
-  if (score >= 30) return { stars: '⭐⭐', text: 'Try it' };
-  return { stars: '⭐', text: 'Later?' };
-};
-
 const TaskCard = ({ task, onToggle, onEdit, showScore }) => {
-  const matchLevel = showScore && task.score !== undefined ? getMatchLevel(task.score) : null;
-
   return (
     <div className={`task-card ${task.is_completed ? 'completed' : ''}`}>
       <div className="task-header">
@@ -36,9 +26,9 @@ const TaskCard = ({ task, onToggle, onEdit, showScore }) => {
           )}
         </button>
         <h4 className="task-title">{task.title}</h4>
-        {matchLevel && (
-          <span className="task-match" title={matchLevel.text}>
-            {matchLevel.stars}
+        {showScore && task.score !== undefined && (
+          <span className="task-score" title="Recommendation score">
+            {Math.round(task.score)}%
           </span>
         )}
       </div>

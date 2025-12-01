@@ -72,27 +72,6 @@ def register_routes(app, db):
         emotions = Emotion.query.all()
         return jsonify([e.to_dict() for e in emotions])
     
-    @app.route('/api/emotions/analyze', methods=['POST'])
-    @login_required
-    def analyze_mood():
-        data = request.get_json()
-        
-        sleep_quality = data.get('sleep_quality', 3)
-        energy_level = data.get('energy_level', 3)
-        stress_level = data.get('stress_level', 3)
-        concentration = data.get('concentration', 3)
-        motivation = data.get('motivation', 3)
-        mood_rating = data.get('mood_rating', 3)
-        
-        best_emotion_name = EmotionRecommendationEngine.analyze_mood_factors(
-            sleep_quality, energy_level, stress_level, concentration, motivation, mood_rating
-        )
-        
-        emotion = Emotion.query.filter_by(name=best_emotion_name).first()
-        emotion_id = emotion.id if emotion else 6
-        
-        return jsonify({'emotion_id': emotion_id})
-    
     @app.route('/api/emotions/record', methods=['POST'])
     @login_required
     def record_emotion():
@@ -115,12 +94,6 @@ def register_routes(app, db):
             existing.notes = data.get('notes', existing.notes)
             if data.get('photo_url'):
                 existing.photo_url = data['photo_url']
-            existing.sleep_quality = data.get('sleep_quality', existing.sleep_quality)
-            existing.energy_level = data.get('energy_level', existing.energy_level)
-            existing.stress_level = data.get('stress_level', existing.stress_level)
-            existing.concentration = data.get('concentration', existing.concentration)
-            existing.motivation = data.get('motivation', existing.motivation)
-            existing.mood_rating = data.get('mood_rating', existing.mood_rating)
             existing.recorded_at = datetime.utcnow()
             entry = existing
         else:
@@ -129,13 +102,7 @@ def register_routes(app, db):
                 emotion_id=data['emotion_id'],
                 date=date,
                 notes=data.get('notes'),
-                photo_url=data.get('photo_url'),
-                sleep_quality=data.get('sleep_quality'),
-                energy_level=data.get('energy_level'),
-                stress_level=data.get('stress_level'),
-                concentration=data.get('concentration'),
-                motivation=data.get('motivation'),
-                mood_rating=data.get('mood_rating')
+                photo_url=data.get('photo_url')
             )
             db.session.add(entry)
         
@@ -324,9 +291,7 @@ def register_routes(app, db):
         emotion_name = request.args.get('emotion', 'Neutral')
         limit = request.args.get('limit', 3, type=int)
         
-        suggestions = EmotionRecommendationEngine.get_suggested_tasks(
-            emotion_name, user_id=current_user.id, limit=limit
-        )
+        suggestions = EmotionRecommendationEngine.get_suggested_tasks(emotion_name, limit)
         return jsonify(suggestions)
     
     @app.route('/api/music/recommendations', methods=['GET'])
