@@ -15,7 +15,7 @@ const categoryColors = {
   Personal: '#f97316'
 };
 
-const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate }) => {
+const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate, bestEmotion }) => {
   const navigate = useNavigate();
 
   const handleGoToTasks = () => {
@@ -25,7 +25,12 @@ const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate 
   };
 
   return (
-    <div className={`task-card ${task.is_completed ? 'completed' : ''}`}>
+    <div 
+      className={`task-card ${task.is_completed ? 'completed' : ''}`}
+      style={bestEmotion ? { 
+        borderLeft: `4px solid ${bestEmotion.color}`,
+      } : {}}
+    >
       <div className="task-content">
         <div className="task-header">
           <h4 className="task-title">
@@ -33,9 +38,20 @@ const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate 
             {task.title}
           </h4>
           {showScore && task.score !== undefined && (
-            <span className="task-score" title="Recommendation score">
-              {Math.round(task.score)}%
-            </span>
+            <div className="task-score-container">
+              {bestEmotion && (
+                <span 
+                  className="best-emotion-badge" 
+                  title={`Best for: ${bestEmotion.name}`}
+                  style={{ backgroundColor: bestEmotion.color + '30', color: bestEmotion.color }}
+                >
+                  {bestEmotion.emoji}
+                </span>
+              )}
+              <span className="task-score" title="Recommendation score">
+                {Math.round(task.score)}%
+              </span>
+            </div>
           )}
         </div>
         
