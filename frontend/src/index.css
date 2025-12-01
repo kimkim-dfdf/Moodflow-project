@@ -513,6 +513,15 @@ body {
   gap: 8px;
 }
 
+.section-header h3 .emotion-icon {
+  font-size: 24px;
+  margin-right: 4px;
+}
+
+.recommendations-section {
+  transition: all 0.3s ease;
+}
+
 .emotion-selector h3 {
   margin-bottom: 16px;
   font-size: 18px;
