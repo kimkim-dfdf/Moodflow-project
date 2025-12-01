@@ -324,7 +324,9 @@ def register_routes(app, db):
         emotion_name = request.args.get('emotion', 'Neutral')
         limit = request.args.get('limit', 3, type=int)
         
-        suggestions = EmotionRecommendationEngine.get_suggested_tasks(emotion_name, limit)
+        suggestions = EmotionRecommendationEngine.get_suggested_tasks(
+            emotion_name, user_id=current_user.id, limit=limit
+        )
         return jsonify(suggestions)
     
     @app.route('/api/music/recommendations', methods=['GET'])

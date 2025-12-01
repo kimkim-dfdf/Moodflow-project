@@ -136,9 +136,21 @@ class EmotionRecommendationEngine:
         return [{'task': task.to_dict(), 'score': score} for task, score in scored_tasks[:limit]]
     
     @classmethod
-    def get_suggested_tasks(cls, emotion_name, limit=3):
+    def get_suggested_tasks(cls, emotion_name, user_id=None, limit=3):
+        from models import Task
+        
         suggestions = cls.EMOTION_TASK_SUGGESTIONS.get(emotion_name, cls.EMOTION_TASK_SUGGESTIONS['Neutral'])
         weights = cls.EMOTION_TASK_WEIGHTS.get(emotion_name, cls.EMOTION_TASK_WEIGHTS['Neutral'])
+        
+        existing_titles = set()
+        if user_id:
+            user_tasks = Task.query.filter_by(user_id=user_id).all()
+            existing_titles = {task.title.lower().strip() for task in user_tasks}
+        
+        available_suggestions = [
+            s for s in suggestions 
+            if s['title'].lower().strip() not in existing_titles
+        ]
         
         def suggestion_score(suggestion):
             cat_weight = weights.get(suggestion['category'], 0.5)
@@ -146,7 +158,7 @@ class EmotionRecommendationEngine:
             priority_match = 1.0 if suggestion['priority'] == priority_pref else 0.7
             return cat_weight * 50 + cls.PRIORITY_SCORES.get(suggestion['priority'], 2) * priority_match * 20
         
-        scored_suggestions = [(s, suggestion_score(s)) for s in suggestions]
+        scored_suggestions = [(s, suggestion_score(s)) for s in available_suggestions]
         scored_suggestions.sort(key=lambda x: x[1], reverse=True)
         
         return [s[0] for s in scored_suggestions[:limit]]
