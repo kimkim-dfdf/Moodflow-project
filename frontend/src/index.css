@@ -1143,6 +1143,21 @@ body {
   background: rgba(99, 102, 241, 0.05);
 }
 
+.calendar-day-full.future-date {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: var(--secondary);
+}
+
+.calendar-day-full.future-date:hover {
+  border-color: var(--border);
+}
+
+.nav-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .day-header {
   display: flex;
   align-items: center;

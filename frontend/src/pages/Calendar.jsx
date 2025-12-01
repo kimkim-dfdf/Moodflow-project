@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek, isAfter, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight, X, Camera, Image, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 
@@ -141,12 +141,23 @@ const Calendar = () => {
   const calendarEnd = endOfWeek(monthEnd);
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
+  const today = new Date();
+  const isCurrentMonth = currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
+
   const prevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   };
 
   const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    if (!isCurrentMonth) {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    }
+  };
+
+  const isFutureDate = (date) => {
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return dateStart > todayStart;
   };
 
   const getSelectedEmotion = () => {
@@ -166,7 +177,11 @@ const Calendar = () => {
             <ChevronLeft size={24} />
           </button>
           <h2>{format(currentDate, 'MMMM yyyy')}</h2>
-          <button onClick={nextMonth} className="nav-btn">
+          <button 
+            onClick={nextMonth} 
+            className={`nav-btn ${isCurrentMonth ? 'disabled' : ''}`}
+            disabled={isCurrentMonth}
+          >
             <ChevronRight size={24} />
           </button>
         </div>
@@ -181,12 +196,14 @@ const Calendar = () => {
           {days.map(day => {
             const dateStr = format(day, 'yyyy-MM-dd');
             const emotion = emotionData[dateStr];
+            const isFuture = isFutureDate(day);
 
             return (
               <div
                 key={dateStr}
-                className={`calendar-day-full diary-mode ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${emotion ? 'has-emotion' : ''}`}
-                onClick={() => handleDateClick(day)}
+                className={`calendar-day-full diary-mode ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${emotion ? 'has-emotion' : ''} ${isFuture ? 'future-date' : ''}`}
+                onClick={() => !isFuture && handleDateClick(day)}
+                style={isFuture ? { cursor: 'not-allowed' } : {}}
               >
                 <div className="day-header">
                   <span className="day-number">{format(day, 'd')}</span>
@@ -197,7 +214,7 @@ const Calendar = () => {
                     {emotion.has_photo && <Camera size={12} className="photo-indicator" />}
                   </div>
                 )}
-                {!emotion && isSameMonth(day, currentDate) && (
+                {!emotion && isSameMonth(day, currentDate) && !isFuture && (
                   <div className="day-empty">
                     <span className="add-diary-hint">+</span>
                   </div>
