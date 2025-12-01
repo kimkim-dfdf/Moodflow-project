@@ -225,7 +225,6 @@ const Dashboard = () => {
                         onToggle={handleTaskToggle}
                         showScore={true}
                         selectedDate={selectedDate}
-                        emotion={selectedEmotion}
                       />
                     ))}
                   </div>
