@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, startOfWeek, endOfWeek, isFuture } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../api/axios';
 
@@ -59,12 +59,13 @@ const MiniCalendar = ({ onDateSelect, selectedDate }) => {
           const dateStr = format(day, 'yyyy-MM-dd');
           const emotion = emotionData[dateStr];
           const isSelected = selectedDate && isSameDay(day, selectedDate);
+          const isFutureDate = isFuture(day) && !isToday(day);
           
           return (
             <div
               key={dateStr}
-              className={`calendar-day ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
-              onClick={() => onDateSelect && onDateSelect(day)}
+              className={`calendar-day ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${isSelected ? 'selected' : ''} ${isFutureDate ? 'future-disabled' : ''}`}
+              onClick={() => !isFutureDate && onDateSelect && onDateSelect(day)}
               style={emotion ? { backgroundColor: `${emotion.color}20` } : {}}
             >
               <span className="day-number">{format(day, 'd')}</span>

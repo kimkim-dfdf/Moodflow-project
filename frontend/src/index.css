@@ -853,6 +853,12 @@ body {
   background: var(--primary-light);
 }
 
+.calendar-day.future-disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .day-emotion {
   font-size: 10px;
 }
@@ -1301,6 +1307,12 @@ body {
 
 .calendar-day-full.diary-mode:hover .add-diary-hint {
   color: var(--primary);
+}
+
+.calendar-day-full.future-disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .diary-modal {
