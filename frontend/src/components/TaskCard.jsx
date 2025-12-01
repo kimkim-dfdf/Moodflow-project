@@ -15,11 +15,13 @@ const categoryColors = {
   Personal: '#f97316'
 };
 
-const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard' }) => {
+const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate }) => {
   const navigate = useNavigate();
 
   const handleGoToTasks = () => {
-    navigate('/tasks');
+    navigate('/tasks', { 
+      state: { selectedDate: selectedDate ? selectedDate.toISOString() : new Date().toISOString() }
+    });
   };
 
   return (

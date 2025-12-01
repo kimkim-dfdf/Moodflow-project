@@ -222,6 +222,7 @@ const Dashboard = () => {
                         task={{ ...item.task, score: item.score }} 
                         onToggle={handleTaskToggle}
                         showScore={true}
+                        selectedDate={selectedDate}
                       />
                     ))}
                   </div>

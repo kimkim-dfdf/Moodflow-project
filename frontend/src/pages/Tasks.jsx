@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import TaskCard from '../components/TaskCard';
 import MiniCalendar from '../components/MiniCalendar';
@@ -9,6 +10,11 @@ const CATEGORIES = ['Work', 'Study', 'Health', 'Personal'];
 const PRIORITIES = ['Low', 'Medium', 'High'];
 
 const Tasks = () => {
+  const location = useLocation();
+  const initialDate = location.state?.selectedDate 
+    ? new Date(location.state.selectedDate) 
+    : new Date();
+
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -18,7 +24,7 @@ const Tasks = () => {
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(initialDate);
   const [showCalendar, setShowCalendar] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -28,6 +34,13 @@ const Tasks = () => {
     priority: 'Medium',
     due_date: ''
   });
+
+  useEffect(() => {
+    if (location.state?.selectedDate) {
+      const newDate = new Date(location.state.selectedDate);
+      setSelectedDate(newDate);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     fetchTasks();
