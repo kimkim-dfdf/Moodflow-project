@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../api/axios';
+import SeedIcon from './SeedIcon';
 
 const MiniCalendar = ({ onDateSelect, selectedDate }) => {
   const [currentDate, setCurrentDate] = useState(selectedDate || new Date());
@@ -85,7 +86,7 @@ const MiniCalendar = ({ onDateSelect, selectedDate }) => {
               <span className="day-number">{format(day, 'd')}</span>
               {emotion && (
                 <span className="day-emotion" title={emotion.emotion}>
-                  {emotion.emoji}
+                  <SeedIcon color={emotion.color} size={12} />
                 </span>
               )}
             </div>
