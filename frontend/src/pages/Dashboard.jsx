@@ -1,3 +1,11 @@
+/**
+ * Dashboard 페이지 컴포넌트
+ * - 오늘의 감정 선택 및 기록
+ * - 감정 기반 할일 추천
+ * - 음악 추천
+ * - 미니 캘린더와 감정 통계
+ */
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useDate } from '../context/DateContext';
@@ -10,33 +18,48 @@ import api from '../api/axios';
 import { format, isToday } from 'date-fns';
 import { Sparkles, Music, CheckCircle2, Calendar } from 'lucide-react';
 
+
 const Dashboard = () => {
+  // 사용자 정보와 선택된 날짜 가져오기
   const { user } = useAuth();
   const { selectedDate, setSelectedDate } = useDate();
-  const [selectedEmotion, setSelectedEmotion] = useState(null);
-  const [recommendedTasks, setRecommendedTasks] = useState([]);
-  const [suggestedTasks, setSuggestedTasks] = useState([]);
-  const [musicRecommendations, setMusicRecommendations] = useState([]);
+  
+  // 상태 관리
+  const [selectedEmotion, setSelectedEmotion] = useState(null);         // 선택된 감정
+  const [recommendedTasks, setRecommendedTasks] = useState([]);         // 추천 할일 목록
+  const [suggestedTasks, setSuggestedTasks] = useState([]);             // 제안 할일 목록
+  const [musicRecommendations, setMusicRecommendations] = useState([]); // 추천 음악
   const [taskSummary, setTaskSummary] = useState({ total: 0, completed: 0, pending: 0 });
-  const [moodStats, setMoodStats] = useState(null);
+  const [moodStats, setMoodStats] = useState(null);                     // 감정 통계
   const [loading, setLoading] = useState(true);
-  const [addedTasks, setAddedTasks] = useState(new Set());
+  const [addedTasks, setAddedTasks] = useState(new Set());              // 이미 추가된 할일 제목들
   const [allTasks, setAllTasks] = useState([]);
-  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);      // 캘린더 새로고침용
 
+
+  // 날짜가 바뀔 때마다 데이터 새로 불러오기
   useEffect(() => {
     fetchDashboardData();
   }, [selectedDate]);
 
+
+  // 감정이 선택되면 추천 목록 업데이트
   useEffect(() => {
     if (selectedEmotion) {
       fetchRecommendations(selectedEmotion.name);
     }
   }, [selectedEmotion]);
 
+
+  /**
+   * 대시보드 전체 데이터 가져오기
+   * - 요약 정보, 해당 날짜의 감정 기록, 할일 목록
+   */
   const fetchDashboardData = async () => {
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      
+      // 여러 API를 동시에 호출해서 시간 절약
       const [summaryRes, dateEmotionRes, tasksRes] = await Promise.all([
         api.get('/dashboard/summary', { params: { date: dateStr } }),
         api.get(`/emotions/diary/${dateStr}`),
@@ -48,12 +71,15 @@ const Dashboard = () => {
       setMoodStats(summary.weekly_mood_stats);
       setAllTasks(tasksRes.data);
       
+      // 이미 추가된 할일 제목들 저장 (중복 방지용)
       const existingTitles = new Set(tasksRes.data.map(t => t.title));
       setAddedTasks(existingTitles);
 
+      // 해당 날짜에 기록된 감정이 있으면 표시
       if (dateEmotionRes.data && dateEmotionRes.data.emotion) {
         setSelectedEmotion(dateEmotionRes.data.emotion);
       } else {
+        // 감정 기록이 없으면 초기화
         setSelectedEmotion(null);
         setRecommendedTasks([]);
         setSuggestedTasks([]);
@@ -67,13 +93,25 @@ const Dashboard = () => {
     }
   };
 
+
+  /**
+   * 감정 기반 추천 데이터 가져오기
+   * - 할일 추천, 새 할일 제안, 음악 추천
+   */
   const fetchRecommendations = async (emotionName) => {
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      
       const [tasksRes, suggestionsRes, musicRes] = await Promise.all([
-        api.get('/tasks/recommended', { params: { emotion: emotionName, limit: 3, date: dateStr } }),
-        api.get('/tasks/suggestions', { params: { emotion: emotionName, limit: 3 } }),
-        api.get('/music/recommendations', { params: { emotion: emotionName, limit: 4 } })
+        api.get('/tasks/recommended', { 
+          params: { emotion: emotionName, limit: 3, date: dateStr } 
+        }),
+        api.get('/tasks/suggestions', { 
+          params: { emotion: emotionName, limit: 3 } 
+        }),
+        api.get('/music/recommendations', { 
+          params: { emotion: emotionName, limit: 4 } 
+        })
       ]);
 
       setRecommendedTasks(tasksRes.data);
@@ -84,9 +122,17 @@ const Dashboard = () => {
     }
   };
 
+
+  /**
+   * 할일 완료 상태 토글
+   */
   const handleTaskToggle = async (task) => {
     try {
-      await api.put(`/tasks/${task.id}`, { is_completed: !task.is_completed });
+      await api.put(`/tasks/${task.id}`, { 
+        is_completed: !task.is_completed 
+      });
+      
+      // 데이터 새로고침
       fetchDashboardData();
       if (selectedEmotion) {
         fetchRecommendations(selectedEmotion.name);
@@ -96,13 +142,19 @@ const Dashboard = () => {
     }
   };
 
+
+  /**
+   * 제안된 할일을 내 할일 목록에 추가
+   */
   const handleAddSuggestedTask = async (suggestion) => {
+    // 이미 추가된 할일이면 무시
     if (addedTasks.has(suggestion.title)) {
       return;
     }
     
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      
       await api.post('/tasks', {
         title: suggestion.title,
         category: suggestion.category,
@@ -110,12 +162,17 @@ const Dashboard = () => {
         task_date: dateStr,
         recommended_for_emotion: selectedEmotion?.name
       });
+      
+      // 추가된 할일 목록 업데이트
       setAddedTasks(prev => new Set([...prev, suggestion.title]));
+      
+      // 데이터 새로고침
       fetchDashboardData();
       if (selectedEmotion) {
         fetchRecommendations(selectedEmotion.name);
       }
     } catch (error) {
+      // 이미 존재하는 할일이면 추가된 것으로 표시
       if (error.response?.status === 409) {
         setAddedTasks(prev => new Set([...prev, suggestion.title]));
       }
@@ -123,11 +180,19 @@ const Dashboard = () => {
     }
   };
 
+
+  /**
+   * 날짜 선택 처리
+   */
   const handleDateSelect = (date) => {
     setSelectedDate(date);
     setLoading(true);
   };
 
+
+  /**
+   * 감정 선택 및 저장
+   */
   const handleEmotionSelect = async (emotion) => {
     setSelectedEmotion(emotion);
     
@@ -136,19 +201,30 @@ const Dashboard = () => {
         emotion_id: emotion.id,
         date: format(selectedDate, 'yyyy-MM-dd')
       });
+      
+      // 캘린더 새로고침 (이모지 업데이트)
       setCalendarRefreshKey(prev => prev + 1);
     } catch (error) {
       console.error('Failed to record emotion:', error);
     }
   };
 
+
+  /**
+   * 시간대에 따른 인사말 반환
+   */
   const getGreeting = () => {
     const hour = new Date().getHours();
+    
     if (hour < 12) return 'Good Morning';
     if (hour < 18) return 'Good Afternoon';
     return 'Good Evening';
   };
 
+
+  /**
+   * 날짜 표시 문자열 생성
+   */
   const getDateDisplay = () => {
     if (isToday(selectedDate)) {
       return format(selectedDate, 'EEEE, MMMM d, yyyy') + ' (Today)';
@@ -156,12 +232,16 @@ const Dashboard = () => {
     return format(selectedDate, 'EEEE, MMMM d, yyyy');
   };
 
+
+  // 로딩 중일 때 표시
   if (loading) {
     return <div className="loading-screen">Loading your dashboard...</div>;
   }
 
+
   return (
     <div className="dashboard-page">
+      {/* 헤더 영역 - 인사말과 할일 요약 */}
       <header className="dashboard-header">
         <div className="greeting">
           <h1>{getGreeting()}, {user?.username}!</h1>
@@ -178,6 +258,8 @@ const Dashboard = () => {
             </button>
           )}
         </div>
+        
+        {/* 할일 요약 배지들 */}
         <div className="task-summary-badges">
           <div className="badge total">
             <span className="badge-value">{taskSummary.total}</span>
@@ -196,7 +278,9 @@ const Dashboard = () => {
       </header>
 
       <div className="dashboard-grid">
+        {/* 메인 콘텐츠 영역 */}
         <div className="dashboard-main">
+          {/* 감정 선택 섹션 */}
           <section className="card emotion-section">
             <div className="emotion-header">
               <h3>How are you feeling {isToday(selectedDate) ? 'today' : 'on this day'}?</h3>
@@ -211,8 +295,10 @@ const Dashboard = () => {
             />
           </section>
 
+          {/* 감정이 선택되면 추천 섹션들 표시 */}
           {selectedEmotion && (
             <>
+              {/* 추천 할일 섹션 */}
               <section className="card recommendations-section">
                 <div className="section-header">
                   <h3><Sparkles size={20} /> Recommended Tasks for You</h3>
@@ -234,6 +320,7 @@ const Dashboard = () => {
                 )}
               </section>
 
+              {/* 할일 제안 섹션 */}
               <section className="card suggestions-section">
                 <div className="section-header">
                   <h3>Suggested Activities for {selectedEmotion.name} Mood</h3>
@@ -260,6 +347,7 @@ const Dashboard = () => {
                 </div>
               </section>
 
+              {/* 음악 추천 섹션 */}
               <section className="card music-section">
                 <div className="section-header">
                   <h3><Music size={20} /> Music for Your Mood</h3>
@@ -274,7 +362,9 @@ const Dashboard = () => {
           )}
         </div>
 
+        {/* 사이드바 영역 */}
         <aside className="dashboard-sidebar">
+          {/* 미니 캘린더 */}
           <section className="card calendar-section">
             <h3 className="calendar-title">Select a Date</h3>
             <MiniCalendar 
@@ -284,6 +374,7 @@ const Dashboard = () => {
             />
           </section>
 
+          {/* 감정 통계 */}
           <section className="card stats-section">
             <MoodStats stats={moodStats} />
           </section>

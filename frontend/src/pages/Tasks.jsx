@@ -1,3 +1,10 @@
+/**
+ * Tasks 페이지 컴포넌트
+ * - 할일 목록 조회, 추가, 수정, 삭제
+ * - 날짜별 할일 관리
+ * - 감정 기반 할일 제안
+ */
+
 import { useState, useEffect } from 'react';
 import { useDate } from '../context/DateContext';
 import api from '../api/axios';
@@ -6,23 +13,29 @@ import MiniCalendar from '../components/MiniCalendar';
 import { Plus, Filter, Sparkles, X, Calendar, RotateCcw } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 
+
+// 카테고리와 우선순위 옵션
 const CATEGORIES = ['Work', 'Study', 'Health', 'Personal'];
 const PRIORITIES = ['Low', 'Medium', 'High'];
 
+
 const Tasks = () => {
+  // 공유 날짜 컨텍스트 사용
   const { selectedDate, setSelectedDate } = useDate();
 
-  const [tasks, setTasks] = useState([]);
+  // 상태 관리
+  const [tasks, setTasks] = useState([]);                              // 할일 목록
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
+  const [showModal, setShowModal] = useState(false);                   // 할일 추가/수정 모달
+  const [editingTask, setEditingTask] = useState(null);                // 수정 중인 할일
   const [filter, setFilter] = useState({ status: 'all', category: 'all' });
-  const [emotions, setEmotions] = useState([]);
-  const [selectedEmotion, setSelectedEmotion] = useState(null);
-  const [suggestedTasks, setSuggestedTasks] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [emotions, setEmotions] = useState([]);                        // 감정 목록
+  const [selectedEmotion, setSelectedEmotion] = useState(null);        // 선택된 날짜의 감정
+  const [suggestedTasks, setSuggestedTasks] = useState([]);            // 제안 할일
+  const [showSuggestions, setShowSuggestions] = useState(false);       // 제안 패널 표시
+  const [showCalendar, setShowCalendar] = useState(false);             // 캘린더 드롭다운
 
+  // 새 할일 폼 데이터
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -31,15 +44,23 @@ const Tasks = () => {
     due_date: ''
   });
 
+
+  // 날짜나 필터가 바뀔 때마다 데이터 새로고침
   useEffect(() => {
     fetchTasks();
     fetchEmotions();
     fetchDateEmotion();
   }, [filter, selectedDate]);
 
+
+  /**
+   * 할일 목록 가져오기
+   */
   const fetchTasks = async () => {
     try {
       const params = { date: format(selectedDate, 'yyyy-MM-dd') };
+      
+      // 필터 적용
       if (filter.status !== 'all') params.status = filter.status;
       if (filter.category !== 'all') params.category = filter.category;
 
@@ -52,6 +73,10 @@ const Tasks = () => {
     }
   };
 
+
+  /**
+   * 감정 목록 가져오기 (제안 기능용)
+   */
   const fetchEmotions = async () => {
     try {
       const response = await api.get('/emotions');
@@ -61,10 +86,15 @@ const Tasks = () => {
     }
   };
 
+
+  /**
+   * 선택된 날짜의 감정 기록 가져오기
+   */
   const fetchDateEmotion = async () => {
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const response = await api.get(`/emotions/diary/${dateStr}`);
+      
       if (response.data && response.data.emotion) {
         setSelectedEmotion(response.data.emotion);
       } else {
@@ -76,6 +106,10 @@ const Tasks = () => {
     }
   };
 
+
+  /**
+   * 감정 기반 할일 제안 가져오기
+   */
   const fetchSuggestions = async (emotionName) => {
     try {
       const response = await api.get('/tasks/suggestions', {
@@ -88,8 +122,13 @@ const Tasks = () => {
     }
   };
 
+
+  /**
+   * 할일 생성/수정 폼 제출
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     try {
       const taskData = {
         ...formData,
@@ -97,10 +136,13 @@ const Tasks = () => {
       };
       
       if (editingTask) {
+        // 수정 모드
         await api.put(`/tasks/${editingTask.id}`, taskData);
       } else {
+        // 새로 생성
         await api.post('/tasks', taskData);
       }
+      
       setShowModal(false);
       resetForm();
       fetchTasks();
@@ -109,6 +151,10 @@ const Tasks = () => {
     }
   };
 
+
+  /**
+   * 할일 수정 모드 진입
+   */
   const handleEdit = (task) => {
     setEditingTask(task);
     setFormData({
@@ -121,6 +167,10 @@ const Tasks = () => {
     setShowModal(true);
   };
 
+
+  /**
+   * 할일 삭제
+   */
   const handleDelete = async (taskId) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
@@ -132,15 +182,25 @@ const Tasks = () => {
     }
   };
 
+
+  /**
+   * 할일 완료 상태 토글
+   */
   const handleToggle = async (task) => {
     try {
-      await api.put(`/tasks/${task.id}`, { is_completed: !task.is_completed });
+      await api.put(`/tasks/${task.id}`, { 
+        is_completed: !task.is_completed 
+      });
       fetchTasks();
     } catch (error) {
       console.error('Failed to toggle task:', error);
     }
   };
 
+
+  /**
+   * 제안된 할일 추가
+   */
   const handleAddSuggestion = async (suggestion) => {
     try {
       await api.post('/tasks', {
@@ -156,6 +216,10 @@ const Tasks = () => {
     }
   };
 
+
+  /**
+   * 폼 초기화
+   */
   const resetForm = () => {
     setEditingTask(null);
     setFormData({
@@ -167,31 +231,48 @@ const Tasks = () => {
     });
   };
 
+
+  /**
+   * 새 할일 모달 열기
+   */
   const openNewTaskModal = () => {
     resetForm();
     setShowModal(true);
   };
 
+
+  /**
+   * 날짜 선택 처리
+   */
   const handleDateSelect = (date) => {
     setSelectedDate(date);
     setShowCalendar(false);
     setLoading(true);
   };
 
+
+  /**
+   * 오늘 날짜로 돌아가기
+   */
   const handleBackToToday = () => {
     setSelectedDate(new Date());
     setLoading(true);
   };
 
+
+  // 완료/미완료 할일 분리
   const incompleteTasks = tasks.filter(t => !t.is_completed);
   const completedTasks = tasks.filter(t => t.is_completed);
+
 
   if (loading) {
     return <div className="loading-screen">Loading tasks...</div>;
   }
 
+
   return (
     <div className="tasks-page">
+      {/* 페이지 헤더 */}
       <header className="page-header">
         <div className="header-title-row">
           <h1>My Tasks</h1>
@@ -211,6 +292,8 @@ const Tasks = () => {
             )}
           </div>
         </div>
+        
+        {/* 액션 버튼들 */}
         <div className="header-actions">
           <button 
             className="btn-secondary"
@@ -227,6 +310,7 @@ const Tasks = () => {
         </div>
       </header>
 
+      {/* 캘린더 드롭다운 */}
       {showCalendar && (
         <div className="calendar-dropdown card">
           <MiniCalendar 
@@ -236,6 +320,7 @@ const Tasks = () => {
         </div>
       )}
 
+      {/* 필터 바 */}
       <div className="filters-bar">
         <div className="filter-group">
           <Filter size={16} />
@@ -259,6 +344,7 @@ const Tasks = () => {
         </div>
       </div>
 
+      {/* 할일 제안 패널 */}
       {showSuggestions && suggestedTasks.length > 0 && (
         <div className="suggestions-panel card">
           <div className="panel-header">
@@ -286,13 +372,20 @@ const Tasks = () => {
         </div>
       )}
 
+      {/* 할일 목록 */}
       <div className="tasks-content">
+        {/* 미완료 할일 */}
         <section className="tasks-section">
           <h2>To Do ({incompleteTasks.length})</h2>
           {incompleteTasks.length > 0 ? (
             <div className="task-list">
               {incompleteTasks.map((task) => (
-                <TaskCard key={task.id} task={task} onToggle={handleToggle} mode="tasks" />
+                <TaskCard 
+                  key={task.id} 
+                  task={task} 
+                  onToggle={handleToggle} 
+                  mode="tasks" 
+                />
               ))}
             </div>
           ) : (
@@ -300,12 +393,18 @@ const Tasks = () => {
           )}
         </section>
 
+        {/* 완료된 할일 */}
         <section className="tasks-section completed">
           <h2>Completed ({completedTasks.length})</h2>
           {completedTasks.length > 0 ? (
             <div className="task-list">
               {completedTasks.map((task) => (
-                <TaskCard key={task.id} task={task} onToggle={handleToggle} mode="tasks" />
+                <TaskCard 
+                  key={task.id} 
+                  task={task} 
+                  onToggle={handleToggle} 
+                  mode="tasks" 
+                />
               ))}
             </div>
           ) : (
@@ -314,6 +413,7 @@ const Tasks = () => {
         </section>
       </div>
 
+      {/* 할일 추가/수정 모달 */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -323,7 +423,9 @@ const Tasks = () => {
                 <X size={20} />
               </button>
             </div>
+            
             <form onSubmit={handleSubmit}>
+              {/* 제목 */}
               <div className="form-group">
                 <label htmlFor="title">Title</label>
                 <input
@@ -336,6 +438,7 @@ const Tasks = () => {
                 />
               </div>
 
+              {/* 설명 */}
               <div className="form-group">
                 <label htmlFor="description">Description</label>
                 <textarea
@@ -347,6 +450,7 @@ const Tasks = () => {
                 />
               </div>
 
+              {/* 카테고리와 우선순위 */}
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="category">Category</label>
@@ -375,6 +479,7 @@ const Tasks = () => {
                 </div>
               </div>
 
+              {/* 마감일 */}
               <div className="form-group">
                 <label htmlFor="due_date">Due Date</label>
                 <input
@@ -385,8 +490,13 @@ const Tasks = () => {
                 />
               </div>
 
+              {/* 버튼들 */}
               <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>
+                <button 
+                  type="button" 
+                  className="btn-secondary" 
+                  onClick={() => setShowModal(false)}
+                >
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
