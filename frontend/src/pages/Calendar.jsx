@@ -56,7 +56,11 @@ const Calendar = () => {
           notes: response.data.notes || '',
           photo_url: response.data.photo_url || ''
         });
-        setPhotoPreview(response.data.photo_url ? `${api.defaults.baseURL}${response.data.photo_url}` : null);
+        if (response.data.photo_url) {
+          setPhotoPreview(`${window.location.origin}${response.data.photo_url}`);
+        } else {
+          setPhotoPreview(null);
+        }
       } else {
         setDiaryEntry(null);
         setFormData({ emotion_id: null, notes: '', photo_url: '' });
@@ -95,7 +99,8 @@ const Calendar = () => {
       const response = await api.post('/upload/photo', formDataUpload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setFormData(prev => ({ ...prev, photo_url: response.data.photo_url }));
+      const photoUrl = response.data.photo_url;
+      setFormData(prev => ({ ...prev, photo_url: photoUrl }));
     } catch (error) {
       console.error('Failed to upload photo:', error);
       alert('사진 업로드에 실패했습니다.');
