@@ -35,7 +35,6 @@ const EmotionSelector = ({ selectedEmotion, onSelect }) => {
 
   return (
     <div className="emotion-selector">
-      <h3>How are you feeling today?</h3>
       <div className="emotion-grid">
         {emotions.map((emotion) => (
           <button
