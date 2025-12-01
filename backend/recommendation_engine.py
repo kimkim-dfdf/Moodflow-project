@@ -222,3 +222,66 @@ class EmotionRecommendationEngine:
             })
         
         return pattern
+    
+    @classmethod
+    def analyze_mood_factors(cls, db, sleep_quality, mood_rating, energy_level, stress_level, concentration, motivation):
+        """Analyze six factors and determine appropriate emotion/mood"""
+        from models import Emotion
+        
+        # Calculate composite scores
+        # Sleep quality affects tiredness/happiness
+        # Energy level directly affects activities possible
+        # Stress level (lower is better) affects mood
+        # Concentration affects focus-requiring tasks
+        # Motivation affects overall engagement
+        # Mood rating is direct indicator
+        
+        # Normalize all factors to 0-10 scale (input is 1-5)
+        normalized_sleep = sleep_quality * 2
+        normalized_mood = mood_rating * 2
+        normalized_energy = energy_level * 2
+        normalized_stress = (6 - stress_level) * 2  # Lower stress is better
+        normalized_concentration = concentration * 2
+        normalized_motivation = motivation * 2
+        
+        # Calculate emotion probabilities based on factors
+        emotion_scores = {}
+        
+        # Happy: Good sleep, high mood, good energy, low stress, high concentration, high motivation
+        emotion_scores['Happy'] = (normalized_sleep * 0.2 + normalized_mood * 0.3 + 
+                                   normalized_energy * 0.2 + normalized_stress * 0.15 + 
+                                   normalized_concentration * 0.1 + normalized_motivation * 0.05) / 10
+        
+        # Sad: Poor mood is key indicator
+        emotion_scores['Sad'] = ((10 - normalized_mood) * 0.4 + 
+                                 (10 - normalized_motivation) * 0.3 + 
+                                 (10 - normalized_energy) * 0.2 + 
+                                 (10 - normalized_sleep) * 0.1) / 10
+        
+        # Tired: Low sleep quality, low energy
+        emotion_scores['Tired'] = ((10 - normalized_sleep) * 0.4 + 
+                                   (10 - normalized_energy) * 0.4 + 
+                                   (10 - normalized_motivation) * 0.2) / 10
+        
+        # Angry: High stress, low concentration, low mood
+        emotion_scores['Angry'] = ((10 - normalized_stress) * 0.1 +  # High stress (inverted)
+                                   (10 - normalized_mood) * 0.3 + 
+                                   (10 - normalized_concentration) * 0.4 + 
+                                   normalized_energy * 0.2) / 10
+        
+        # Stressed: High stress level, lower concentration
+        emotion_scores['Stressed'] = ((10 - normalized_stress) * 0.05 +  # High stress (inverted)
+                                      (10 - normalized_concentration) * 0.3 + 
+                                      normalized_sleep * 0.3 + 
+                                      normalized_mood * 0.2 + 
+                                      normalized_energy * 0.15) / 10
+        
+        # Neutral: Moderate scores across the board
+        neutral_deviation = abs(normalized_energy - 5) + abs(normalized_mood - 5) + abs(normalized_stress - 5)
+        emotion_scores['Neutral'] = 10 - (neutral_deviation / 3)  # Lower deviation = more neutral
+        
+        # Get the emotion with highest score
+        best_emotion = max(emotion_scores, key=emotion_scores.get)
+        emotion = Emotion.query.filter_by(name=best_emotion).first()
+        
+        return emotion.id if emotion else 6  # Default to Neutral (id=6)

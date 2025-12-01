@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import EmotionSelector from '../components/EmotionSelector';
+import MoodAnalyzer from '../components/MoodAnalyzer';
 import TaskCard from '../components/TaskCard';
 import MusicCard from '../components/MusicCard';
 import MiniCalendar from '../components/MiniCalendar';
@@ -133,7 +133,7 @@ const Dashboard = () => {
       <div className="dashboard-grid">
         <div className="dashboard-main">
           <section className="card emotion-section">
-            <EmotionSelector 
+            <MoodAnalyzer 
               selectedEmotion={selectedEmotion} 
               onSelect={setSelectedEmotion} 
             />
