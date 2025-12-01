@@ -224,9 +224,8 @@ class EmotionRecommendationEngine:
         return pattern
     
     @classmethod
-    def analyze_mood_factors(cls, db, sleep_quality, energy_level, stress_level, concentration, motivation, mood_rating):
+    def analyze_mood_factors(cls, sleep_quality, energy_level, stress_level, concentration, motivation, mood_rating):
         """Analyze six factors and determine appropriate emotion"""
-        from models import Emotion
         
         norm_sleep = sleep_quality * 2
         norm_energy = energy_level * 2
@@ -245,6 +244,4 @@ class EmotionRecommendationEngine:
         emotion_scores['Neutral'] = 10 - (abs(norm_energy - 5) + abs(norm_mood - 5) + abs(norm_stress - 5)) / 3
         
         best_emotion = max(emotion_scores, key=emotion_scores.get)
-        emotion = Emotion.query.filter_by(name=best_emotion).first()
-        
-        return emotion.id if emotion else 6
+        return best_emotion

@@ -84,9 +84,12 @@ def register_routes(app, db):
         motivation = data.get('motivation', 3)
         mood_rating = data.get('mood_rating', 3)
         
-        emotion_id = EmotionRecommendationEngine.analyze_mood_factors(
-            db, sleep_quality, energy_level, stress_level, concentration, motivation, mood_rating
+        best_emotion_name = EmotionRecommendationEngine.analyze_mood_factors(
+            sleep_quality, energy_level, stress_level, concentration, motivation, mood_rating
         )
+        
+        emotion = Emotion.query.filter_by(name=best_emotion_name).first()
+        emotion_id = emotion.id if emotion else 6
         
         return jsonify({'emotion_id': emotion_id})
     
