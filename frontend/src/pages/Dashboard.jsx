@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import EmotionSelector from '../components/EmotionSelector';
-import EnergySlider from '../components/EnergySlider';
 import TaskCard from '../components/TaskCard';
 import MusicCard from '../components/MusicCard';
 import MiniCalendar from '../components/MiniCalendar';
@@ -13,7 +12,6 @@ import { Sparkles, Music, CheckCircle2 } from 'lucide-react';
 const Dashboard = () => {
   const { user } = useAuth();
   const [selectedEmotion, setSelectedEmotion] = useState(null);
-  const [energyLevel, setEnergyLevel] = useState(3);
   const [recommendedTasks, setRecommendedTasks] = useState([]);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
   const [musicRecommendations, setMusicRecommendations] = useState([]);
@@ -29,9 +27,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (selectedEmotion) {
-      fetchRecommendations(selectedEmotion.name, energyLevel);
+      fetchRecommendations(selectedEmotion.name);
     }
-  }, [selectedEmotion, energyLevel]);
+  }, [selectedEmotion]);
 
   const fetchDashboardData = async () => {
     try {
@@ -59,10 +57,10 @@ const Dashboard = () => {
     }
   };
 
-  const fetchRecommendations = async (emotionName, energy = 3) => {
+  const fetchRecommendations = async (emotionName) => {
     try {
       const [tasksRes, suggestionsRes, musicRes] = await Promise.all([
-        api.get('/tasks/recommended', { params: { emotion: emotionName, limit: 3, energy } }),
+        api.get('/tasks/recommended', { params: { emotion: emotionName, limit: 3 } }),
         api.get('/tasks/suggestions', { params: { emotion: emotionName, limit: 3 } }),
         api.get('/music/recommendations', { params: { emotion: emotionName, limit: 4 } })
       ]);
@@ -80,7 +78,7 @@ const Dashboard = () => {
       await api.put(`/tasks/${task.id}`, { is_completed: !task.is_completed });
       fetchDashboardData();
       if (selectedEmotion) {
-        fetchRecommendations(selectedEmotion.name, energyLevel);
+        fetchRecommendations(selectedEmotion.name);
       }
     } catch (error) {
       console.error('Failed to toggle task:', error);
@@ -102,7 +100,7 @@ const Dashboard = () => {
       setAddedTasks(prev => new Set([...prev, suggestion.title]));
       fetchDashboardData();
       if (selectedEmotion) {
-        fetchRecommendations(selectedEmotion.name, energyLevel);
+        fetchRecommendations(selectedEmotion.name);
       }
     } catch (error) {
       if (error.response?.status === 409) {
@@ -154,12 +152,6 @@ const Dashboard = () => {
               selectedEmotion={selectedEmotion} 
               onSelect={setSelectedEmotion} 
             />
-            {selectedEmotion && (
-              <EnergySlider 
-                value={energyLevel} 
-                onChange={setEnergyLevel} 
-              />
-            )}
           </section>
 
           {selectedEmotion && (
@@ -171,20 +163,12 @@ const Dashboard = () => {
                 {recommendedTasks.length > 0 ? (
                   <div className="task-list">
                     {recommendedTasks.map((item) => (
-                      <div key={item.task.id} className="task-with-reasons">
-                        <TaskCard 
-                          task={{ ...item.task, score: item.score }} 
-                          onToggle={handleTaskToggle}
-                          showScore={true}
-                        />
-                        {item.reasons && item.reasons.length > 0 && (
-                          <div className="task-reasons">
-                            {item.reasons.map((reason, idx) => (
-                              <span key={idx} className="reason-tag">{reason}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <TaskCard 
+                        key={item.task.id} 
+                        task={{ ...item.task, score: item.score }} 
+                        onToggle={handleTaskToggle}
+                        showScore={true}
+                      />
                     ))}
                   </div>
                 ) : (
