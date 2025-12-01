@@ -21,6 +21,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [addedTasks, setAddedTasks] = useState(new Set());
   const [allTasks, setAllTasks] = useState([]);
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchDashboardData();
@@ -134,6 +135,7 @@ const Dashboard = () => {
         emotion_id: emotion.id,
         date: format(selectedDate, 'yyyy-MM-dd')
       });
+      setCalendarRefreshKey(prev => prev + 1);
     } catch (error) {
       console.error('Failed to record emotion:', error);
     }
@@ -275,6 +277,7 @@ const Dashboard = () => {
           <section className="card calendar-section">
             <h3 className="calendar-title">Select a Date</h3>
             <MiniCalendar 
+              key={calendarRefreshKey}
               onDateSelect={handleDateSelect}
               selectedDate={selectedDate}
             />
