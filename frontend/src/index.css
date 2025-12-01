@@ -643,6 +643,24 @@ body {
   background: #4f46e5;
 }
 
+.action-btn.complete {
+  background: var(--success);
+  color: white;
+}
+
+.action-btn.complete:hover {
+  background: #16a34a;
+}
+
+.action-btn.undo {
+  background: var(--text-muted);
+  color: white;
+}
+
+.action-btn.undo:hover {
+  background: var(--text-secondary);
+}
+
 .task-score {
   background: var(--primary);
   color: white;

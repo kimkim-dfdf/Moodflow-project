@@ -1,4 +1,4 @@
-import { CheckCircle, Clock, Flag, ArrowRight } from 'lucide-react';
+import { CheckCircle, Clock, Flag, ArrowRight, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,7 +15,7 @@ const categoryColors = {
   Personal: '#f97316'
 };
 
-const TaskCard = ({ task, onToggle, onEdit, showScore }) => {
+const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard' }) => {
   const navigate = useNavigate();
 
   const handleGoToTasks = () => {
@@ -65,13 +65,23 @@ const TaskCard = ({ task, onToggle, onEdit, showScore }) => {
       </div>
       
       <div className="task-hover-actions">
-        <button 
-          className="action-btn goto"
-          onClick={handleGoToTasks}
-        >
-          <ArrowRight size={16} />
-          Go to Todo List
-        </button>
+        {mode === 'tasks' ? (
+          <button 
+            className={`action-btn ${task.is_completed ? 'undo' : 'complete'}`}
+            onClick={() => onToggle(task)}
+          >
+            <Check size={16} />
+            {task.is_completed ? 'Undo' : 'Complete'}
+          </button>
+        ) : (
+          <button 
+            className="action-btn goto"
+            onClick={handleGoToTasks}
+          >
+            <ArrowRight size={16} />
+            Go to Todo List
+          </button>
+        )}
       </div>
     </div>
   );

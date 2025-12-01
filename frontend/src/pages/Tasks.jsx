@@ -240,13 +240,7 @@ const Tasks = () => {
           {incompleteTasks.length > 0 ? (
             <div className="task-list">
               {incompleteTasks.map((task) => (
-                <div key={task.id} className="task-item-wrapper">
-                  <TaskCard task={task} onToggle={handleToggle} />
-                  <div className="task-actions">
-                    <button className="edit-btn" onClick={() => handleEdit(task)}>Edit</button>
-                    <button className="delete-btn" onClick={() => handleDelete(task.id)}>Delete</button>
-                  </div>
-                </div>
+                <TaskCard key={task.id} task={task} onToggle={handleToggle} mode="tasks" />
               ))}
             </div>
           ) : (
@@ -259,12 +253,7 @@ const Tasks = () => {
           {completedTasks.length > 0 ? (
             <div className="task-list">
               {completedTasks.map((task) => (
-                <div key={task.id} className="task-item-wrapper">
-                  <TaskCard task={task} onToggle={handleToggle} />
-                  <div className="task-actions">
-                    <button className="delete-btn" onClick={() => handleDelete(task.id)}>Delete</button>
-                  </div>
-                </div>
+                <TaskCard key={task.id} task={task} onToggle={handleToggle} mode="tasks" />
               ))}
             </div>
           ) : (
