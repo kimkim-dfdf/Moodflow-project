@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useDate } from '../context/DateContext';
 import EmotionSelector from '../components/EmotionSelector';
 import TaskCard from '../components/TaskCard';
 import MusicCard from '../components/MusicCard';
@@ -11,7 +12,7 @@ import { Sparkles, Music, CheckCircle2, Calendar } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { selectedDate, setSelectedDate } = useDate();
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [recommendedTasks, setRecommendedTasks] = useState([]);
   const [suggestedTasks, setSuggestedTasks] = useState([]);

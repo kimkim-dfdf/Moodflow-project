@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { DateProvider } from './context/DateContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -32,8 +33,9 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
+      <DateProvider>
+        <Router>
+          <Routes>
           <Route path="/login" element={
             <PublicRoute>
               <Login />
@@ -56,8 +58,9 @@ function App() {
             <Route path="profile" element={<Profile />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </Router>
+          </Routes>
+        </Router>
+      </DateProvider>
     </AuthProvider>
   );
 }
