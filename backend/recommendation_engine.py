@@ -146,11 +146,14 @@ class EmotionRecommendationEngine:
         if user_id:
             user_tasks = Task.query.filter_by(user_id=user_id).all()
             existing_titles = {task.title.lower().strip() for task in user_tasks}
+            print(f"[DEBUG] User {user_id} has {len(user_tasks)} tasks")
+            print(f"[DEBUG] Existing titles: {existing_titles}")
         
         available_suggestions = [
             s for s in suggestions 
             if s['title'].lower().strip() not in existing_titles
         ]
+        print(f"[DEBUG] Available suggestions after filter: {[s['title'] for s in available_suggestions]}")
         
         def suggestion_score(suggestion):
             cat_weight = weights.get(suggestion['category'], 0.5)
