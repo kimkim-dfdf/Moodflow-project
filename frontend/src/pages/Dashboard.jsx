@@ -127,6 +127,13 @@ const Dashboard = () => {
   };
 
   const handleEmotionSelect = async (emotion) => {
+    if (selectedEmotion && selectedEmotion.id !== emotion.id) {
+      const confirmed = window.confirm(
+        `Change your mood from "${selectedEmotion.name}" to "${emotion.name}"?`
+      );
+      if (!confirmed) return;
+    }
+    
     setSelectedEmotion(emotion);
     
     try {
