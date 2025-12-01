@@ -103,7 +103,7 @@ const Calendar = () => {
       setFormData(prev => ({ ...prev, photo_url: photoUrl }));
     } catch (error) {
       console.error('Failed to upload photo:', error);
-      alert('사진 업로드에 실패했습니다.');
+      alert('Failed to upload photo.');
     } finally {
       setUploadingPhoto(false);
     }
@@ -116,7 +116,7 @@ const Calendar = () => {
 
   const handleSaveDiary = async () => {
     if (!formData.emotion_id) {
-      alert('기분을 선택해주세요.');
+      alert('Please select a mood.');
       return;
     }
 
@@ -131,7 +131,7 @@ const Calendar = () => {
       fetchEmotionData();
     } catch (error) {
       console.error('Failed to save diary:', error);
-      alert('저장에 실패했습니다.');
+      alert('Failed to save.');
     }
   };
 
@@ -156,8 +156,8 @@ const Calendar = () => {
   return (
     <div className="calendar-page">
       <header className="page-header">
-        <h1>기분 일기</h1>
-        <p className="page-subtitle">날짜를 클릭하여 오늘의 기분과 사진을 기록하세요</p>
+        <h1>Mood Diary</h1>
+        <p className="page-subtitle">Click on a date to record your mood and photos</p>
       </header>
 
       <div className="calendar-container card">
@@ -165,14 +165,14 @@ const Calendar = () => {
           <button onClick={prevMonth} className="nav-btn">
             <ChevronLeft size={24} />
           </button>
-          <h2>{format(currentDate, 'yyyy년 M월')}</h2>
+          <h2>{format(currentDate, 'MMMM yyyy')}</h2>
           <button onClick={nextMonth} className="nav-btn">
             <ChevronRight size={24} />
           </button>
         </div>
 
         <div className="calendar-weekdays">
-          {['일', '월', '화', '수', '목', '금', '토'].map(day => (
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
             <div key={day} className="weekday">{day}</div>
           ))}
         </div>
@@ -212,18 +212,18 @@ const Calendar = () => {
         <div className="modal-overlay" onClick={() => setShowDiaryModal(false)}>
           <div className="modal diary-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{format(selectedDate, 'yyyy년 M월 d일')} 기분 일기</h2>
+              <h2>Mood Diary - {format(selectedDate, 'MMMM d, yyyy')}</h2>
               <button className="close-btn" onClick={() => setShowDiaryModal(false)}>
                 <X size={20} />
               </button>
             </div>
 
             {isLoading ? (
-              <div className="modal-loading">불러오는 중...</div>
+              <div className="modal-loading">Loading...</div>
             ) : (
               <div className="diary-content">
                 <div className="diary-section">
-                  <label className="section-label">오늘의 기분</label>
+                  <label className="section-label">How are you feeling?</label>
                   <div className="emotion-grid-diary">
                     {emotions.map((emotion) => (
                       <button
@@ -243,7 +243,7 @@ const Calendar = () => {
                 </div>
 
                 <div className="diary-section">
-                  <label className="section-label">오늘의 사진</label>
+                  <label className="section-label">Photo of the Day</label>
                   <div className="photo-upload-area">
                     {photoPreview ? (
                       <div className="photo-preview-container">
@@ -261,11 +261,11 @@ const Calendar = () => {
                           style={{ display: 'none' }}
                         />
                         {uploadingPhoto ? (
-                          <span>업로드 중...</span>
+                          <span>Uploading...</span>
                         ) : (
                           <>
                             <Image size={32} />
-                            <span>사진 추가하기</span>
+                            <span>Add Photo</span>
                           </>
                         )}
                       </label>
@@ -274,10 +274,10 @@ const Calendar = () => {
                 </div>
 
                 <div className="diary-section">
-                  <label className="section-label">오늘의 일기</label>
+                  <label className="section-label">Daily Notes</label>
                   <textarea
                     className="diary-notes"
-                    placeholder="오늘 하루는 어땠나요? 기분을 자유롭게 적어보세요..."
+                    placeholder="How was your day? Write freely about your feelings..."
                     value={formData.notes}
                     onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     rows={4}
@@ -286,7 +286,7 @@ const Calendar = () => {
 
                 <div className="modal-actions">
                   <button type="button" className="btn-secondary" onClick={() => setShowDiaryModal(false)}>
-                    취소
+                    Cancel
                   </button>
                   <button 
                     type="button" 
@@ -294,7 +294,7 @@ const Calendar = () => {
                     onClick={handleSaveDiary}
                     disabled={!formData.emotion_id}
                   >
-                    저장하기
+                    Save
                   </button>
                 </div>
               </div>
