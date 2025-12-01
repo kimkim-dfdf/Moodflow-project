@@ -15,11 +15,11 @@ const categoryColors = {
 };
 
 const getMatchLevel = (score) => {
-  if (score >= 90) return { stars: '⭐⭐⭐⭐⭐', text: '완벽해요!' };
-  if (score >= 70) return { stars: '⭐⭐⭐⭐', text: '좋아요!' };
-  if (score >= 50) return { stars: '⭐⭐⭐', text: '괜찮아요' };
-  if (score >= 30) return { stars: '⭐⭐', text: '시도해볼까요' };
-  return { stars: '⭐', text: '나중에 어때요?' };
+  if (score >= 90) return { stars: '⭐⭐⭐⭐⭐', text: 'Perfect!' };
+  if (score >= 70) return { stars: '⭐⭐⭐⭐', text: 'Great!' };
+  if (score >= 50) return { stars: '⭐⭐⭐', text: 'Good' };
+  if (score >= 30) return { stars: '⭐⭐', text: 'Try it' };
+  return { stars: '⭐', text: 'Later?' };
 };
 
 const TaskCard = ({ task, onToggle, onEdit, showScore }) => {
