@@ -6,11 +6,12 @@ import MusicCard from '../components/MusicCard';
 import MiniCalendar from '../components/MiniCalendar';
 import MoodStats from '../components/MoodStats';
 import api from '../api/axios';
-import { format } from 'date-fns';
-import { Sparkles, Music, CheckCircle2 } from 'lucide-react';
+import { format, subDays, isToday, isFuture } from 'date-fns';
+import { Sparkles, Music, CheckCircle2, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [recommendedTasks, setRecommendedTasks] = useState([]);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
@@ -21,9 +22,43 @@ const Dashboard = () => {
   const [addedTasks, setAddedTasks] = useState(new Set());
   const [allTasks, setAllTasks] = useState([]);
 
+  const resetDashboardState = () => {
+    setSelectedEmotion(null);
+    setRecommendedTasks([]);
+    setSuggestedTasks([]);
+    setMusicRecommendations([]);
+    setTaskSummary({ total: 0, completed: 0, pending: 0 });
+    setAddedTasks(new Set());
+    setAllTasks([]);
+  };
+
+  const goToPreviousDay = () => {
+    const newDate = subDays(selectedDate, 1);
+    setSelectedDate(newDate);
+  };
+
+  const goToNextDay = () => {
+    const nextDate = new Date(selectedDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    if (!isFuture(nextDate) || isToday(nextDate)) {
+      setSelectedDate(nextDate);
+    }
+  };
+
+  const goToToday = () => {
+    setSelectedDate(new Date());
+  };
+
+  const canGoNext = () => {
+    const nextDate = new Date(selectedDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    return !isFuture(nextDate) || isToday(nextDate);
+  };
+
   useEffect(() => {
+    resetDashboardState();
     fetchDashboardData();
-  }, []);
+  }, [selectedDate]);
 
   useEffect(() => {
     if (selectedEmotion) {
@@ -32,11 +67,13 @@ const Dashboard = () => {
   }, [selectedEmotion]);
 
   const fetchDashboardData = async () => {
+    setLoading(true);
     try {
-      const [summaryRes, todayEmotionRes, tasksRes] = await Promise.all([
-        api.get('/dashboard/summary'),
-        api.get('/emotions/today'),
-        api.get('/tasks')
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const [summaryRes, dateEmotionRes, tasksRes] = await Promise.all([
+        api.get('/dashboard/summary', { params: { date: dateStr } }),
+        api.get(`/emotions/diary/${dateStr}`),
+        api.get('/tasks', { params: { date: dateStr } })
       ]);
 
       const summary = summaryRes.data;
@@ -47,8 +84,8 @@ const Dashboard = () => {
       const existingTitles = new Set(tasksRes.data.map(t => t.title));
       setAddedTasks(existingTitles);
 
-      if (todayEmotionRes.data) {
-        setSelectedEmotion(todayEmotionRes.data.emotion);
+      if (dateEmotionRes.data && dateEmotionRes.data.emotion) {
+        setSelectedEmotion(dateEmotionRes.data.emotion);
       }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
@@ -126,7 +163,25 @@ const Dashboard = () => {
       <header className="dashboard-header">
         <div className="greeting">
           <h1>{getGreeting()}, {user?.username}!</h1>
-          <p>{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+          <div className="date-navigation">
+            <button className="date-nav-btn" onClick={goToPreviousDay}>
+              <ChevronLeft size={20} />
+            </button>
+            <span className="current-date">{format(selectedDate, 'EEEE, MMMM d, yyyy')}</span>
+            <button 
+              className="date-nav-btn" 
+              onClick={goToNextDay}
+              disabled={!canGoNext()}
+            >
+              <ChevronRight size={20} />
+            </button>
+            {!isToday(selectedDate) && (
+              <button className="today-btn" onClick={goToToday}>
+                <RotateCcw size={16} />
+                Today
+              </button>
+            )}
+          </div>
         </div>
         <div className="task-summary-badges">
           <div className="badge total">
@@ -150,7 +205,8 @@ const Dashboard = () => {
           <section className="card emotion-section">
             <EmotionSelector 
               selectedEmotion={selectedEmotion} 
-              onSelect={setSelectedEmotion} 
+              onSelect={setSelectedEmotion}
+              selectedDate={selectedDate}
             />
           </section>
 
