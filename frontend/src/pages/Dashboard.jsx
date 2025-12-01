@@ -67,8 +67,9 @@ const Dashboard = () => {
 
   const fetchRecommendations = async (emotionName) => {
     try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const [tasksRes, suggestionsRes, musicRes] = await Promise.all([
-        api.get('/tasks/recommended', { params: { emotion: emotionName, limit: 3 } }),
+        api.get('/tasks/recommended', { params: { emotion: emotionName, limit: 3, date: dateStr } }),
         api.get('/tasks/suggestions', { params: { emotion: emotionName, limit: 3 } }),
         api.get('/music/recommendations', { params: { emotion: emotionName, limit: 4 } })
       ]);
@@ -99,10 +100,12 @@ const Dashboard = () => {
     }
     
     try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
       await api.post('/tasks', {
         title: suggestion.title,
         category: suggestion.category,
         priority: suggestion.priority,
+        task_date: dateStr,
         recommended_for_emotion: selectedEmotion?.name
       });
       setAddedTasks(prev => new Set([...prev, suggestion.title]));

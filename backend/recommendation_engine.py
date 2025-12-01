@@ -118,13 +118,18 @@ class EmotionRecommendationEngine:
         return min(100, max(0, total_score))
     
     @classmethod
-    def get_recommended_tasks(cls, db, user_id, emotion_name, limit=5):
+    def get_recommended_tasks(cls, db, user_id, emotion_name, limit=5, task_date=None):
         from models import Task, User
         
-        tasks = Task.query.filter_by(
+        query = Task.query.filter_by(
             user_id=user_id,
             is_completed=False
-        ).all()
+        )
+        
+        if task_date:
+            query = query.filter_by(task_date=task_date)
+        
+        tasks = query.all()
         
         user = User.query.get(user_id)
         

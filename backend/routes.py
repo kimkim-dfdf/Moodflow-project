@@ -189,8 +189,13 @@ def register_routes(app, db):
     def get_tasks():
         status = request.args.get('status')
         category = request.args.get('category')
+        date_str = request.args.get('date')
         
         query = Task.query.filter_by(user_id=current_user.id)
+        
+        if date_str:
+            task_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            query = query.filter_by(task_date=task_date)
         
         if status == 'completed':
             query = query.filter_by(is_completed=True)
@@ -211,14 +216,19 @@ def register_routes(app, db):
         if not data or not data.get('title'):
             return jsonify({'error': 'Title is required'}), 400
         
+        task_date = datetime.now().date()
+        if data.get('task_date'):
+            task_date = datetime.strptime(data['task_date'], '%Y-%m-%d').date()
+        
         existing_task = Task.query.filter_by(
             user_id=current_user.id,
             title=data['title'],
+            task_date=task_date,
             is_completed=False
         ).first()
         
         if existing_task:
-            return jsonify({'error': 'This task already exists', 'task': existing_task.to_dict()}), 409
+            return jsonify({'error': 'This task already exists for this date', 'task': existing_task.to_dict()}), 409
         
         task = Task(
             user_id=current_user.id,
@@ -226,6 +236,7 @@ def register_routes(app, db):
             description=data.get('description'),
             category=data.get('category', 'Personal'),
             priority=data.get('priority', 'Medium'),
+            task_date=task_date,
             due_date=datetime.strptime(data['due_date'], '%Y-%m-%d').date() if data.get('due_date') else None,
             recommended_for_emotion=data.get('recommended_for_emotion')
         )
@@ -288,9 +299,14 @@ def register_routes(app, db):
     def get_recommended_tasks():
         emotion_name = request.args.get('emotion', 'Neutral')
         limit = request.args.get('limit', 5, type=int)
+        date_str = request.args.get('date')
+        
+        task_date = None
+        if date_str:
+            task_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         
         recommendations = EmotionRecommendationEngine.get_recommended_tasks(
-            db, current_user.id, emotion_name, limit
+            db, current_user.id, emotion_name, limit, task_date
         )
         return jsonify(recommendations)
     
