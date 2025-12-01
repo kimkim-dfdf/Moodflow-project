@@ -241,7 +241,7 @@ class EmotionRecommendationEngine:
         emotion_scores['Tired'] = ((10 - norm_sleep) * 0.4 + (10 - norm_energy) * 0.4 + (10 - norm_motivation) * 0.2) / 10
         emotion_scores['Angry'] = ((10 - norm_stress) * 0.2 + (10 - norm_mood) * 0.2 + (10 - norm_concentration) * 0.3 + norm_energy * 0.3) / 10
         emotion_scores['Stressed'] = ((10 - norm_stress) * 0.1 + (10 - norm_concentration) * 0.3 + norm_sleep * 0.25 + norm_mood * 0.2 + norm_energy * 0.15) / 10
-        emotion_scores['Neutral'] = 10 - (abs(norm_energy - 5) + abs(norm_mood - 5) + abs(norm_stress - 5)) / 3
+        emotion_scores['Neutral'] = 1 - (abs(norm_energy - 6) + abs(norm_mood - 6) + abs(norm_stress - 6)) / 24
         
         best_emotion = max(emotion_scores, key=emotion_scores.get)
         return best_emotion
