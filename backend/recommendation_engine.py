@@ -222,3 +222,29 @@ class EmotionRecommendationEngine:
             })
         
         return pattern
+    
+    @classmethod
+    def analyze_mood_factors(cls, db, sleep_quality, energy_level, stress_level, concentration, motivation, mood_rating):
+        """Analyze six factors and determine appropriate emotion"""
+        from models import Emotion
+        
+        norm_sleep = sleep_quality * 2
+        norm_energy = energy_level * 2
+        norm_stress = (6 - stress_level) * 2
+        norm_concentration = concentration * 2
+        norm_motivation = motivation * 2
+        norm_mood = mood_rating * 2
+        
+        emotion_scores = {}
+        
+        emotion_scores['Happy'] = (norm_sleep * 0.15 + norm_energy * 0.2 + norm_stress * 0.15 + norm_concentration * 0.15 + norm_motivation * 0.2 + norm_mood * 0.15) / 10
+        emotion_scores['Sad'] = ((10 - norm_mood) * 0.3 + (10 - norm_motivation) * 0.3 + (10 - norm_energy) * 0.2 + (10 - norm_sleep) * 0.2) / 10
+        emotion_scores['Tired'] = ((10 - norm_sleep) * 0.4 + (10 - norm_energy) * 0.4 + (10 - norm_motivation) * 0.2) / 10
+        emotion_scores['Angry'] = ((10 - norm_stress) * 0.2 + (10 - norm_mood) * 0.2 + (10 - norm_concentration) * 0.3 + norm_energy * 0.3) / 10
+        emotion_scores['Stressed'] = ((10 - norm_stress) * 0.1 + (10 - norm_concentration) * 0.3 + norm_sleep * 0.25 + norm_mood * 0.2 + norm_energy * 0.15) / 10
+        emotion_scores['Neutral'] = 10 - (abs(norm_energy - 5) + abs(norm_mood - 5) + abs(norm_stress - 5)) / 3
+        
+        best_emotion = max(emotion_scores, key=emotion_scores.get)
+        emotion = Emotion.query.filter_by(name=best_emotion).first()
+        
+        return emotion.id if emotion else 6

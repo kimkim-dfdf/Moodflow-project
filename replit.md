@@ -91,7 +91,13 @@ The app uses a weighted scoring system that considers:
 - GET `/api/dashboard/summary` - Get dashboard summary
 
 ## Recent Changes
-- December 1, 2025: Initial project setup with complete MVP features
+- December 1, 2025: Enhanced emotion selector with AI analysis
+  - "How are you feeling today?" now supports factor-based mood analysis
+  - Users can analyze mood via 6 factors: sleep quality, energy level, stress level, concentration, motivation, mood rating
+  - System automatically determines appropriate emotion from factors
+  - Sliders with values 1-5 for each factor
+  - Still supports direct emoji selection
+- Previous: Initial project setup with complete MVP features
 - Implemented emotion-based recommendation engine
 - Created all 4 main pages: Dashboard, Tasks, Calendar, Profile
 - Added music recommendations with external links
