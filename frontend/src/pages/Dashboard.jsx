@@ -27,12 +27,24 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    setSelectedEmotion(null);
-    setRecommendedTasks([]);
-    setSuggestedTasks([]);
-    setMusicRecommendations([]);
+    const loadDateData = async () => {
+      setSelectedEmotion(null);
+      setRecommendedTasks([]);
+      setSuggestedTasks([]);
+      setMusicRecommendations([]);
+      
+      try {
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const response = await api.get(`/emotions/diary/${dateStr}`);
+        if (response.data && response.data.emotion) {
+          setSelectedEmotion(response.data.emotion);
+        }
+      } catch (error) {
+        console.error('Failed to fetch date emotion:', error);
+      }
+    };
     
-    fetchDateEmotion();
+    loadDateData();
   }, [selectedDate]);
 
   useEffect(() => {
@@ -59,18 +71,6 @@ const Dashboard = () => {
       console.error('Failed to fetch dashboard data:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchDateEmotion = async () => {
-    try {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const response = await api.get(`/emotions/diary/${dateStr}`);
-      if (response.data && response.data.emotion) {
-        setSelectedEmotion(response.data.emotion);
-      }
-    } catch (error) {
-      console.error('Failed to fetch date emotion:', error);
     }
   };
 
@@ -185,7 +185,6 @@ const Dashboard = () => {
               selectedEmotion={selectedEmotion} 
               onSelect={setSelectedEmotion}
               selectedDate={selectedDate}
-              onEmotionRecorded={fetchDateEmotion}
             />
           </section>
 
