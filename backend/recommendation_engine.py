@@ -40,24 +40,6 @@ class EmotionRecommendationEngine:
     
     PRIORITY_SCORES = {'High': 3, 'Medium': 2, 'Low': 1}
     
-    EMOTION_COLORS = {
-        'Happy': '#FFD93D',
-        'Sad': '#6B7FD7',
-        'Tired': '#8B4513',
-        'Angry': '#FF6B6B',
-        'Stressed': '#FF9F43',
-        'Neutral': '#95A5A6'
-    }
-    
-    EMOTION_EMOJIS = {
-        'Happy': '😊',
-        'Sad': '😢',
-        'Tired': '😴',
-        'Angry': '😠',
-        'Stressed': '😰',
-        'Neutral': '😐'
-    }
-    
     EMOTION_TASK_SUGGESTIONS = {
         'Happy': [
             {'title': 'Start a new creative project', 'category': 'Personal', 'priority': 'High'},
@@ -136,24 +118,6 @@ class EmotionRecommendationEngine:
         return min(100, max(0, total_score))
     
     @classmethod
-    def get_best_matching_emotion(cls, task, user=None):
-        best_emotion = 'Neutral'
-        best_score = 0
-        
-        for emotion_name in cls.EMOTION_TASK_WEIGHTS.keys():
-            score = cls.calculate_task_score(task, emotion_name, user)
-            if score > best_score:
-                best_score = score
-                best_emotion = emotion_name
-        
-        return {
-            'name': best_emotion,
-            'color': cls.EMOTION_COLORS.get(best_emotion, '#95A5A6'),
-            'emoji': cls.EMOTION_EMOJIS.get(best_emotion, '😐'),
-            'score': best_score
-        }
-    
-    @classmethod
     def get_recommended_tasks(cls, db, user_id, emotion_name, limit=5, task_date=None):
         from models import Task, User
         
@@ -172,16 +136,11 @@ class EmotionRecommendationEngine:
         scored_tasks = []
         for task in tasks:
             score = cls.calculate_task_score(task, emotion_name, user)
-            best_match = cls.get_best_matching_emotion(task, user)
-            scored_tasks.append((task, score, best_match))
+            scored_tasks.append((task, score))
         
         scored_tasks.sort(key=lambda x: x[1], reverse=True)
         
-        return [{
-            'task': task.to_dict(), 
-            'score': score,
-            'best_emotion': best_match
-        } for task, score, best_match in scored_tasks[:limit]]
+        return [{'task': task.to_dict(), 'score': score} for task, score in scored_tasks[:limit]]
     
     @classmethod
     def get_suggested_tasks(cls, emotion_name, limit=3):

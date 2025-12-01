@@ -661,23 +661,6 @@ body {
   background: var(--text-secondary);
 }
 
-.task-score-container {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.best-emotion-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  font-size: 14px;
-  cursor: help;
-}
-
 .task-score {
   background: var(--primary);
   color: white;

@@ -223,7 +223,6 @@ const Dashboard = () => {
                         onToggle={handleTaskToggle}
                         showScore={true}
                         selectedDate={selectedDate}
-                        bestEmotion={item.best_emotion}
                       />
                     ))}
                   </div>
