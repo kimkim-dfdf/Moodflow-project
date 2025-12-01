@@ -6,11 +6,12 @@ import MusicCard from '../components/MusicCard';
 import MiniCalendar from '../components/MiniCalendar';
 import MoodStats from '../components/MoodStats';
 import api from '../api/axios';
-import { format } from 'date-fns';
-import { Sparkles, Music, CheckCircle2 } from 'lucide-react';
+import { format, isToday } from 'date-fns';
+import { Sparkles, Music, CheckCircle2, Calendar } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [recommendedTasks, setRecommendedTasks] = useState([]);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
@@ -23,7 +24,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [selectedDate]);
 
   useEffect(() => {
     if (selectedEmotion) {
@@ -33,10 +34,11 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [summaryRes, todayEmotionRes, tasksRes] = await Promise.all([
-        api.get('/dashboard/summary'),
-        api.get('/emotions/today'),
-        api.get('/tasks')
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const [summaryRes, dateEmotionRes, tasksRes] = await Promise.all([
+        api.get('/dashboard/summary', { params: { date: dateStr } }),
+        api.get(`/emotions/diary/${dateStr}`),
+        api.get('/tasks', { params: { date: dateStr } })
       ]);
 
       const summary = summaryRes.data;
@@ -47,11 +49,17 @@ const Dashboard = () => {
       const existingTitles = new Set(tasksRes.data.map(t => t.title));
       setAddedTasks(existingTitles);
 
-      if (todayEmotionRes.data) {
-        setSelectedEmotion(todayEmotionRes.data.emotion);
+      if (dateEmotionRes.data && dateEmotionRes.data.emotion) {
+        setSelectedEmotion(dateEmotionRes.data.emotion);
+      } else {
+        setSelectedEmotion(null);
+        setRecommendedTasks([]);
+        setSuggestedTasks([]);
+        setMusicRecommendations([]);
       }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
+      setSelectedEmotion(null);
     } finally {
       setLoading(false);
     }
@@ -110,11 +118,36 @@ const Dashboard = () => {
     }
   };
 
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
+    setLoading(true);
+  };
+
+  const handleEmotionSelect = async (emotion) => {
+    setSelectedEmotion(emotion);
+    
+    try {
+      await api.post('/emotions/record', {
+        emotion_id: emotion.id,
+        date: format(selectedDate, 'yyyy-MM-dd')
+      });
+    } catch (error) {
+      console.error('Failed to record emotion:', error);
+    }
+  };
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
     if (hour < 18) return 'Good Afternoon';
     return 'Good Evening';
+  };
+
+  const getDateDisplay = () => {
+    if (isToday(selectedDate)) {
+      return format(selectedDate, 'EEEE, MMMM d, yyyy') + ' (Today)';
+    }
+    return format(selectedDate, 'EEEE, MMMM d, yyyy');
   };
 
   if (loading) {
@@ -126,7 +159,18 @@ const Dashboard = () => {
       <header className="dashboard-header">
         <div className="greeting">
           <h1>{getGreeting()}, {user?.username}!</h1>
-          <p>{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+          <p className="date-display">
+            <Calendar size={16} />
+            {getDateDisplay()}
+          </p>
+          {!isToday(selectedDate) && (
+            <button 
+              className="today-btn"
+              onClick={() => handleDateSelect(new Date())}
+            >
+              Back to Today
+            </button>
+          )}
         </div>
         <div className="task-summary-badges">
           <div className="badge total">
@@ -148,9 +192,16 @@ const Dashboard = () => {
       <div className="dashboard-grid">
         <div className="dashboard-main">
           <section className="card emotion-section">
+            <div className="emotion-header">
+              <h3>How are you feeling {isToday(selectedDate) ? 'today' : 'on this day'}?</h3>
+              {!selectedEmotion && (
+                <p className="emotion-hint">Select your mood to get personalized recommendations</p>
+              )}
+            </div>
             <EmotionSelector 
               selectedEmotion={selectedEmotion} 
-              onSelect={setSelectedEmotion} 
+              onSelect={handleEmotionSelect}
+              selectedDate={selectedDate}
             />
           </section>
 
@@ -218,7 +269,11 @@ const Dashboard = () => {
 
         <aside className="dashboard-sidebar">
           <section className="card calendar-section">
-            <MiniCalendar />
+            <h3 className="calendar-title">Select a Date</h3>
+            <MiniCalendar 
+              onDateSelect={handleDateSelect}
+              selectedDate={selectedDate}
+            />
           </section>
 
           <section className="card stats-section">

@@ -406,6 +406,50 @@ body {
   color: var(--text-secondary);
 }
 
+.date-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.today-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.today-btn:hover {
+  background: var(--primary-dark);
+}
+
+.calendar-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.emotion-header {
+  margin-bottom: 16px;
+}
+
+.emotion-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.emotion-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 .task-summary-badges {
   display: flex;
   gap: 12px;
@@ -818,6 +862,15 @@ body {
 .calendar-day.today {
   background: var(--primary);
   color: white;
+}
+
+.calendar-day.selected {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.calendar-day.selected:not(.today) {
+  background: var(--primary-light);
 }
 
 .day-emotion {
