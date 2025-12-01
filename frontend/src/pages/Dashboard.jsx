@@ -27,24 +27,35 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
+    let isCancelled = false;
+    
+    setSelectedEmotion(null);
+    setRecommendedTasks([]);
+    setSuggestedTasks([]);
+    setMusicRecommendations([]);
+    
     const loadDateData = async () => {
-      setSelectedEmotion(null);
-      setRecommendedTasks([]);
-      setSuggestedTasks([]);
-      setMusicRecommendations([]);
-      
       try {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
         const response = await api.get(`/emotions/diary/${dateStr}`);
+        
+        if (isCancelled) return;
+        
         if (response.data && response.data.emotion) {
           setSelectedEmotion(response.data.emotion);
         }
       } catch (error) {
-        console.error('Failed to fetch date emotion:', error);
+        if (!isCancelled) {
+          console.error('Failed to fetch date emotion:', error);
+        }
       }
     };
     
     loadDateData();
+    
+    return () => {
+      isCancelled = true;
+    };
   }, [selectedDate]);
 
   useEffect(() => {
@@ -179,7 +190,7 @@ const Dashboard = () => {
       </header>
 
       <div className="dashboard-grid">
-        <div className="dashboard-main">
+        <div className="dashboard-main" key={format(selectedDate, 'yyyy-MM-dd')}>
           <section className="card emotion-section">
             <EmotionSelector 
               selectedEmotion={selectedEmotion} 
