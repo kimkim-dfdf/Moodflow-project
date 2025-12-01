@@ -210,18 +210,9 @@ const Dashboard = () => {
 
           {selectedEmotion && (
             <>
-              <section 
-                className="card recommendations-section"
-                style={{
-                  borderLeft: `4px solid ${selectedEmotion.color}`,
-                  background: `linear-gradient(135deg, ${selectedEmotion.color}15 0%, transparent 100%)`
-                }}
-              >
+              <section className="card recommendations-section">
                 <div className="section-header">
-                  <h3 style={{ color: selectedEmotion.color }}>
-                    <span className="emotion-icon">{selectedEmotion.emoji}</span>
-                    <Sparkles size={20} /> Recommended Tasks for You
-                  </h3>
+                  <h3><Sparkles size={20} /> Recommended Tasks for You</h3>
                 </div>
                 {recommendedTasks.length > 0 ? (
                   <div className="task-list">
