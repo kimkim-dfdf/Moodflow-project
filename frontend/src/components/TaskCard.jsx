@@ -15,8 +15,27 @@ const categoryColors = {
   Personal: '#f97316'
 };
 
-const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate }) => {
+const emotionColors = {
+  Happy: '#FFD93D',
+  Sad: '#6B7FD7',
+  Tired: '#8B4513',
+  Angry: '#FF6B6B',
+  Stressed: '#FF9F43',
+  Neutral: '#95A5A6'
+};
+
+const emotionEmojis = {
+  Happy: '😊',
+  Sad: '😢',
+  Tired: '😴',
+  Angry: '😠',
+  Stressed: '😰',
+  Neutral: '😐'
+};
+
+const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate, emotion }) => {
   const navigate = useNavigate();
+  const emotionColor = emotion ? emotionColors[emotion.name] || emotion.color : null;
 
   const handleGoToTasks = () => {
     navigate('/tasks', { 
@@ -25,7 +44,13 @@ const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate 
   };
 
   return (
-    <div className={`task-card ${task.is_completed ? 'completed' : ''}`}>
+    <div 
+      className={`task-card ${task.is_completed ? 'completed' : ''} ${emotion ? 'emotion-styled' : ''}`}
+      style={emotion ? { 
+        borderLeft: `4px solid ${emotionColor}`,
+        backgroundColor: `${emotionColor}10`
+      } : {}}
+    >
       <div className="task-content">
         <div className="task-header">
           <h4 className="task-title">
@@ -44,6 +69,18 @@ const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate 
         )}
         
         <div className="task-meta">
+          {emotion && (
+            <span 
+              className="task-emotion-badge"
+              style={{ 
+                backgroundColor: emotionColor,
+                color: ['Happy', 'Stressed'].includes(emotion.name) ? '#333' : '#fff'
+              }}
+              title={`Recommended for ${emotion.name} mood`}
+            >
+              {emotion.emoji} {emotion.name}
+            </span>
+          )}
           <span 
             className="task-category"
             style={{ backgroundColor: categoryColors[task.category] || '#6366f1' }}
