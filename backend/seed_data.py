@@ -22,7 +22,7 @@ def seed_database(db):
         {
             'name': 'Tired',
             'emoji': '😴',
-            'color': '#A8A8A8',
+            'color': '#8B4513',
             'energy_level': 2,
             'focus_level': 3
         },
