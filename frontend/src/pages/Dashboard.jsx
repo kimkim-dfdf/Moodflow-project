@@ -18,6 +18,8 @@ const Dashboard = () => {
   const [taskSummary, setTaskSummary] = useState({ total: 0, completed: 0, pending: 0 });
   const [moodStats, setMoodStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [addedTasks, setAddedTasks] = useState(new Set());
+  const [allTasks, setAllTasks] = useState([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -31,14 +33,19 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [summaryRes, todayEmotionRes] = await Promise.all([
+      const [summaryRes, todayEmotionRes, tasksRes] = await Promise.all([
         api.get('/dashboard/summary'),
-        api.get('/emotions/today')
+        api.get('/emotions/today'),
+        api.get('/tasks')
       ]);
 
       const summary = summaryRes.data;
       setTaskSummary(summary.task_summary);
       setMoodStats(summary.weekly_mood_stats);
+      setAllTasks(tasksRes.data);
+      
+      const existingTitles = new Set(tasksRes.data.map(t => t.title));
+      setAddedTasks(existingTitles);
 
       if (todayEmotionRes.data) {
         setSelectedEmotion(todayEmotionRes.data.emotion);
@@ -79,6 +86,10 @@ const Dashboard = () => {
   };
 
   const handleAddSuggestedTask = async (suggestion) => {
+    if (addedTasks.has(suggestion.title)) {
+      return;
+    }
+    
     try {
       await api.post('/tasks', {
         title: suggestion.title,
@@ -86,11 +97,15 @@ const Dashboard = () => {
         priority: suggestion.priority,
         recommended_for_emotion: selectedEmotion?.name
       });
+      setAddedTasks(prev => new Set([...prev, suggestion.title]));
       fetchDashboardData();
       if (selectedEmotion) {
         fetchRecommendations(selectedEmotion.name);
       }
     } catch (error) {
+      if (error.response?.status === 409) {
+        setAddedTasks(prev => new Set([...prev, suggestion.title]));
+      }
       console.error('Failed to add task:', error);
     }
   };
@@ -166,20 +181,24 @@ const Dashboard = () => {
                   <h3>Suggested Activities for {selectedEmotion.name} Mood</h3>
                 </div>
                 <div className="suggestions-grid">
-                  {suggestedTasks.map((suggestion, index) => (
-                    <div key={index} className="suggestion-card">
-                      <p>{suggestion.title}</p>
-                      <div className="suggestion-meta">
-                        <span className="category">{suggestion.category}</span>
-                        <button 
-                          className="add-btn"
-                          onClick={() => handleAddSuggestedTask(suggestion)}
-                        >
-                          Add to Tasks
-                        </button>
+                  {suggestedTasks.map((suggestion, index) => {
+                    const isAdded = addedTasks.has(suggestion.title);
+                    return (
+                      <div key={index} className="suggestion-card">
+                        <p>{suggestion.title}</p>
+                        <div className="suggestion-meta">
+                          <span className="category">{suggestion.category}</span>
+                          <button 
+                            className={`add-btn ${isAdded ? 'added' : ''}`}
+                            onClick={() => handleAddSuggestedTask(suggestion)}
+                            disabled={isAdded}
+                          >
+                            {isAdded ? 'Added' : 'Add to Tasks'}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
 

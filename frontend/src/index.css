@@ -650,6 +650,20 @@ body {
   background: var(--primary-dark);
 }
 
+.add-btn.added {
+  background: var(--success);
+  cursor: default;
+  opacity: 0.8;
+}
+
+.add-btn.added:hover {
+  background: var(--success);
+}
+
+.add-btn:disabled {
+  cursor: not-allowed;
+}
+
 .music-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

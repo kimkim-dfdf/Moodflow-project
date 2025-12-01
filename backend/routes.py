@@ -211,6 +211,15 @@ def register_routes(app, db):
         if not data or not data.get('title'):
             return jsonify({'error': 'Title is required'}), 400
         
+        existing_task = Task.query.filter_by(
+            user_id=current_user.id,
+            title=data['title'],
+            is_completed=False
+        ).first()
+        
+        if existing_task:
+            return jsonify({'error': 'This task already exists', 'task': existing_task.to_dict()}), 409
+        
         task = Task(
             user_id=current_user.id,
             title=data['title'],
