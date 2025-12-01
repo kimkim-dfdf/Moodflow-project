@@ -1,4 +1,4 @@
-import { CheckCircle, Circle, Clock, Flag } from 'lucide-react';
+import { CheckCircle, Circle, Clock, Flag, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
 const priorityColors = {
@@ -17,46 +17,54 @@ const categoryColors = {
 const TaskCard = ({ task, onToggle, onEdit, showScore }) => {
   return (
     <div className={`task-card ${task.is_completed ? 'completed' : ''}`}>
-      <div className="task-header">
-        <button className="toggle-btn" onClick={() => onToggle(task)}>
-          {task.is_completed ? (
-            <CheckCircle size={20} className="checked" />
-          ) : (
-            <Circle size={20} />
+      <div className="task-content">
+        <div className="task-header">
+          <h4 className="task-title">
+            {task.is_completed && <CheckCircle size={16} className="completed-icon" />}
+            {task.title}
+          </h4>
+          {showScore && task.score !== undefined && (
+            <span className="task-score" title="Recommendation score">
+              {Math.round(task.score)}%
+            </span>
           )}
-        </button>
-        <h4 className="task-title">{task.title}</h4>
-        {showScore && task.score !== undefined && (
-          <span className="task-score" title="Recommendation score">
-            {Math.round(task.score)}%
-          </span>
+        </div>
+        
+        {task.description && (
+          <p className="task-description">{task.description}</p>
         )}
+        
+        <div className="task-meta">
+          <span 
+            className="task-category"
+            style={{ backgroundColor: categoryColors[task.category] || '#6366f1' }}
+          >
+            {task.category}
+          </span>
+          <span 
+            className="task-priority"
+            style={{ color: priorityColors[task.priority] || '#f59e0b' }}
+          >
+            <Flag size={14} />
+            {task.priority}
+          </span>
+          {task.due_date && (
+            <span className="task-due">
+              <Clock size={14} />
+              {format(new Date(task.due_date), 'MMM d')}
+            </span>
+          )}
+        </div>
       </div>
       
-      {task.description && (
-        <p className="task-description">{task.description}</p>
-      )}
-      
-      <div className="task-meta">
-        <span 
-          className="task-category"
-          style={{ backgroundColor: categoryColors[task.category] || '#6366f1' }}
+      <div className="task-hover-actions">
+        <button 
+          className={`action-btn ${task.is_completed ? 'undo' : 'complete'}`}
+          onClick={() => onToggle(task)}
         >
-          {task.category}
-        </span>
-        <span 
-          className="task-priority"
-          style={{ color: priorityColors[task.priority] || '#f59e0b' }}
-        >
-          <Flag size={14} />
-          {task.priority}
-        </span>
-        {task.due_date && (
-          <span className="task-due">
-            <Clock size={14} />
-            {format(new Date(task.due_date), 'MMM d')}
-          </span>
-        )}
+          <Check size={16} />
+          {task.is_completed ? 'Undo' : 'Complete'}
+        </button>
       </div>
     </div>
   );

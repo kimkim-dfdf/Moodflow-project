@@ -568,6 +568,10 @@ body {
   border-radius: var(--radius-sm);
   padding: 16px;
   transition: all 0.2s;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .task-card:hover {
@@ -582,29 +586,70 @@ body {
   text-decoration: line-through;
 }
 
+.task-content {
+  flex: 1;
+}
+
 .task-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 8px;
-}
-
-.toggle-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: var(--text-muted);
-}
-
-.toggle-btn .checked {
-  color: var(--success);
 }
 
 .task-title {
   flex: 1;
   font-weight: 500;
   font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.completed-icon {
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+.task-hover-actions {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.task-card:hover .task-hover-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.action-btn.complete {
+  background: var(--success);
+  color: white;
+}
+
+.action-btn.complete:hover {
+  background: #16a34a;
+}
+
+.action-btn.undo {
+  background: var(--text-muted);
+  color: white;
+}
+
+.action-btn.undo:hover {
+  background: var(--text-secondary);
 }
 
 .task-score {
@@ -620,14 +665,12 @@ body {
   font-size: 13px;
   color: var(--text-secondary);
   margin-bottom: 12px;
-  margin-left: 32px;
 }
 
 .task-meta {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-left: 32px;
 }
 
 .task-category {
