@@ -89,33 +89,31 @@ class EmotionRecommendationEngine:
     def calculate_task_score(cls, task, emotion_name, user=None):
         weights = cls.EMOTION_TASK_WEIGHTS.get(emotion_name, cls.EMOTION_TASK_WEIGHTS['Neutral'])
         
-        category_score = weights.get(task.category, 0.5) * 40
-        
+        category_weight = weights.get(task.category, 0.5)
         priority_pref = weights.get('priority_preference', 'Medium')
-        priority_match = 1.0 if task.priority == priority_pref else 0.7
-        priority_score = cls.PRIORITY_SCORES.get(task.priority, 2) * priority_match * 20
+        priority_weight = cls.PRIORITY_SCORES.get(task.priority, 2) / 3.0
         
-        urgency_score = 0
+        priority_match = 1.0 if task.priority == priority_pref else 0.6
+        
+        urgency_weight = 0
         if task.due_date:
             days_until_due = (task.due_date - datetime.now().date()).days
             if days_until_due <= 0:
-                urgency_score = 30
+                urgency_weight = 1.0
             elif days_until_due <= 1:
-                urgency_score = 25
+                urgency_weight = 0.9
             elif days_until_due <= 3:
-                urgency_score = 15
+                urgency_weight = 0.6
             elif days_until_due <= 7:
-                urgency_score = 5
+                urgency_weight = 0.3
         
-        personal_preference_score = 0
-        if user and user.preferred_categories:
-            preferred = user.preferred_categories.split(',')
-            if task.category in preferred:
-                personal_preference_score = 10 * (1 + preferred.index(task.category) * -0.1)
+        weighted_score = (
+            category_weight * 50 +
+            priority_weight * priority_match * 30 +
+            urgency_weight * 20
+        )
         
-        total_score = category_score + priority_score + urgency_score + personal_preference_score
-        
-        return min(100, max(0, total_score))
+        return min(100, max(0, weighted_score))
     
     @classmethod
     def get_recommended_tasks(cls, db, user_id, emotion_name, limit=5):
@@ -140,8 +138,18 @@ class EmotionRecommendationEngine:
     @classmethod
     def get_suggested_tasks(cls, emotion_name, limit=3):
         suggestions = cls.EMOTION_TASK_SUGGESTIONS.get(emotion_name, cls.EMOTION_TASK_SUGGESTIONS['Neutral'])
-        selected = random.sample(suggestions, min(limit, len(suggestions)))
-        return selected
+        weights = cls.EMOTION_TASK_WEIGHTS.get(emotion_name, cls.EMOTION_TASK_WEIGHTS['Neutral'])
+        
+        def suggestion_score(suggestion):
+            cat_weight = weights.get(suggestion['category'], 0.5)
+            priority_pref = weights.get('priority_preference', 'Medium')
+            priority_match = 1.0 if suggestion['priority'] == priority_pref else 0.7
+            return cat_weight * 50 + cls.PRIORITY_SCORES.get(suggestion['priority'], 2) * priority_match * 20
+        
+        scored_suggestions = [(s, suggestion_score(s)) for s in suggestions]
+        scored_suggestions.sort(key=lambda x: x[1], reverse=True)
+        
+        return [s[0] for s in scored_suggestions[:limit]]
     
     @classmethod
     def get_music_recommendations(cls, db, emotion_name, user_id=None, limit=4):

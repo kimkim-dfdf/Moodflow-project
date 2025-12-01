@@ -91,17 +91,16 @@ The app uses a weighted scoring system that considers:
 - GET `/api/dashboard/summary` - Get dashboard summary
 
 ## Recent Changes
-- December 1, 2025: ✅ COMPLETED - Enhanced emotion selector with AI analysis + Fixed emotion analysis algorithm
-  - "How are you feeling today?" now supports factor-based mood analysis
-  - Users can analyze mood via 6 factors: sleep quality, energy level, stress level, concentration, motivation, mood rating
-  - System automatically determines appropriate emotion from factors
-  - Sliders with values 1-5 for each factor with visual feedback
-  - Still supports direct emoji selection (original functionality)
-  - Database successfully migrated with 6 new columns in emotion_history table
-  - Fixed emotion analysis algorithm to properly rank emotions (Neutral calculation corrected)
-  - Backend /api/emotions/analyze endpoint working correctly with accurate emotion detection
-  - Frontend EmotionSelector component with toggle between modes
-  - All workflows restarted and stable
+- December 1, 2025: ✅ COMPLETED - Enhanced emotion selector + Fixed recommendation algorithms
+  - Emotion selector: Factor-based mood analysis with 6 sliders + direct emoji selection
+  - Database: Added 6 columns (sleep_quality, energy_level, stress_level, concentration, motivation, mood_rating)
+  - Fixed emotion analysis algorithm: Neutral calculation corrected for proper emotion ranking
+  - Improved recommendation engine:
+    - `calculate_task_score()`: Simplified scoring (Category 50% + Priority 30% + Urgency 20%)
+    - `get_suggested_tasks()`: Now ranked by emotion fit, not random
+    - Consistent scoring between recommended and suggested tasks
+  - Both "Recommended Tasks for You" and "Suggested Activities" now properly aligned
+  - All endpoints tested and working with Happy mood recommendations
 - Previous: Initial project setup with complete MVP features
 - Implemented emotion-based recommendation engine
 - Created all 4 main pages: Dashboard, Tasks, Calendar, Profile
