@@ -27,6 +27,11 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
+    setSelectedEmotion(null);
+    setRecommendedTasks([]);
+    setSuggestedTasks([]);
+    setMusicRecommendations([]);
+    
     fetchDateEmotion();
   }, [selectedDate]);
 
@@ -63,25 +68,13 @@ const Dashboard = () => {
       const response = await api.get(`/emotions/diary/${dateStr}`);
       if (response.data && response.data.emotion) {
         setSelectedEmotion(response.data.emotion);
-      } else {
-        setSelectedEmotion(null);
-        setRecommendedTasks([]);
-        setSuggestedTasks([]);
-        setMusicRecommendations([]);
       }
     } catch (error) {
-      setSelectedEmotion(null);
-      setRecommendedTasks([]);
-      setSuggestedTasks([]);
-      setMusicRecommendations([]);
+      console.error('Failed to fetch date emotion:', error);
     }
   };
 
   const handleDateSelect = (date) => {
-    setSelectedEmotion(null);
-    setRecommendedTasks([]);
-    setSuggestedTasks([]);
-    setMusicRecommendations([]);
     setSelectedDate(date);
   };
 
