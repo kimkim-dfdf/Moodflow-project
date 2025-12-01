@@ -563,13 +563,17 @@ body {
   font-size: 15px;
 }
 
-.task-score {
-  background: var(--primary);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
+.task-match {
+  font-size: 14px;
+  display: flex;
+  gap: 2px;
+  cursor: help;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.task-match:hover {
+  opacity: 1;
 }
 
 .task-description {
