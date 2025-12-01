@@ -77,13 +77,9 @@ const Calendar = () => {
   };
 
   const handleDateClick = (date) => {
-    setFormData({ emotion_id: null, notes: '', photo_url: '' });
-    setPhotoPreview(null);
-    setDiaryEntry(null);
-    
     setSelectedDate(date);
-    setShowDiaryModal(true);
     fetchDiaryEntry(date);
+    setShowDiaryModal(true);
   };
 
   const handlePhotoUpload = async (e) => {
