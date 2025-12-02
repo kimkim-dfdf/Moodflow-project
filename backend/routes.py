@@ -387,12 +387,6 @@ def register_routes(app, db):
                 return jsonify({'error': 'Username already taken'}), 400
             current_user.username = data['username']
         
-        if 'preferred_categories' in data:
-            if isinstance(data['preferred_categories'], list):
-                current_user.preferred_categories = ','.join(data['preferred_categories'])
-            else:
-                current_user.preferred_categories = data['preferred_categories']
-        
         db.session.commit()
         return jsonify(current_user.to_dict())
     

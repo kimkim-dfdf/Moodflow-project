@@ -13,8 +13,6 @@ const EMOTION_COLORS = {
   'Neutral': '#95A5A6'
 };
 
-const CATEGORIES = ['Work', 'Study', 'Health', 'Personal'];
-
 const Profile = () => {
   const { user, setUser } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -22,8 +20,7 @@ const Profile = () => {
   const [emotionStats, setEmotionStats] = useState(null);
 
   const [formData, setFormData] = useState({
-    username: user?.username || '',
-    preferred_categories: user?.preferred_categories || []
+    username: user?.username || ''
   });
 
   useEffect(() => {
@@ -33,8 +30,7 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       setFormData({
-        username: user.username || '',
-        preferred_categories: user.preferred_categories || []
+        username: user.username || ''
       });
     }
   }, [user]);
@@ -62,14 +58,6 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCategoryToggle = (category) => {
-    const currentCategories = formData.preferred_categories;
-    const newCategories = currentCategories.includes(category)
-      ? currentCategories.filter(c => c !== category)
-      : [...currentCategories, category];
-    setFormData({ ...formData, preferred_categories: newCategories });
   };
 
   const pieData = emotionStats?.counts 
@@ -119,23 +107,6 @@ const Profile = () => {
                 className="disabled"
               />
               <small>Email cannot be changed</small>
-            </div>
-
-            <div className="form-group">
-              <label>Preferred Categories</label>
-              <div className="category-toggles">
-                {CATEGORIES.map(category => (
-                  <button
-                    key={category}
-                    type="button"
-                    className={`category-toggle ${formData.preferred_categories.includes(category) ? 'active' : ''}`}
-                    onClick={() => handleCategoryToggle(category)}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-              <small>Selected categories will be prioritized in recommendations</small>
             </div>
 
             <button type="submit" className="btn-primary" disabled={loading}>
