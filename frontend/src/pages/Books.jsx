@@ -86,10 +86,6 @@ const Books = () => {
               key={tag.id}
               className={`tag-chip ${selectedTags.includes(tag.slug) ? 'active' : ''}`}
               onClick={() => toggleTag(tag.slug)}
-              style={{
-                '--tag-color': tag.color,
-                '--tag-bg': selectedTags.includes(tag.slug) ? tag.color : 'transparent'
-              }}
             >
               {tag.name}
               <span className="tag-count">{tag.book_count}</span>

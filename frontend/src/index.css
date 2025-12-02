@@ -933,16 +933,16 @@ body {
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border: 2px solid var(--tag-color, var(--border));
-  background: var(--tag-bg, transparent);
+  border: 2px solid var(--border);
+  background: transparent;
   border-radius: 20px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
 }
-.tag-chip:hover { border-color: var(--tag-color); background: color-mix(in srgb, var(--tag-color) 10%, transparent); }
-.tag-chip.active { background: var(--tag-color); color: white; border-color: var(--tag-color); }
+.tag-chip:hover { border-color: var(--primary); background: rgba(99,102,241,0.1); }
+.tag-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
 
 .tag-count { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: 600; }
 .tag-chip.active .tag-count { background: rgba(255,255,255,0.25); }
@@ -973,8 +973,8 @@ body {
 .book-tag-pill {
   display: inline-block;
   padding: 2px 8px;
-  background: color-mix(in srgb, var(--pill-color, var(--primary)) 15%, transparent);
-  color: var(--pill-color, var(--primary));
+  background: rgba(99,102,241,0.15);
+  color: var(--primary);
   border-radius: 10px;
   font-size: 10px;
   font-weight: 500;
