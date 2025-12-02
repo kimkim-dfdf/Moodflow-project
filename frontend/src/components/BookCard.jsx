@@ -1,6 +1,6 @@
 import { BookOpen } from 'lucide-react';
 
-const BookCard = ({ book }) => {
+const BookCard = ({ book, showTags = false }) => {
   return (
     <div className="book-card">
       <div className="book-icon">
@@ -12,6 +12,19 @@ const BookCard = ({ book }) => {
         <span className="book-genre">{book.genre}</span>
         {book.description && (
           <p className="book-description">{book.description}</p>
+        )}
+        {showTags && book.tags && book.tags.length > 0 && (
+          <div className="book-tags">
+            {book.tags.map((tag) => (
+              <span 
+                key={tag.id} 
+                className="book-tag-pill"
+                style={{ '--pill-color': tag.color }}
+              >
+                {tag.name}
+              </span>
+            ))}
+          </div>
         )}
       </div>
     </div>
