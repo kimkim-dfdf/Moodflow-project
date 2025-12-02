@@ -45,7 +45,7 @@ MoodFlow is a modern web application that helps users track their emotional stat
 
 ### 4. Books
 - Dedicated page for book recommendations
-- **Tag-based filtering with 10 Korean emotion tags** (희망적인, 위로가 필요한, 평온함을 찾는, 성장하고 싶은, 감성에 젖고 싶은, 현실에서 벗어나고 싶은, 재충전이 필요한, 용기가 필요한, 새로운 시각을 찾는, 집중력을 높이고 싶은)
+- **Tag-based filtering with 10 emotion tags** (Hopeful, Comforting, Peaceful, Growth, Emotional, Escapism, Recharge, Courage, New Perspective, Focus)
 - Multi-select tag chips UI for refined book discovery
 - 15 curated books with 3 tags each
 - Book details: title, author, genre, description, associated tags

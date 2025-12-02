@@ -66,16 +66,16 @@ const Books = () => {
   return (
     <div className="books-page">
       <header className="page-header">
-        <h1><BookOpen size={28} /> 책 추천</h1>
-        <p>지금 기분에 맞는 책을 발견하세요</p>
+        <h1><BookOpen size={28} /> Book Recommendations</h1>
+        <p>Discover books that match your current mood</p>
       </header>
 
       <div className="tag-filter-section">
         <div className="tag-filter-header">
-          <span className="tag-filter-label">감정 태그로 찾기</span>
+          <span className="tag-filter-label">Filter by Mood Tags</span>
           {selectedTags.length > 0 && (
             <button className="clear-tags-btn" onClick={clearAllTags}>
-              전체 해제
+              Clear All
             </button>
           )}
         </div>
@@ -99,7 +99,7 @@ const Books = () => {
 
         {selectedTags.length > 0 && (
           <div className="selected-tags-display">
-            <span>선택된 태그:</span>
+            <span>Selected:</span>
             <div className="selected-tags-list">
               {getSelectedTagNames().map((name, idx) => (
                 <span key={idx} className="selected-tag-pill">
@@ -117,15 +117,15 @@ const Books = () => {
       </div>
 
       {loading ? (
-        <div className="loading-state">책을 불러오는 중...</div>
+        <div className="loading-state">Loading books...</div>
       ) : (
         <div className="books-container">
           {books.length > 0 ? (
             <>
               <div className="books-result-info">
                 {selectedTags.length > 0 
-                  ? `선택한 태그에 맞는 ${books.length}권의 책`
-                  : `전체 ${books.length}권의 책`
+                  ? `${books.length} books matching selected tags`
+                  : `All ${books.length} books`
                 }
               </div>
               <div className="books-full-grid">
@@ -137,7 +137,7 @@ const Books = () => {
           ) : (
             <div className="empty-state">
               <BookOpen size={48} />
-              <p>선택한 태그에 맞는 책이 없습니다.</p>
+              <p>No books found for selected tags.</p>
             </div>
           )}
         </div>
