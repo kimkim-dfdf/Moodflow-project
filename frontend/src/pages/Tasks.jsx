@@ -3,7 +3,7 @@ import { useDate } from '../context/DateContext';
 import api from '../api/axios';
 import TaskCard from '../components/TaskCard';
 import MiniCalendar from '../components/MiniCalendar';
-import { Plus, Filter, Sparkles, X, Calendar, RotateCcw } from 'lucide-react';
+import { Plus, Sparkles, X, Calendar, RotateCcw } from 'lucide-react';
 import { format, isToday } from 'date-fns';
 
 const CATEGORIES = ['Work', 'Study', 'Health', 'Personal'];
@@ -15,9 +15,6 @@ const Tasks = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [filter, setFilter] = useState({ status: 'all', category: 'all' });
-  const [emotions, setEmotions] = useState([]);
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -33,31 +30,18 @@ const Tasks = () => {
 
   useEffect(() => {
     fetchTasks();
-    fetchEmotions();
     fetchDateEmotion();
-  }, [filter, selectedDate]);
+  }, [selectedDate]);
 
   const fetchTasks = async () => {
     try {
       const params = { date: format(selectedDate, 'yyyy-MM-dd') };
-      if (filter.status !== 'all') params.status = filter.status;
-      if (filter.category !== 'all') params.category = filter.category;
-
       const response = await api.get('/tasks', { params });
       setTasks(response.data);
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchEmotions = async () => {
-    try {
-      const response = await api.get('/emotions');
-      setEmotions(response.data);
-    } catch (error) {
-      console.error('Failed to fetch emotions:', error);
     }
   };
 
@@ -95,40 +79,12 @@ const Tasks = () => {
         ...formData,
         task_date: format(selectedDate, 'yyyy-MM-dd')
       };
-      
-      if (editingTask) {
-        await api.put(`/tasks/${editingTask.id}`, taskData);
-      } else {
-        await api.post('/tasks', taskData);
-      }
+      await api.post('/tasks', taskData);
       setShowModal(false);
       resetForm();
       fetchTasks();
     } catch (error) {
       console.error('Failed to save task:', error);
-    }
-  };
-
-  const handleEdit = (task) => {
-    setEditingTask(task);
-    setFormData({
-      title: task.title,
-      description: task.description || '',
-      category: task.category,
-      priority: task.priority,
-      due_time: task.due_time || ''
-    });
-    setShowModal(true);
-  };
-
-  const handleDelete = async (taskId) => {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      try {
-        await api.delete(`/tasks/${taskId}`);
-        fetchTasks();
-      } catch (error) {
-        console.error('Failed to delete task:', error);
-      }
     }
   };
 
@@ -157,7 +113,6 @@ const Tasks = () => {
   };
 
   const resetForm = () => {
-    setEditingTask(null);
     setFormData({
       title: '',
       description: '',
@@ -296,7 +251,7 @@ const Tasks = () => {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{editingTask ? 'Edit Task' : 'New Task'}</h2>
+              <h2>New Task</h2>
               <button className="close-btn" onClick={() => setShowModal(false)}>
                 <X size={20} />
               </button>
@@ -368,7 +323,7 @@ const Tasks = () => {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary">
-                  {editingTask ? 'Update Task' : 'Create Task'}
+                  Create Task
                 </button>
               </div>
             </form>
