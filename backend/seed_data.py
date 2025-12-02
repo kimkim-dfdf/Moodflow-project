@@ -1,9 +1,10 @@
 def seed_database(db):
     from models import Emotion, MusicRecommendation, BookRecommendation
     
-    if Emotion.query.first() is not None:
+    if Emotion.query.first():
         return
     
+    # Emotions
     emotions = [
         {'name': 'Happy', 'emoji': '😊', 'color': '#FFD93D'},
         {'name': 'Sad', 'emoji': '😢', 'color': '#6B7FD7'},
@@ -13,154 +14,104 @@ def seed_database(db):
         {'name': 'Neutral', 'emoji': '😐', 'color': '#95A5A6'}
     ]
     
-    emotion_objects = {}
-    for emotion_data in emotions:
-        emotion = Emotion(**emotion_data)
-        db.session.add(emotion)
+    emo_map = {}
+    for e in emotions:
+        obj = Emotion(**e)
+        db.session.add(obj)
         db.session.flush()
-        emotion_objects[emotion_data['name']] = emotion
+        emo_map[e['name']] = obj
     
-    music_data = [
-        {
-            'emotion': 'Happy',
-            'songs': [
-                {'title': 'Happy', 'artist': 'Pharrell Williams', 'genre': 'Pop', 'youtube_url': 'https://www.youtube.com/watch?v=ZbZSe6N_BXs'},
-                {'title': 'Good as Hell', 'artist': 'Lizzo', 'genre': 'Pop', 'youtube_url': 'https://www.youtube.com/watch?v=SmbmeOgWsqE'},
-                {'title': 'Walking on Sunshine', 'artist': 'Katrina and the Waves', 'genre': 'Pop Rock', 'youtube_url': 'https://www.youtube.com/watch?v=iPUmE-tne5U'},
-                {'title': 'Uptown Funk', 'artist': 'Bruno Mars', 'genre': 'Funk Pop', 'youtube_url': 'https://www.youtube.com/watch?v=OPf0YbXqDm0'},
-            ]
-        },
-        {
-            'emotion': 'Sad',
-            'songs': [
-                {'title': 'Someone Like You', 'artist': 'Adele', 'genre': 'Pop Ballad', 'youtube_url': 'https://www.youtube.com/watch?v=hLQl3WQQoQ0'},
-                {'title': 'Fix You', 'artist': 'Coldplay', 'genre': 'Alternative Rock', 'youtube_url': 'https://www.youtube.com/watch?v=k4V3Mo61fJM'},
-                {'title': 'Hurt', 'artist': 'Johnny Cash', 'genre': 'Country', 'youtube_url': 'https://www.youtube.com/watch?v=8AHCfZTRGiI'},
-                {'title': 'The Night We Met', 'artist': 'Lord Huron', 'genre': 'Indie Folk', 'youtube_url': 'https://www.youtube.com/watch?v=KtlgYxa6BMU'},
-            ]
-        },
-        {
-            'emotion': 'Tired',
-            'songs': [
-                {'title': 'Weightless', 'artist': 'Marconi Union', 'genre': 'Ambient', 'youtube_url': 'https://www.youtube.com/watch?v=UfcAVejslrU'},
-                {'title': 'Clair de Lune', 'artist': 'Debussy', 'genre': 'Classical', 'youtube_url': 'https://www.youtube.com/watch?v=CvFH_6DNRCY'},
-                {'title': 'Sunset Lover', 'artist': 'Petit Biscuit', 'genre': 'Electronic', 'youtube_url': 'https://www.youtube.com/watch?v=wuCK-oiE3rM'},
-                {'title': 'Sleep', 'artist': 'Max Richter', 'genre': 'Ambient Classical', 'youtube_url': 'https://www.youtube.com/watch?v=4UAqmSJhN9M'},
-            ]
-        },
-        {
-            'emotion': 'Angry',
-            'songs': [
-                {'title': 'Break Stuff', 'artist': 'Limp Bizkit', 'genre': 'Nu Metal', 'youtube_url': 'https://www.youtube.com/watch?v=ZpUYjpKg9KY'},
-                {'title': 'Killing in the Name', 'artist': 'Rage Against the Machine', 'genre': 'Rock', 'youtube_url': 'https://www.youtube.com/watch?v=bWXazVhlyxQ'},
-                {'title': 'Bodies', 'artist': 'Drowning Pool', 'genre': 'Metal', 'youtube_url': 'https://www.youtube.com/watch?v=04F4xlWSFh0'},
-                {'title': 'Chop Suey!', 'artist': 'System of a Down', 'genre': 'Metal', 'youtube_url': 'https://www.youtube.com/watch?v=CSvFpBOe8eY'},
-            ]
-        },
-        {
-            'emotion': 'Stressed',
-            'songs': [
-                {'title': 'Breathe Me', 'artist': 'Sia', 'genre': 'Pop', 'youtube_url': 'https://www.youtube.com/watch?v=wHOH3VMHVx8'},
-                {'title': 'Orinoco Flow', 'artist': 'Enya', 'genre': 'New Age', 'youtube_url': 'https://www.youtube.com/watch?v=LTrk4X9ACtw'},
-                {'title': 'Ocean Eyes', 'artist': 'Billie Eilish', 'genre': 'Electropop', 'youtube_url': 'https://www.youtube.com/watch?v=viimfQi_pUw'},
-                {'title': 'Strawberry Swing', 'artist': 'Coldplay', 'genre': 'Alternative Rock', 'youtube_url': 'https://www.youtube.com/watch?v=h3pJZSTQqIg'},
-            ]
-        },
-        {
-            'emotion': 'Neutral',
-            'songs': [
-                {'title': 'Lovely Day', 'artist': 'Bill Withers', 'genre': 'Soul', 'youtube_url': 'https://www.youtube.com/watch?v=bEeaS6fuUoA'},
-                {'title': 'Here Comes the Sun', 'artist': 'The Beatles', 'genre': 'Rock', 'youtube_url': 'https://www.youtube.com/watch?v=KQetemT1sWc'},
-                {'title': 'Budapest', 'artist': 'George Ezra', 'genre': 'Folk Pop', 'youtube_url': 'https://www.youtube.com/watch?v=VHrLPs3_1Fs'},
-                {'title': 'Electric Feel', 'artist': 'MGMT', 'genre': 'Indie Electronic', 'youtube_url': 'https://www.youtube.com/watch?v=MmZexg8sxyk'},
-            ]
-        }
-    ]
+    # Music data
+    music = {
+        'Happy': [
+            ('Happy', 'Pharrell Williams', 'Pop', 'ZbZSe6N_BXs'),
+            ('Good as Hell', 'Lizzo', 'Pop', 'SmbmeOgWsqE'),
+            ('Walking on Sunshine', 'Katrina and the Waves', 'Pop Rock', 'iPUmE-tne5U'),
+            ('Uptown Funk', 'Bruno Mars', 'Funk Pop', 'OPf0YbXqDm0'),
+        ],
+        'Sad': [
+            ('Someone Like You', 'Adele', 'Pop Ballad', 'hLQl3WQQoQ0'),
+            ('Fix You', 'Coldplay', 'Alternative Rock', 'k4V3Mo61fJM'),
+            ('Hurt', 'Johnny Cash', 'Country', '8AHCfZTRGiI'),
+            ('The Night We Met', 'Lord Huron', 'Indie Folk', 'KtlgYxa6BMU'),
+        ],
+        'Tired': [
+            ('Weightless', 'Marconi Union', 'Ambient', 'UfcAVejslrU'),
+            ('Clair de Lune', 'Debussy', 'Classical', 'CvFH_6DNRCY'),
+            ('Sunset Lover', 'Petit Biscuit', 'Electronic', 'wuCK-oiE3rM'),
+            ('Sleep', 'Max Richter', 'Ambient Classical', '4UAqmSJhN9M'),
+        ],
+        'Angry': [
+            ('Break Stuff', 'Limp Bizkit', 'Nu Metal', 'ZpUYjpKg9KY'),
+            ('Killing in the Name', 'Rage Against the Machine', 'Rock', 'bWXazVhlyxQ'),
+            ('Bodies', 'Drowning Pool', 'Metal', '04F4xlWSFh0'),
+            ('Chop Suey!', 'System of a Down', 'Metal', 'CSvFpBOe8eY'),
+        ],
+        'Stressed': [
+            ('Breathe Me', 'Sia', 'Pop', 'wHOH3VMHVx8'),
+            ('Orinoco Flow', 'Enya', 'New Age', 'LTrk4X9ACtw'),
+            ('Ocean Eyes', 'Billie Eilish', 'Electropop', 'viimfQi_pUw'),
+            ('Strawberry Swing', 'Coldplay', 'Alternative Rock', 'h3pJZSTQqIg'),
+        ],
+        'Neutral': [
+            ('Lovely Day', 'Bill Withers', 'Soul', 'bEeaS6fuUoA'),
+            ('Here Comes the Sun', 'The Beatles', 'Rock', 'KQetemT1sWc'),
+            ('Budapest', 'George Ezra', 'Folk Pop', 'VHrLPs3_1Fs'),
+            ('Electric Feel', 'MGMT', 'Indie Electronic', 'MmZexg8sxyk'),
+        ]
+    }
     
-    for emotion_music in music_data:
-        emotion = emotion_objects.get(emotion_music['emotion'])
-        if emotion:
-            for i, song in enumerate(emotion_music['songs']):
-                music = MusicRecommendation(
-                    emotion_id=emotion.id,
-                    title=song['title'],
-                    artist=song['artist'],
-                    genre=song['genre'],
-                    youtube_url=song['youtube_url'],
-                    popularity_score=10.0 - (i * 0.5)
-                )
-                db.session.add(music)
+    for emo_name, songs in music.items():
+        emo = emo_map.get(emo_name)
+        if emo:
+            for i, (title, artist, genre, vid) in enumerate(songs):
+                db.session.add(MusicRecommendation(emotion_id=emo.id, title=title, artist=artist, genre=genre, youtube_url='https://www.youtube.com/watch?v=' + vid, popularity_score=10.0 - i * 0.5))
     
-    book_data = [
-        {
-            'emotion': 'Happy',
-            'books': [
-                {'title': 'The Alchemist', 'author': 'Paulo Coelho', 'genre': 'Fiction', 'description': 'A magical story about following your dreams'},
-                {'title': 'Big Magic', 'author': 'Elizabeth Gilbert', 'genre': 'Self-Help', 'description': 'Creative living beyond fear'},
-                {'title': 'The Happiness Project', 'author': 'Gretchen Rubin', 'genre': 'Self-Help', 'description': 'A year-long journey to discover happiness'},
-                {'title': 'Yes Please', 'author': 'Amy Poehler', 'genre': 'Memoir', 'description': 'Hilarious and inspiring stories'},
-            ]
-        },
-        {
-            'emotion': 'Sad',
-            'books': [
-                {'title': 'When Breath Becomes Air', 'author': 'Paul Kalanithi', 'genre': 'Memoir', 'description': 'A profound reflection on life and death'},
-                {'title': 'The Year of Magical Thinking', 'author': 'Joan Didion', 'genre': 'Memoir', 'description': 'Processing grief and loss'},
-                {'title': 'Tiny Beautiful Things', 'author': 'Cheryl Strayed', 'genre': 'Self-Help', 'description': 'Advice on life and love'},
-                {'title': 'Norwegian Wood', 'author': 'Haruki Murakami', 'genre': 'Fiction', 'description': 'A story of love and melancholy'},
-            ]
-        },
-        {
-            'emotion': 'Tired',
-            'books': [
-                {'title': 'The Little Prince', 'author': 'Antoine de Saint-Exupery', 'genre': 'Fiction', 'description': 'A gentle tale with deep meaning'},
-                {'title': 'Winnie-the-Pooh', 'author': 'A.A. Milne', 'genre': 'Fiction', 'description': 'Comforting adventures in the Hundred Acre Wood'},
-                {'title': 'The House in the Cerulean Sea', 'author': 'TJ Klune', 'genre': 'Fantasy', 'description': 'A cozy, heartwarming fantasy'},
-                {'title': 'Hygge: The Danish Art of Living', 'author': 'Meik Wiking', 'genre': 'Lifestyle', 'description': 'Finding comfort in simple pleasures'},
-            ]
-        },
-        {
-            'emotion': 'Angry',
-            'books': [
-                {'title': 'The Art of War', 'author': 'Sun Tzu', 'genre': 'Philosophy', 'description': 'Ancient wisdom on strategy'},
-                {'title': 'Rage', 'author': 'Bob Woodward', 'genre': 'Non-Fiction', 'description': 'Understanding power and politics'},
-                {'title': 'Anger: Wisdom for Cooling the Flames', 'author': 'Thich Nhat Hanh', 'genre': 'Self-Help', 'description': 'Buddhist approach to managing anger'},
-                {'title': 'The Count of Monte Cristo', 'author': 'Alexandre Dumas', 'genre': 'Classic', 'description': 'An epic tale of revenge and redemption'},
-            ]
-        },
-        {
-            'emotion': 'Stressed',
-            'books': [
-                {'title': 'The Power of Now', 'author': 'Eckhart Tolle', 'genre': 'Self-Help', 'description': 'Living in the present moment'},
-                {'title': 'Wherever You Go, There You Are', 'author': 'Jon Kabat-Zinn', 'genre': 'Self-Help', 'description': 'Mindfulness meditation in everyday life'},
-                {'title': 'The Untethered Soul', 'author': 'Michael Singer', 'genre': 'Self-Help', 'description': 'Journey beyond yourself'},
-                {'title': 'Why Zebras Dont Get Ulcers', 'author': 'Robert Sapolsky', 'genre': 'Science', 'description': 'Understanding stress and health'},
-            ]
-        },
-        {
-            'emotion': 'Neutral',
-            'books': [
-                {'title': 'Sapiens', 'author': 'Yuval Noah Harari', 'genre': 'Non-Fiction', 'description': 'A brief history of humankind'},
-                {'title': 'Thinking, Fast and Slow', 'author': 'Daniel Kahneman', 'genre': 'Psychology', 'description': 'How we make decisions'},
-                {'title': 'Atomic Habits', 'author': 'James Clear', 'genre': 'Self-Help', 'description': 'Tiny changes for remarkable results'},
-                {'title': 'A Short History of Nearly Everything', 'author': 'Bill Bryson', 'genre': 'Science', 'description': 'Exploring the wonders of science'},
-            ]
-        }
-    ]
+    # Books data
+    books = {
+        'Happy': [
+            ('The Alchemist', 'Paulo Coelho', 'Fiction', 'A magical story about following your dreams'),
+            ('Big Magic', 'Elizabeth Gilbert', 'Self-Help', 'Creative living beyond fear'),
+            ('The Happiness Project', 'Gretchen Rubin', 'Self-Help', 'A year-long journey to discover happiness'),
+            ('Yes Please', 'Amy Poehler', 'Memoir', 'Hilarious and inspiring stories'),
+        ],
+        'Sad': [
+            ('When Breath Becomes Air', 'Paul Kalanithi', 'Memoir', 'A profound reflection on life and death'),
+            ('The Year of Magical Thinking', 'Joan Didion', 'Memoir', 'Processing grief and loss'),
+            ('Tiny Beautiful Things', 'Cheryl Strayed', 'Self-Help', 'Advice on life and love'),
+            ('Norwegian Wood', 'Haruki Murakami', 'Fiction', 'A story of love and melancholy'),
+        ],
+        'Tired': [
+            ('The Little Prince', 'Antoine de Saint-Exupery', 'Fiction', 'A gentle tale with deep meaning'),
+            ('Winnie-the-Pooh', 'A.A. Milne', 'Fiction', 'Comforting adventures in the Hundred Acre Wood'),
+            ('The House in the Cerulean Sea', 'TJ Klune', 'Fantasy', 'A cozy, heartwarming fantasy'),
+            ('Hygge: The Danish Art of Living', 'Meik Wiking', 'Lifestyle', 'Finding comfort in simple pleasures'),
+        ],
+        'Angry': [
+            ('The Art of War', 'Sun Tzu', 'Philosophy', 'Ancient wisdom on strategy'),
+            ('Rage', 'Bob Woodward', 'Non-Fiction', 'Understanding power and politics'),
+            ('Anger: Wisdom for Cooling the Flames', 'Thich Nhat Hanh', 'Self-Help', 'Buddhist approach to managing anger'),
+            ('The Count of Monte Cristo', 'Alexandre Dumas', 'Classic', 'An epic tale of revenge and redemption'),
+        ],
+        'Stressed': [
+            ('The Power of Now', 'Eckhart Tolle', 'Self-Help', 'Living in the present moment'),
+            ('Wherever You Go, There You Are', 'Jon Kabat-Zinn', 'Self-Help', 'Mindfulness meditation in everyday life'),
+            ('The Untethered Soul', 'Michael Singer', 'Self-Help', 'Journey beyond yourself'),
+            ('Why Zebras Dont Get Ulcers', 'Robert Sapolsky', 'Science', 'Understanding stress and health'),
+        ],
+        'Neutral': [
+            ('Sapiens', 'Yuval Noah Harari', 'Non-Fiction', 'A brief history of humankind'),
+            ('Thinking, Fast and Slow', 'Daniel Kahneman', 'Psychology', 'How we make decisions'),
+            ('Atomic Habits', 'James Clear', 'Self-Help', 'Tiny changes for remarkable results'),
+            ('A Short History of Nearly Everything', 'Bill Bryson', 'Science', 'Exploring the wonders of science'),
+        ]
+    }
     
-    for emotion_books in book_data:
-        emotion = emotion_objects.get(emotion_books['emotion'])
-        if emotion:
-            for i, book in enumerate(emotion_books['books']):
-                book_rec = BookRecommendation(
-                    emotion_id=emotion.id,
-                    title=book['title'],
-                    author=book['author'],
-                    genre=book['genre'],
-                    description=book['description'],
-                    popularity_score=10.0 - (i * 0.5)
-                )
-                db.session.add(book_rec)
+    for emo_name, book_list in books.items():
+        emo = emo_map.get(emo_name)
+        if emo:
+            for i, (title, author, genre, desc) in enumerate(book_list):
+                db.session.add(BookRecommendation(emotion_id=emo.id, title=title, author=author, genre=genre, description=desc, popularity_score=10.0 - i * 0.5))
     
     db.session.commit()
-    print("Database seeded successfully!")
+    print("Database seeded!")
