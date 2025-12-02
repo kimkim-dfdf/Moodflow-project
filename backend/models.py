@@ -177,6 +177,36 @@ class MusicRecommendation(db.Model):
         }
 
 
+class BookTag(db.Model):
+    __tablename__ = 'book_tags'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    slug = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.Text)
+    color = db.Column(db.String(20), default='#6366f1')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'slug': self.slug,
+            'description': self.description,
+            'color': self.color
+        }
+
+
+class BookTagLink(db.Model):
+    __tablename__ = 'book_tag_links'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    book_id = db.Column(db.Integer, db.ForeignKey('book_recommendations.id'), nullable=False)
+    tag_id = db.Column(db.Integer, db.ForeignKey('book_tags.id'), nullable=False)
+    
+    __table_args__ = (db.UniqueConstraint('book_id', 'tag_id', name='unique_book_tag'),)
+
+
 class BookRecommendation(db.Model):
     __tablename__ = 'book_recommendations'
     
@@ -190,6 +220,7 @@ class BookRecommendation(db.Model):
     popularity_score = db.Column(db.Float, default=0.0)
     
     emotion = db.relationship('Emotion', backref='book_recommendations')
+    tags = db.relationship('BookTag', secondary='book_tag_links', backref='books')
     
     def to_dict(self):
         return {
@@ -201,5 +232,6 @@ class BookRecommendation(db.Model):
             'genre': self.genre,
             'description': self.description,
             'cover_url': self.cover_url,
-            'popularity_score': self.popularity_score
+            'popularity_score': self.popularity_score,
+            'tags': [tag.to_dict() for tag in self.tags] if self.tags else []
         }
