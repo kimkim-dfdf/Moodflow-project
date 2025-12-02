@@ -106,15 +106,15 @@ def calculate_task_score(task, emotion_name):
     if not weights:
         weights = EMOTION_WEIGHTS['Neutral']
     
-    # Category score (40% weight)
+    # Category score (57% weight)
     category = task.category
     if category in weights:
         cat_weight = weights[category]
     else:
         cat_weight = 0.5
-    category_score = cat_weight * 40
+    category_score = cat_weight * 57
     
-    # Priority score (35% weight)
+    # Priority score (43% weight)
     priority_pref = weights.get('priority', 'Medium')
     
     if task.priority == priority_pref:
@@ -126,27 +126,10 @@ def calculate_task_score(task, emotion_name):
         p_score = PRIORITY_SCORES[task.priority]
     else:
         p_score = 2
-    priority_score = p_score * priority_match * 11.67
-    
-    # Urgency score (25% weight)
-    urgency_score = 0
-    if task.due_date:
-        today = datetime.now().date()
-        days_until_due = (task.due_date - today).days
-        
-        if days_until_due <= 0:
-            urgency_score = 25
-        elif days_until_due <= 1:
-            urgency_score = 20
-        elif days_until_due <= 3:
-            urgency_score = 12
-        elif days_until_due <= 7:
-            urgency_score = 5
-        else:
-            urgency_score = 0
+    priority_score = p_score * priority_match * 14.33
     
     # Calculate total score
-    total = category_score + priority_score + urgency_score
+    total = category_score + priority_score
     
     # Keep between 0 and 100
     if total > 100:
