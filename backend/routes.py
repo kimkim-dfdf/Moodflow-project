@@ -16,6 +16,10 @@ def allowed_file(filename):
 def register_routes(app, db):
     from models import User, Task, Emotion, EmotionHistory, MusicRecommendation, BookRecommendation, BookTag, BookTagLink
     
+    # ============================================
+    # AUTH API - 로그인/회원가입 (4개)
+    # ============================================
+    
     @app.route('/api/auth/register', methods=['POST'])
     def register():
         data = request.get_json()
@@ -66,6 +70,10 @@ def register_routes(app, db):
     @login_required
     def get_current_user():
         return jsonify({'user': current_user.to_dict()})
+    
+    # ============================================
+    # EMOTIONS API - 감정 선택/기록 (5개)
+    # ============================================
     
     @app.route('/api/emotions', methods=['GET'])
     def get_emotions():
@@ -126,6 +134,10 @@ def register_routes(app, db):
             return jsonify(entry.to_dict())
         return jsonify(None)
     
+    # ============================================
+    # UPLOAD API - 사진 업로드 (2개)
+    # ============================================
+    
     @app.route('/api/upload/photo', methods=['POST'])
     @login_required
     def upload_photo():
@@ -170,6 +182,10 @@ def register_routes(app, db):
         days = request.args.get('days', 30, type=int)
         stats = EmotionRecommendationEngine.get_emotion_statistics(db, current_user.id, days)
         return jsonify(stats)
+    
+    # ============================================
+    # TASKS API - Task 관리/추천 (5개)
+    # ============================================
     
     @app.route('/api/tasks', methods=['GET'])
     @login_required
@@ -265,6 +281,10 @@ def register_routes(app, db):
         suggestions = EmotionRecommendationEngine.get_suggested_tasks(emotion_name, limit)
         return jsonify(suggestions)
     
+    # ============================================
+    # MUSIC API - 음악 추천 (1개)
+    # ============================================
+    
     @app.route('/api/music/recommendations', methods=['GET'])
     def get_music_recommendations():
         emotion_name = request.args.get('emotion', 'Neutral')
@@ -275,6 +295,10 @@ def register_routes(app, db):
             db, emotion_name, user_id, limit
         )
         return jsonify(recommendations)
+    
+    # ============================================
+    # BOOKS API - 책 추천 (2개)
+    # ============================================
     
     @app.route('/api/books/tags', methods=['GET'])
     def get_book_tags():
@@ -343,6 +367,10 @@ def register_routes(app, db):
         
         return jsonify(result[:limit])
     
+    # ============================================
+    # PROFILE API - 사용자 설정 (2개)
+    # ============================================
+    
     @app.route('/api/user/profile', methods=['GET'])
     @login_required
     def get_profile():
@@ -370,6 +398,10 @@ def register_routes(app, db):
         
         db.session.commit()
         return jsonify(current_user.to_dict())
+    
+    # ============================================
+    # DASHBOARD API - 대시보드 요약 (1개)
+    # ============================================
     
     @app.route('/api/dashboard/summary', methods=['GET'])
     @login_required
