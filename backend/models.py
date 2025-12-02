@@ -45,17 +45,13 @@ class Emotion(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     emoji = db.Column(db.String(10), nullable=False)
     color = db.Column(db.String(20), nullable=False)
-    energy_level = db.Column(db.Integer, default=5)
-    focus_level = db.Column(db.Integer, default=5)
     
     def to_dict(self):
         return {
             'id': self.id,
             'name': self.name,
             'emoji': self.emoji,
-            'color': self.color,
-            'energy_level': self.energy_level,
-            'focus_level': self.focus_level
+            'color': self.color
         }
 
 
