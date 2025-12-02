@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { User, Mail, Clock, Save, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { format } from 'date-fns';
 
 const EMOTION_COLORS = {
   'Happy': '#FFD93D',
@@ -21,7 +20,6 @@ const Profile = () => {
   const { user, setUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [emotionHistory, setEmotionHistory] = useState([]);
   const [emotionStats, setEmotionStats] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -46,12 +44,8 @@ const Profile = () => {
 
   const fetchEmotionData = async () => {
     try {
-      const [historyRes, statsRes] = await Promise.all([
-        api.get('/emotions/history', { params: { days: 30 } }),
-        api.get('/emotions/statistics', { params: { days: 30 } })
-      ]);
-      setEmotionHistory(historyRes.data);
-      setEmotionStats(statsRes.data);
+      const response = await api.get('/emotions/statistics', { params: { days: 30 } });
+      setEmotionStats(response.data);
     } catch (error) {
       console.error('Failed to fetch emotion data:', error);
     }
@@ -216,34 +210,6 @@ const Profile = () => {
           )}
         </section>
 
-        <section className="card recent-emotions">
-          <h2>Recent Emotions</h2>
-          {emotionHistory.length > 0 ? (
-            <div className="emotion-list">
-              {emotionHistory.slice(0, 10).map((entry) => (
-                <div key={entry.id} className="emotion-entry">
-                  <span 
-                    className="emotion-badge"
-                    style={{ backgroundColor: entry.emotion?.color }}
-                  >
-                    {entry.emotion?.emoji}
-                  </span>
-                  <div className="emotion-details">
-                    <span className="emotion-name">{entry.emotion?.name}</span>
-                    <span className="emotion-date">
-                      {format(new Date(entry.date), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                  {entry.notes && (
-                    <p className="emotion-notes">{entry.notes}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="empty-state">No emotions recorded yet.</p>
-          )}
-        </section>
       </div>
     </div>
   );
