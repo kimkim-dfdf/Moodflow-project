@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { User, Mail, Clock, Bell, Save, TrendingUp } from 'lucide-react';
+import { User, Mail, Clock, Save, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { format, subDays } from 'date-fns';
 
@@ -27,8 +27,7 @@ const Profile = () => {
   const [formData, setFormData] = useState({
     username: user?.username || '',
     preferred_work_time: user?.preferred_work_time || 'morning',
-    preferred_categories: user?.preferred_categories || [],
-    notification_enabled: user?.notification_enabled ?? true
+    preferred_categories: user?.preferred_categories || []
   });
 
   useEffect(() => {
@@ -40,8 +39,7 @@ const Profile = () => {
       setFormData({
         username: user.username || '',
         preferred_work_time: user.preferred_work_time || 'morning',
-        preferred_categories: user.preferred_categories || [],
-        notification_enabled: user.notification_enabled ?? true
+        preferred_categories: user.preferred_categories || []
       });
     }
   }, [user]);
@@ -173,18 +171,6 @@ const Profile = () => {
                 ))}
               </div>
               <small>Selected categories will be prioritized in recommendations</small>
-            </div>
-
-            <div className="form-group checkbox-group">
-              <input
-                type="checkbox"
-                id="notifications"
-                checked={formData.notification_enabled}
-                onChange={(e) => setFormData({ ...formData, notification_enabled: e.target.checked })}
-              />
-              <label htmlFor="notifications">
-                <Bell size={16} /> Enable notifications
-              </label>
             </div>
 
             <button type="submit" className="btn-primary" disabled={loading}>
