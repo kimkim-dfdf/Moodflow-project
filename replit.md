@@ -1,7 +1,7 @@
 # MoodFlow - Emotion-Based Productivity Dashboard
 
 ## Overview
-MoodFlow is a modern web application that helps users track their emotional state and receive personalized task and music recommendations based on their current mood. Built with React frontend and Python Flask backend.
+MoodFlow is a modern web application that helps users track their emotional state and receive personalized task, music, and book recommendations based on their current mood. Built with React frontend and Python Flask backend.
 
 ## Project Architecture
 
@@ -16,7 +16,7 @@ MoodFlow is a modern web application that helps users track their emotional stat
 - **Key Technologies**: Flask, SQLAlchemy, Flask-Login, Flask-CORS
 
 ### Database (PostgreSQL)
-- Tables: users, tasks, emotions, emotion_history, calendar_events, music_recommendations
+- Tables: users, tasks, emotions, emotion_history, calendar_events, music_recommendations, book_recommendations
 - Uses SQLAlchemy ORM for database operations
 
 ## Key Features
@@ -25,7 +25,8 @@ MoodFlow is a modern web application that helps users track their emotional stat
 - User greeting with current date
 - Emotion selection (Happy, Sad, Tired, Angry, Stressed, Neutral)
 - Personalized task recommendations based on mood
-- Music recommendations with YouTube/Spotify links
+- Music recommendations with YouTube links
+- Book recommendations based on mood
 - Mini calendar with emotion tracking
 - Weekly mood statistics chart
 
@@ -42,7 +43,13 @@ MoodFlow is a modern web application that helps users track their emotional stat
 - Record emotions for any day
 - Visual emotion indicators on calendar
 
-### 4. Profile
+### 4. Books
+- Dedicated page for book recommendations
+- Filter by emotion/mood
+- 24 curated books across 6 emotions
+- Book details: title, author, genre, description
+
+### 5. Profile
 - User settings management
 - Preferred work time configuration
 - Category preferences
@@ -85,19 +92,28 @@ The app uses a weighted scoring system that considers:
 - PUT `/api/calendar/events/:id` - Update event
 - DELETE `/api/calendar/events/:id` - Delete event
 
+### Books
+- GET `/api/books/recommendations` - Get book recommendations (params: emotion, limit)
+
 ### Profile
 - GET `/api/user/profile` - Get profile
 - PUT `/api/user/profile` - Update profile
 - GET `/api/dashboard/summary` - Get dashboard summary
 
 ## Recent Changes
+- December 2, 2025: Added book recommendations feature
+  - Created BookRecommendation model with 24 books (4 per emotion)
+  - Added /api/books/recommendations endpoint
+  - Created BookCard component and Books page
+  - Added Books to navigation (now 5 pages)
+  - Integrated book recommendations into Dashboard
 - December 1, 2025: Initial project setup with complete MVP features
 - Implemented emotion-based recommendation engine
 - Created all 4 main pages: Dashboard, Tasks, Calendar, Profile
-- Added music recommendations with external links
+- Added music recommendations with YouTube links
 - Implemented responsive design
 
 ## User Preferences
 - Clean, minimal interface preferred
 - Soft colors and rounded cards
-- Left-side navigation with 4 menu items only
+- Left-side navigation with 5 menu items (Dashboard, Tasks, Calendar, Books, Profile)
