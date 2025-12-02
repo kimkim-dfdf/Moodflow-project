@@ -330,6 +330,23 @@ def register_routes(app, db):
         )
         return jsonify(recommendations)
     
+    @app.route('/api/books/recommendations', methods=['GET'])
+    def get_book_recommendations():
+        from models import Emotion, BookRecommendation
+        
+        emotion_name = request.args.get('emotion', 'Neutral')
+        limit = request.args.get('limit', 4, type=int)
+        
+        emotion = Emotion.query.filter_by(name=emotion_name).first()
+        if not emotion:
+            return jsonify([])
+        
+        books = BookRecommendation.query.filter_by(
+            emotion_id=emotion.id
+        ).order_by(BookRecommendation.popularity_score.desc()).limit(limit).all()
+        
+        return jsonify([b.to_dict() for b in books])
+    
     @app.route('/api/calendar/events', methods=['GET'])
     @login_required
     def get_calendar_events():
