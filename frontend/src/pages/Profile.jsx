@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { User, Mail, Clock, Save, TrendingUp } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { format, subDays } from 'date-fns';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { format } from 'date-fns';
 
 const EMOTION_COLORS = {
   'Happy': '#FFD93D',
@@ -88,17 +88,6 @@ const Profile = () => {
         color: EMOTION_COLORS[name] || '#95A5A6'
       }))
     : [];
-
-  const lineData = Array.from({ length: 14 }, (_, i) => {
-    const date = subDays(new Date(), 13 - i);
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const entry = emotionHistory.find(h => h.date === dateStr);
-    return {
-      date: format(date, 'MMM d'),
-      emotion: entry?.emotion?.name || null,
-      score: entry?.emotion?.energy_level || 5
-    };
-  });
 
   return (
     <div className="profile-page">
@@ -219,24 +208,6 @@ const Profile = () => {
                 </ResponsiveContainer>
               </div>
 
-              <div className="chart-container">
-                <h3>Energy Level Trend (Last 14 Days)</h3>
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={lineData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" fontSize={12} />
-                    <YAxis domain={[0, 10]} fontSize={12} />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="score" 
-                      stroke="#6366f1" 
-                      strokeWidth={2}
-                      dot={{ fill: '#6366f1' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
             </>
           ) : (
             <div className="empty-state">
