@@ -376,25 +376,88 @@ def register_routes(app, db):
                 .all()
             return jsonify([b.to_dict() for b in books])
         
-        tag_ids = [t.id for t in BookTag.query.filter(BookTag.slug.in_(tag_slugs)).all()]
+        selected_tags = BookTag.query.filter(BookTag.slug.in_(tag_slugs)).all()
+        tag_ids = [t.id for t in selected_tags]
         
         if not tag_ids:
             return jsonify([])
         
-        book_ids = db.session.query(BookTagLink.book_id)\
-            .filter(BookTagLink.tag_id.in_(tag_ids))\
-            .group_by(BookTagLink.book_id)\
-            .all()
+        # Jaccard-style matching: count how many selected tags each book has
+        book_match_counts = db.session.query(
+            BookTagLink.book_id,
+            db.func.count(BookTagLink.tag_id).label('match_count')
+        ).filter(BookTagLink.tag_id.in_(tag_ids))\
+         .group_by(BookTagLink.book_id)\
+         .all()
         
-        book_ids = [b[0] for b in book_ids]
+        book_scores = {book_id: count for book_id, count in book_match_counts}
+        book_ids = list(book_scores.keys())
         
         books = BookRecommendation.query\
             .filter(BookRecommendation.id.in_(book_ids))\
-            .order_by(BookRecommendation.popularity_score.desc())\
-            .limit(limit)\
             .all()
         
-        return jsonify([b.to_dict() for b in books])
+        # Calculate match score and sort by it
+        total_selected = len(tag_slugs)
+        result = []
+        for book in books:
+            book_dict = book.to_dict()
+            match_count = book_scores.get(book.id, 0)
+            book_tags_count = len(book_dict.get('tags', []))
+            # Jaccard similarity: intersection / union
+            union = total_selected + book_tags_count - match_count
+            jaccard_score = match_count / union if union > 0 else 0
+            book_dict['match_count'] = match_count
+            book_dict['total_selected'] = total_selected
+            book_dict['match_score'] = round(jaccard_score * 100)
+            result.append(book_dict)
+        
+        # Sort by match_count (desc), then by popularity_score (desc)
+        result.sort(key=lambda x: (-x['match_count'], -x.get('popularity_score', 0)))
+        
+        return jsonify(result[:limit])
+    
+    @app.route('/api/books/related-tags', methods=['GET'])
+    def get_related_tags():
+        # Get tags that co-occur with selected tags (Tag Co-occurrence Algorithm)
+        tag_slugs = request.args.getlist('tags') or request.args.getlist('tags[]')
+        
+        if not tag_slugs:
+            return jsonify([])
+        
+        selected_tags = BookTag.query.filter(BookTag.slug.in_(tag_slugs)).all()
+        selected_tag_ids = [t.id for t in selected_tags]
+        
+        if not selected_tag_ids:
+            return jsonify([])
+        
+        # Find books that have the selected tags
+        books_with_tags = db.session.query(BookTagLink.book_id)\
+            .filter(BookTagLink.tag_id.in_(selected_tag_ids))\
+            .distinct().all()
+        book_ids = [b[0] for b in books_with_tags]
+        
+        if not book_ids:
+            return jsonify([])
+        
+        # Find other tags that appear in these books (co-occurrence)
+        co_occurring = db.session.query(
+            BookTag,
+            db.func.count(BookTagLink.book_id).label('co_count')
+        ).join(BookTagLink, BookTag.id == BookTagLink.tag_id)\
+         .filter(BookTagLink.book_id.in_(book_ids))\
+         .filter(~BookTag.id.in_(selected_tag_ids))\
+         .group_by(BookTag.id)\
+         .order_by(db.func.count(BookTagLink.book_id).desc())\
+         .limit(5).all()
+        
+        result = []
+        for tag, count in co_occurring:
+            tag_dict = tag.to_dict()
+            tag_dict['co_occurrence_count'] = count
+            result.append(tag_dict)
+        
+        return jsonify(result)
     
     @app.route('/api/calendar/events', methods=['GET'])
     @login_required

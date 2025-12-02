@@ -46,7 +46,10 @@ MoodFlow is a modern web application that helps users track their emotional stat
 ### 4. Books
 - Dedicated page for book recommendations
 - **Tag-based filtering with 10 emotion tags** (Hopeful, Comforting, Peaceful, Growth, Emotional, Escapism, Recharge, Courage, New Perspective, Focus)
+- **Jaccard Similarity Algorithm**: Books scored by tag match percentage
+- **Tag Co-occurrence Algorithm**: Suggests related tags based on frequently paired tags
 - Multi-select tag chips UI for refined book discovery
+- Match score badge showing relevance percentage
 - 15 curated books with 3 tags each
 - Book details: title, author, genre, description, associated tags
 
