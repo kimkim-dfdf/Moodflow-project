@@ -30,7 +30,7 @@ def create_app():
     login_manager.init_app(app)
     
     with app.app_context():
-        from models import User, Emotion, EmotionHistory, Task, CalendarEvent, MusicRecommendation
+        from models import User, Emotion, EmotionHistory, Task, MusicRecommendation
         
         @login_manager.user_loader
         def load_user(user_id):

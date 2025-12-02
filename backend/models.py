@@ -19,7 +19,6 @@ class User(UserMixin, db.Model):
     
     tasks = db.relationship('Task', backref='user', lazy=True, cascade='all, delete-orphan')
     emotions = db.relationship('EmotionHistory', backref='user', lazy=True, cascade='all, delete-orphan')
-    events = db.relationship('CalendarEvent', backref='user', lazy=True, cascade='all, delete-orphan')
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -121,33 +120,6 @@ class Task(db.Model):
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
             'recommended_for_emotion': self.recommended_for_emotion,
             'emotion_score': self.emotion_score
-        }
-
-
-class CalendarEvent(db.Model):
-    __tablename__ = 'calendar_events'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text)
-    start_date = db.Column(db.DateTime, nullable=False)
-    end_date = db.Column(db.DateTime)
-    all_day = db.Column(db.Boolean, default=False)
-    color = db.Column(db.String(20), default='#6366f1')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'title': self.title,
-            'description': self.description,
-            'start_date': self.start_date.isoformat() if self.start_date else None,
-            'end_date': self.end_date.isoformat() if self.end_date else None,
-            'all_day': self.all_day,
-            'color': self.color,
-            'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
 

@@ -14,7 +14,7 @@ def allowed_file(filename):
 
 
 def register_routes(app, db):
-    from models import User, Task, Emotion, EmotionHistory, CalendarEvent, MusicRecommendation, BookRecommendation, BookTag, BookTagLink
+    from models import User, Task, Emotion, EmotionHistory, MusicRecommendation, BookRecommendation, BookTag, BookTagLink
     
     @app.route('/api/auth/register', methods=['POST'])
     def register():
@@ -155,19 +155,6 @@ def register_routes(app, db):
     def serve_upload(filename):
         return send_from_directory(UPLOAD_FOLDER, filename)
     
-    @app.route('/api/emotions/today', methods=['GET'])
-    @login_required
-    def get_today_emotion():
-        today = datetime.now().date()
-        entry = EmotionHistory.query.filter_by(
-            user_id=current_user.id,
-            date=today
-        ).first()
-        
-        if entry:
-            return jsonify(entry.to_dict())
-        return jsonify(None)
-    
     @app.route('/api/emotions/history', methods=['GET'])
     @login_required
     def get_emotion_history():
@@ -187,8 +174,6 @@ def register_routes(app, db):
     @app.route('/api/tasks', methods=['GET'])
     @login_required
     def get_tasks():
-        status = request.args.get('status')
-        category = request.args.get('category')
         date_str = request.args.get('date')
         
         query = Task.query.filter_by(user_id=current_user.id)
@@ -196,14 +181,6 @@ def register_routes(app, db):
         if date_str:
             task_date = datetime.strptime(date_str, '%Y-%m-%d').date()
             query = query.filter_by(task_date=task_date)
-        
-        if status == 'completed':
-            query = query.filter_by(is_completed=True)
-        elif status == 'incomplete':
-            query = query.filter_by(is_completed=False)
-        
-        if category:
-            query = query.filter_by(category=category)
         
         tasks = query.order_by(Task.created_at.desc()).all()
         return jsonify([t.to_dict() for t in tasks])
@@ -247,14 +224,6 @@ def register_routes(app, db):
         
         return jsonify(task.to_dict()), 201
     
-    @app.route('/api/tasks/<int:task_id>', methods=['GET'])
-    @login_required
-    def get_task(task_id):
-        task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
-        if not task:
-            return jsonify({'error': 'Task not found'}), 404
-        return jsonify(task.to_dict())
-    
     @app.route('/api/tasks/<int:task_id>', methods=['PUT'])
     @login_required
     def update_task(task_id):
@@ -285,17 +254,6 @@ def register_routes(app, db):
         
         db.session.commit()
         return jsonify(task.to_dict())
-    
-    @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
-    @login_required
-    def delete_task(task_id):
-        task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
-        if not task:
-            return jsonify({'error': 'Task not found'}), 404
-        
-        db.session.delete(task)
-        db.session.commit()
-        return jsonify({'message': 'Task deleted successfully'})
     
     @app.route('/api/tasks/recommended', methods=['GET'])
     @login_required
@@ -333,21 +291,6 @@ def register_routes(app, db):
         )
         return jsonify(recommendations)
     
-    @app.route('/api/books/recommendations', methods=['GET'])
-    def get_book_recommendations():
-        emotion_name = request.args.get('emotion', 'Neutral')
-        limit = request.args.get('limit', 4, type=int)
-        
-        emotion = Emotion.query.filter_by(name=emotion_name).first()
-        if not emotion:
-            return jsonify([])
-        
-        books = BookRecommendation.query.filter_by(
-            emotion_id=emotion.id
-        ).order_by(BookRecommendation.popularity_score.desc()).limit(limit).all()
-        
-        return jsonify([b.to_dict() for b in books])
-    
     @app.route('/api/books/tags', methods=['GET'])
     def get_book_tags():
         tags = db.session.query(
@@ -368,7 +311,6 @@ def register_routes(app, db):
     
     @app.route('/api/books', methods=['GET'])
     def get_books_by_tags():
-        # Handle both 'tags' and 'tags[]' formats (axios sends tags[]=value)
         tag_slugs = request.args.getlist('tags') or request.args.getlist('tags[]')
         limit = request.args.get('limit', 24, type=int)
         
@@ -385,7 +327,6 @@ def register_routes(app, db):
         if not tag_ids:
             return jsonify([])
         
-        # Jaccard-style matching: count how many selected tags each book has
         book_match_counts = db.session.query(
             BookTagLink.book_id,
             db.func.count(BookTagLink.tag_id).label('match_count')
@@ -400,14 +341,12 @@ def register_routes(app, db):
             .filter(BookRecommendation.id.in_(book_ids))\
             .all()
         
-        # Calculate match score and sort by it
         total_selected = len(tag_slugs)
         result = []
         for book in books:
             book_dict = book.to_dict()
             match_count = book_scores.get(book.id, 0)
             book_tags_count = len(book_dict.get('tags', []))
-            # Jaccard similarity: intersection / union
             union = total_selected + book_tags_count - match_count
             jaccard_score = match_count / union if union > 0 else 0
             book_dict['match_count'] = match_count
@@ -415,91 +354,9 @@ def register_routes(app, db):
             book_dict['match_score'] = round(jaccard_score * 100)
             result.append(book_dict)
         
-        # Sort by match_count (desc), then by popularity_score (desc)
         result.sort(key=lambda x: (-x['match_count'], -x.get('popularity_score', 0)))
         
         return jsonify(result[:limit])
-    
-    @app.route('/api/calendar/events', methods=['GET'])
-    @login_required
-    def get_calendar_events():
-        month = request.args.get('month', type=int)
-        year = request.args.get('year', type=int)
-        
-        query = CalendarEvent.query.filter_by(user_id=current_user.id)
-        
-        if month and year:
-            start_date = datetime(year, month, 1)
-            if month == 12:
-                end_date = datetime(year + 1, 1, 1)
-            else:
-                end_date = datetime(year, month + 1, 1)
-            query = query.filter(
-                CalendarEvent.start_date >= start_date,
-                CalendarEvent.start_date < end_date
-            )
-        
-        events = query.order_by(CalendarEvent.start_date).all()
-        return jsonify([e.to_dict() for e in events])
-    
-    @app.route('/api/calendar/events', methods=['POST'])
-    @login_required
-    def create_calendar_event():
-        data = request.get_json()
-        
-        if not data or not data.get('title') or not data.get('start_date'):
-            return jsonify({'error': 'Title and start date are required'}), 400
-        
-        event = CalendarEvent(
-            user_id=current_user.id,
-            title=data['title'],
-            description=data.get('description'),
-            start_date=datetime.fromisoformat(data['start_date'].replace('Z', '+00:00')),
-            end_date=datetime.fromisoformat(data['end_date'].replace('Z', '+00:00')) if data.get('end_date') else None,
-            all_day=data.get('all_day', False),
-            color=data.get('color', '#6366f1')
-        )
-        
-        db.session.add(event)
-        db.session.commit()
-        
-        return jsonify(event.to_dict()), 201
-    
-    @app.route('/api/calendar/events/<int:event_id>', methods=['PUT'])
-    @login_required
-    def update_calendar_event(event_id):
-        event = CalendarEvent.query.filter_by(id=event_id, user_id=current_user.id).first()
-        if not event:
-            return jsonify({'error': 'Event not found'}), 404
-        
-        data = request.get_json()
-        
-        if 'title' in data:
-            event.title = data['title']
-        if 'description' in data:
-            event.description = data['description']
-        if 'start_date' in data:
-            event.start_date = datetime.fromisoformat(data['start_date'].replace('Z', '+00:00'))
-        if 'end_date' in data:
-            event.end_date = datetime.fromisoformat(data['end_date'].replace('Z', '+00:00')) if data['end_date'] else None
-        if 'all_day' in data:
-            event.all_day = data['all_day']
-        if 'color' in data:
-            event.color = data['color']
-        
-        db.session.commit()
-        return jsonify(event.to_dict())
-    
-    @app.route('/api/calendar/events/<int:event_id>', methods=['DELETE'])
-    @login_required
-    def delete_calendar_event(event_id):
-        event = CalendarEvent.query.filter_by(id=event_id, user_id=current_user.id).first()
-        if not event:
-            return jsonify({'error': 'Event not found'}), 404
-        
-        db.session.delete(event)
-        db.session.commit()
-        return jsonify({'message': 'Event deleted successfully'})
     
     @app.route('/api/user/profile', methods=['GET'])
     @login_required
