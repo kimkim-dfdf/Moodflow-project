@@ -1,7 +1,31 @@
 import { useState, useEffect, useRef } from 'react';
-import BookCard from '../components/BookCard';
 import api from '../api/axios';
 import { BookOpen, X } from 'lucide-react';
+
+const BookCard = ({ book, showTags = false }) => (
+  <div className="book-card">
+    <div className="book-icon">
+      <BookOpen size={24} />
+    </div>
+    <div className="book-info">
+      <h4 className="book-title">{book.title}</h4>
+      <p className="book-author">{book.author}</p>
+      <span className="book-genre">{book.genre}</span>
+      {book.description && (
+        <p className="book-description">{book.description}</p>
+      )}
+      {showTags && book.tags && book.tags.length > 0 && (
+        <div className="book-tags">
+          {book.tags.map((tag) => (
+            <span key={tag.id} className="book-tag-pill">
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+);
 
 const Books = () => {
   const [selectedTags, setSelectedTags] = useState([]);
