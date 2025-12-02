@@ -115,18 +115,26 @@ def calculate_task_score(task, emotion_name):
     category_score = cat_weight * 57
     
     # Priority score (43% weight)
+    # Score is based on emotion's preferred priority
     priority_pref = weights.get('priority', 'Medium')
     
-    if task.priority == priority_pref:
-        priority_match = 1.0
+    # Create priority scores based on emotion preference
+    # The preferred priority gets 3 points, others get less
+    if priority_pref == 'High':
+        # Happy, energetic - prefer difficult tasks
+        priority_values = {'High': 3, 'Medium': 2, 'Low': 1}
+    elif priority_pref == 'Low':
+        # Tired, sad - prefer easy tasks
+        priority_values = {'Low': 3, 'Medium': 2, 'High': 1}
     else:
-        priority_match = 0.7
+        # Neutral, angry, stressed - prefer medium tasks
+        priority_values = {'Medium': 3, 'High': 2, 'Low': 2}
     
-    if task.priority in PRIORITY_SCORES:
-        p_score = PRIORITY_SCORES[task.priority]
+    if task.priority in priority_values:
+        p_score = priority_values[task.priority]
     else:
         p_score = 2
-    priority_score = p_score * priority_match * 14.33
+    priority_score = p_score * 14.33
     
     # Calculate total score
     total = category_score + priority_score
