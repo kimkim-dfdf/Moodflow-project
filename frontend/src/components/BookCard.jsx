@@ -1,21 +1,13 @@
 import { BookOpen } from 'lucide-react';
 
-const BookCard = ({ book, showTags = false, showScore = false }) => {
+const BookCard = ({ book, showTags = false }) => {
   return (
     <div className="book-card">
       <div className="book-icon">
         <BookOpen size={24} />
       </div>
       <div className="book-info">
-        <div className="book-header">
-          <h4 className="book-title">{book.title}</h4>
-          {showScore && book.match_score !== undefined && (
-            <div className="match-score-badge">
-              <span className="match-score">{book.match_score}%</span>
-              <span className="match-label">match</span>
-            </div>
-          )}
-        </div>
+        <h4 className="book-title">{book.title}</h4>
         <p className="book-author">{book.author}</p>
         <span className="book-genre">{book.genre}</span>
         {book.description && (

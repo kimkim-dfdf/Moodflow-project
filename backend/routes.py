@@ -336,36 +336,19 @@ def register_routes(app, db):
         if not tag_ids:
             return jsonify([])
         
-        book_match_counts = db.session.query(
-            BookTagLink.book_id,
-            db.func.count(BookTagLink.tag_id).label('match_count')
-        ).filter(BookTagLink.tag_id.in_(tag_ids))\
-         .group_by(BookTagLink.book_id)\
-         .all()
-        
-        book_scores = {book_id: count for book_id, count in book_match_counts}
-        book_ids = list(book_scores.keys())
+        book_ids = db.session.query(BookTagLink.book_id)\
+            .filter(BookTagLink.tag_id.in_(tag_ids))\
+            .distinct()\
+            .all()
+        book_ids = [b[0] for b in book_ids]
         
         books = BookRecommendation.query\
             .filter(BookRecommendation.id.in_(book_ids))\
+            .order_by(BookRecommendation.popularity_score.desc())\
+            .limit(limit)\
             .all()
         
-        total_selected = len(tag_slugs)
-        result = []
-        for book in books:
-            book_dict = book.to_dict()
-            match_count = book_scores.get(book.id, 0)
-            book_tags_count = len(book_dict.get('tags', []))
-            union = total_selected + book_tags_count - match_count
-            jaccard_score = match_count / union if union > 0 else 0
-            book_dict['match_count'] = match_count
-            book_dict['total_selected'] = total_selected
-            book_dict['match_score'] = round(jaccard_score * 100)
-            result.append(book_dict)
-        
-        result.sort(key=lambda x: (-x['match_count'], -x.get('popularity_score', 0)))
-        
-        return jsonify(result[:limit])
+        return jsonify([b.to_dict() for b in books])
     
     # ============================================
     # PROFILE API - 사용자 설정 (2개)

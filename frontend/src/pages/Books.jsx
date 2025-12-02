@@ -121,7 +121,7 @@ const Books = () => {
             <>
               <div className="books-result-info">
                 {selectedTags.length > 0 
-                  ? `${books.length} books matching selected tags (sorted by relevance)`
+                  ? `${books.length} books found`
                   : `All ${books.length} books`
                 }
               </div>
@@ -130,8 +130,7 @@ const Books = () => {
                   <BookCard 
                     key={book.id} 
                     book={book} 
-                    showTags={true} 
-                    showScore={selectedTags.length > 0}
+                    showTags={true}
                   />
                 ))}
               </div>
