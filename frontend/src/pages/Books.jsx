@@ -1,60 +1,61 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect, useRef } from 'react';
 import BookCard from '../components/BookCard';
 import api from '../api/axios';
 import { BookOpen, X } from 'lucide-react';
 
 const Books = () => {
-  const { user } = useAuth();
   const [selectedTags, setSelectedTags] = useState([]);
   const [books, setBooks] = useState([]);
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
+  const fetchIdRef = useRef(0);
 
   useEffect(() => {
-    fetchTags();
+    const init = async () => {
+      try {
+        const res = await api.get('/books/tags');
+        setTags(res.data);
+      } catch (err) {
+        console.error('Failed to fetch tags:', err);
+      }
+      fetchBooks([]);
+    };
+    init();
   }, []);
 
-  useEffect(() => {
-    fetchBooks();
-  }, [selectedTags]);
-
-  const fetchTags = async () => {
-    try {
-      const res = await api.get('/books/tags');
-      setTags(res.data);
-    } catch (err) {
-      console.error('Failed to fetch tags:', err);
-    }
-  };
-
-  const fetchBooks = async () => {
+  const fetchBooks = async (tagList) => {
+    const fetchId = ++fetchIdRef.current;
     setLoading(true);
     try {
       let url = '/books';
-      if (selectedTags.length > 0) {
-        const tagParams = selectedTags.map(t => `tags=${t}`).join('&');
+      if (tagList.length > 0) {
+        const tagParams = tagList.map(t => `tags=${t}`).join('&');
         url = `/books?${tagParams}`;
       }
       const res = await api.get(url);
-      setBooks(res.data);
+      if (fetchId === fetchIdRef.current) {
+        setBooks(res.data);
+      }
     } catch (err) {
       console.error('Failed to fetch books:', err);
     } finally {
-      setLoading(false);
+      if (fetchId === fetchIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   const toggleTag = (slug) => {
-    setSelectedTags(prev => 
-      prev.includes(slug) 
-        ? prev.filter(t => t !== slug)
-        : [...prev, slug]
-    );
+    const newTags = selectedTags.includes(slug)
+      ? selectedTags.filter(t => t !== slug)
+      : [...selectedTags, slug];
+    setSelectedTags(newTags);
+    fetchBooks(newTags);
   };
 
   const clearAllTags = () => {
     setSelectedTags([]);
+    fetchBooks([]);
   };
 
   const getSelectedTagNames = () => {
