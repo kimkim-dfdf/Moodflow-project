@@ -368,9 +368,6 @@ def register_routes(app, db):
             else:
                 current_user.preferred_categories = data['preferred_categories']
         
-        if 'notification_enabled' in data:
-            current_user.notification_enabled = data['notification_enabled']
-        
         db.session.commit()
         return jsonify(current_user.to_dict())
     
