@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { User, Mail, Clock, Save, TrendingUp } from 'lucide-react';
+import { User, Mail, Save, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const EMOTION_COLORS = {
@@ -14,7 +14,6 @@ const EMOTION_COLORS = {
 };
 
 const CATEGORIES = ['Work', 'Study', 'Health', 'Personal'];
-const WORK_TIMES = ['morning', 'afternoon', 'evening', 'night'];
 
 const Profile = () => {
   const { user, setUser } = useAuth();
@@ -24,7 +23,6 @@ const Profile = () => {
 
   const [formData, setFormData] = useState({
     username: user?.username || '',
-    preferred_work_time: user?.preferred_work_time || 'morning',
     preferred_categories: user?.preferred_categories || []
   });
 
@@ -36,7 +34,6 @@ const Profile = () => {
     if (user) {
       setFormData({
         username: user.username || '',
-        preferred_work_time: user.preferred_work_time || 'morning',
         preferred_categories: user.preferred_categories || []
       });
     }
@@ -122,21 +119,6 @@ const Profile = () => {
                 className="disabled"
               />
               <small>Email cannot be changed</small>
-            </div>
-
-            <div className="form-group">
-              <label><Clock size={16} /> Preferred Work Time</label>
-              <select
-                value={formData.preferred_work_time}
-                onChange={(e) => setFormData({ ...formData, preferred_work_time: e.target.value })}
-              >
-                {WORK_TIMES.map(time => (
-                  <option key={time} value={time}>
-                    {time.charAt(0).toUpperCase() + time.slice(1)}
-                  </option>
-                ))}
-              </select>
-              <small>Tasks will be prioritized based on your preferred work time</small>
             </div>
 
             <div className="form-group">
