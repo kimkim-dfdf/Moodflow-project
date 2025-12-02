@@ -3,84 +3,118 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isTod
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../api/axios';
 
-const MiniCalendar = ({ onDateSelect, selectedDate }) => {
+function MiniCalendar({ onDateSelect, selectedDate }) {
   const [currentDate, setCurrentDate] = useState(selectedDate || new Date());
   const [emotionData, setEmotionData] = useState({});
 
   useEffect(() => {
-    fetchEmotionData();
+    api.get('/emotions/statistics', { params: { days: 30 } })
+      .then(response => {
+        setEmotionData(response.data.daily_emotions || {});
+      })
+      .catch(error => {
+        console.error('Failed to fetch emotion data:', error);
+      });
   }, [currentDate]);
 
-  const fetchEmotionData = async () => {
-    try {
-      const response = await api.get('/emotions/statistics', {
-        params: { days: 30 }
-      });
-      setEmotionData(response.data.daily_emotions || {});
-    } catch (error) {
-      console.error('Failed to fetch emotion data:', error);
+  const today = new Date();
+  
+  function isFutureDate(date) {
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return dateStart > todayStart;
+  }
+
+  function isCurrentMonth() {
+    return currentDate.getMonth() === today.getMonth() && 
+           currentDate.getFullYear() === today.getFullYear();
+  }
+
+  function goToPrevMonth() {
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+    setCurrentDate(newDate);
+  }
+
+  function goToNextMonth() {
+    if (!isCurrentMonth()) {
+      const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
+      setCurrentDate(newDate);
     }
-  };
+  }
+
+  function handleDayClick(day) {
+    if (!isFutureDate(day) && onDateSelect) {
+      onDateSelect(day);
+    }
+  }
+
+  function getDayClassName(day) {
+    let className = 'calendar-day';
+    
+    if (!isSameMonth(day, currentDate)) {
+      className = className + ' other-month';
+    }
+    if (isToday(day)) {
+      className = className + ' today';
+    }
+    if (selectedDate && isSameDay(day, selectedDate)) {
+      className = className + ' selected';
+    }
+    if (isFutureDate(day)) {
+      className = className + ' future-date';
+    }
+    
+    return className;
+  }
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart);
   const calendarEnd = endOfWeek(monthEnd);
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-
-  const today = new Date();
-  const isCurrentMonth = currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
-
-  const isFutureDate = (date) => {
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    return dateStart > todayStart;
-  };
-
-  const prevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
-  };
-
-  const nextMonth = () => {
-    if (!isCurrentMonth) {
-      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
-    }
-  };
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
     <div className="mini-calendar">
       <div className="calendar-header">
-        <button onClick={prevMonth} className="nav-btn">
+        <button onClick={goToPrevMonth} className="nav-btn">
           <ChevronLeft size={18} />
         </button>
         <h3>{format(currentDate, 'MMMM yyyy')}</h3>
         <button 
-          onClick={nextMonth} 
-          className={`nav-btn ${isCurrentMonth ? 'disabled' : ''}`}
-          disabled={isCurrentMonth}
+          onClick={goToNextMonth} 
+          className={isCurrentMonth() ? 'nav-btn disabled' : 'nav-btn'}
+          disabled={isCurrentMonth()}
         >
           <ChevronRight size={18} />
         </button>
       </div>
 
       <div className="calendar-weekdays">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div key={day} className="weekday">{day}</div>
-        ))}
+        {weekdays.map(function(day) {
+          return <div key={day} className="weekday">{day}</div>;
+        })}
       </div>
 
       <div className="calendar-grid">
-        {days.map(day => {
+        {days.map(function(day) {
           const dateStr = format(day, 'yyyy-MM-dd');
           const emotion = emotionData[dateStr];
           const isFuture = isFutureDate(day);
           
+          let style = {};
+          if (isFuture) {
+            style = { cursor: 'not-allowed' };
+          } else if (emotion) {
+            style = { backgroundColor: emotion.color + '20' };
+          }
+
           return (
             <div
               key={dateStr}
-              className={`calendar-day ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${selectedDate && isSameDay(day, selectedDate) ? 'selected' : ''} ${isFuture ? 'future-date' : ''}`}
-              onClick={() => !isFuture && onDateSelect && onDateSelect(day)}
-              style={isFuture ? { cursor: 'not-allowed' } : (emotion ? { backgroundColor: `${emotion.color}20` } : {})}
+              className={getDayClassName(day)}
+              onClick={function() { handleDayClick(day); }}
+              style={style}
             >
               <span className="day-number">{format(day, 'd')}</span>
               {emotion && (
@@ -94,6 +128,6 @@ const MiniCalendar = ({ onDateSelect, selectedDate }) => {
       </div>
     </div>
   );
-};
+}
 
 export default MiniCalendar;

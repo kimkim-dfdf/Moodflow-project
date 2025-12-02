@@ -1,31 +1,34 @@
 import { CheckCircle, Clock, Flag, ArrowRight, Check } from 'lucide-react';
-import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
-const priorityColors = {
-  High: '#ef4444',
-  Medium: '#f59e0b',
-  Low: '#22c55e'
-};
-
-const categoryColors = {
-  Work: '#6366f1',
-  Study: '#8b5cf6',
-  Health: '#10b981',
-  Personal: '#f97316'
-};
-
-const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate }) => {
+function TaskCard({ task, onToggle, showScore, mode }) {
   const navigate = useNavigate();
 
-  const handleGoToTasks = () => {
-    navigate('/tasks', { 
-      state: { selectedDate: selectedDate ? selectedDate.toISOString() : new Date().toISOString() }
-    });
-  };
+  function handleComplete() {
+    onToggle(task);
+  }
+
+  function handleGoToTasks() {
+    navigate('/tasks');
+  }
+
+  function getCategoryColor(category) {
+    if (category === 'Work') return '#6366f1';
+    if (category === 'Study') return '#8b5cf6';
+    if (category === 'Health') return '#10b981';
+    if (category === 'Personal') return '#f97316';
+    return '#6366f1';
+  }
+
+  function getPriorityColor(priority) {
+    if (priority === 'High') return '#ef4444';
+    if (priority === 'Medium') return '#f59e0b';
+    if (priority === 'Low') return '#22c55e';
+    return '#f59e0b';
+  }
 
   return (
-    <div className={`task-card ${task.is_completed ? 'completed' : ''}`}>
+    <div className={task.is_completed ? 'task-card completed' : 'task-card'}>
       <div className="task-content">
         <div className="task-header">
           <h4 className="task-title">
@@ -33,9 +36,7 @@ const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate 
             {task.title}
           </h4>
           {showScore && task.score !== undefined && (
-            <span className="task-score" title="Recommendation score">
-              {Math.round(task.score)}%
-            </span>
+            <span className="task-score">{Math.round(task.score)}%</span>
           )}
         </div>
         
@@ -46,13 +47,13 @@ const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate 
         <div className="task-meta">
           <span 
             className="task-category"
-            style={{ backgroundColor: categoryColors[task.category] || '#6366f1' }}
+            style={{ backgroundColor: getCategoryColor(task.category) }}
           >
             {task.category}
           </span>
           <span 
             className="task-priority"
-            style={{ color: priorityColors[task.priority] || '#f59e0b' }}
+            style={{ color: getPriorityColor(task.priority) }}
           >
             <Flag size={14} />
             {task.priority}
@@ -69,17 +70,14 @@ const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate 
       <div className="task-hover-actions">
         {mode === 'tasks' ? (
           <button 
-            className={`action-btn ${task.is_completed ? 'undo' : 'complete'}`}
-            onClick={() => onToggle(task)}
+            className={task.is_completed ? 'action-btn undo' : 'action-btn complete'}
+            onClick={handleComplete}
           >
             <Check size={16} />
             {task.is_completed ? 'Undo' : 'Complete'}
           </button>
         ) : (
-          <button 
-            className="action-btn goto"
-            onClick={handleGoToTasks}
-          >
+          <button className="action-btn goto" onClick={handleGoToTasks}>
             <ArrowRight size={16} />
             Go to Todo List
           </button>
@@ -87,6 +85,6 @@ const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate 
       </div>
     </div>
   );
-};
+}
 
 export default TaskCard;
