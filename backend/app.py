@@ -16,9 +16,16 @@ login_manager = LoginManager()
 
 def create_app():
     app = Flask(__name__)
+    
     CORS(app, supports_credentials=True, origins=["*"])
     
-    app.secret_key = os.environ.get("SESSION_SECRET") or os.environ.get("FLASK_SECRET_KEY") or "dev-secret-key"
+    secret = os.environ.get("SESSION_SECRET")
+    if not secret:
+        secret = os.environ.get("FLASK_SECRET_KEY")
+    if not secret:
+        secret = "dev-secret-key"
+    app.secret_key = secret
+    
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "pool_recycle": 300,

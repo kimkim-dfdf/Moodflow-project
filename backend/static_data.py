@@ -85,7 +85,8 @@ def get_music_by_emotion(emotion_name, limit):
     for music in MUSIC_RECOMMENDATIONS:
         if music['emotion'] == emotion_name:
             result.append(music)
-    if limit:
+    
+    if limit and limit < len(result):
         return result[:limit]
     return result
 
@@ -96,7 +97,7 @@ def get_all_book_tags():
 
 def get_books_by_tags(tag_slugs, limit):
     if not tag_slugs:
-        if limit:
+        if limit and limit < len(BOOK_RECOMMENDATIONS):
             return BOOK_RECOMMENDATIONS[:limit]
         return BOOK_RECOMMENDATIONS
     
@@ -106,6 +107,7 @@ def get_books_by_tags(tag_slugs, limit):
         for tag in tag_slugs:
             if tag in book['tags']:
                 match_count = match_count + 1
+        
         if match_count == len(tag_slugs):
             book_copy = dict(book)
             book_copy['match_score'] = match_count / len(book['tags']) * 100
@@ -118,7 +120,7 @@ def get_books_by_tags(tag_slugs, limit):
                 result[i] = result[j]
                 result[j] = temp
     
-    if limit:
+    if limit and limit < len(result):
         return result[:limit]
     return result
 

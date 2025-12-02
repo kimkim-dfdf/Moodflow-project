@@ -7,21 +7,27 @@ import static_data
 import os
 import uuid
 
+
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
+
 def allowed_file(filename):
-    if filename and '.' in filename:
-        ext = filename.rsplit('.', 1)[1].lower()
-        if ext in ALLOWED_EXTENSIONS:
-            return True
+    if not filename:
+        return False
+    if '.' not in filename:
+        return False
+    
+    ext = filename.rsplit('.', 1)[1].lower()
+    if ext in ALLOWED_EXTENSIONS:
+        return True
     return False
 
 
 def register_routes(app, db):
     from models import User, Task, EmotionHistory
     
-    # AUTH API
+    
     @app.route('/api/auth/register', methods=['POST'])
     def register():
         data = request.get_json()
@@ -51,6 +57,7 @@ def register_routes(app, db):
         
         return jsonify({'message': 'Registration successful', 'user': user.to_dict()}), 201
     
+    
     @app.route('/api/auth/login', methods=['POST'])
     def login():
         data = request.get_json()
@@ -71,21 +78,24 @@ def register_routes(app, db):
         login_user(user)
         return jsonify({'message': 'Login successful', 'user': user.to_dict()})
     
+    
     @app.route('/api/auth/logout', methods=['POST'])
     @login_required
     def logout():
         logout_user()
         return jsonify({'message': 'Logged out successfully'})
     
+    
     @app.route('/api/auth/me', methods=['GET'])
     @login_required
     def get_current_user():
         return jsonify({'user': current_user.to_dict()})
     
-    # EMOTIONS API
+    
     @app.route('/api/emotions', methods=['GET'])
     def get_emotions():
         return jsonify(static_data.EMOTIONS)
+    
     
     @app.route('/api/emotions/record', methods=['POST'])
     @login_required
@@ -125,6 +135,7 @@ def register_routes(app, db):
         db.session.commit()
         return jsonify({'message': 'Emotion recorded', 'entry': entry.to_dict()})
     
+    
     @app.route('/api/emotions/diary/<date_str>', methods=['GET'])
     @login_required
     def get_diary_entry(date_str):
@@ -138,7 +149,7 @@ def register_routes(app, db):
             return jsonify(entry.to_dict())
         return jsonify(None)
     
-    # UPLOAD API
+    
     @app.route('/api/upload/photo', methods=['POST'])
     @login_required
     def upload_photo():
@@ -163,9 +174,11 @@ def register_routes(app, db):
         photo_url = '/api/uploads/' + unique_filename
         return jsonify({'photo_url': photo_url, 'filename': unique_filename})
     
+    
     @app.route('/api/uploads/<filename>')
     def serve_upload(filename):
         return send_from_directory(UPLOAD_FOLDER, filename)
+    
     
     @app.route('/api/emotions/history', methods=['GET'])
     @login_required
@@ -178,6 +191,7 @@ def register_routes(app, db):
             result.append(entry.to_dict())
         return jsonify(result)
     
+    
     @app.route('/api/emotions/statistics', methods=['GET'])
     @login_required
     def get_emotion_statistics():
@@ -185,7 +199,7 @@ def register_routes(app, db):
         stats = recommendation_engine.get_emotion_statistics(db, current_user.id, days)
         return jsonify(stats)
     
-    # TASKS API
+    
     @app.route('/api/tasks', methods=['GET'])
     @login_required
     def get_tasks():
@@ -202,6 +216,7 @@ def register_routes(app, db):
         for task in tasks:
             result.append(task.to_dict())
         return jsonify(result)
+    
     
     @app.route('/api/tasks', methods=['POST'])
     @login_required
@@ -244,6 +259,7 @@ def register_routes(app, db):
         
         return jsonify(task.to_dict()), 201
     
+    
     @app.route('/api/tasks/<int:task_id>', methods=['PUT'])
     @login_required
     def update_task(task_id):
@@ -263,6 +279,7 @@ def register_routes(app, db):
         db.session.commit()
         return jsonify(task.to_dict())
     
+    
     @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
     @login_required
     def delete_task(task_id):
@@ -273,6 +290,7 @@ def register_routes(app, db):
         db.session.delete(task)
         db.session.commit()
         return jsonify({'message': 'Task deleted'})
+    
     
     @app.route('/api/tasks/recommended', methods=['GET'])
     @login_required
@@ -291,6 +309,7 @@ def register_routes(app, db):
         recommendations = recommendation_engine.get_recommended_tasks(db, current_user.id, emotion, limit, task_date)
         return jsonify(recommendations)
     
+    
     @app.route('/api/tasks/suggestions', methods=['GET'])
     @login_required
     def get_task_suggestions():
@@ -302,7 +321,7 @@ def register_routes(app, db):
         suggestions = recommendation_engine.get_suggested_tasks(emotion, limit)
         return jsonify(suggestions)
     
-    # MUSIC API
+    
     @app.route('/api/music/recommendations', methods=['GET'])
     def get_music_recommendations():
         emotion = request.args.get('emotion')
@@ -313,11 +332,12 @@ def register_routes(app, db):
         recommendations = static_data.get_music_by_emotion(emotion, limit)
         return jsonify(recommendations)
     
-    # BOOKS API
+    
     @app.route('/api/books/tags', methods=['GET'])
     def get_book_tags():
         tags = static_data.get_all_book_tags()
         result = []
+        
         for tag in tags:
             tag_copy = dict(tag)
             count = 0
@@ -336,6 +356,7 @@ def register_routes(app, db):
         
         return jsonify(result)
     
+    
     @app.route('/api/books', methods=['GET'])
     def get_books_by_tags():
         tag_slugs = request.args.getlist('tags')
@@ -353,11 +374,12 @@ def register_routes(app, db):
         
         return jsonify(result)
     
-    # PROFILE API
+    
     @app.route('/api/user/profile', methods=['GET'])
     @login_required
     def get_profile():
         return jsonify(current_user.to_dict())
+    
     
     @app.route('/api/user/profile', methods=['PUT'])
     @login_required
@@ -373,7 +395,7 @@ def register_routes(app, db):
         db.session.commit()
         return jsonify(current_user.to_dict())
     
-    # DASHBOARD API
+    
     @app.route('/api/dashboard/summary', methods=['GET'])
     @login_required
     def get_dashboard_summary():

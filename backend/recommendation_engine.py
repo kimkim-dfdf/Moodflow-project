@@ -1,7 +1,5 @@
 from datetime import datetime, timedelta
-import random
 
-# Emotion weights for task categories
 EMOTION_WEIGHTS = {
     'Happy': {
         'Work': 1.0,
@@ -47,13 +45,6 @@ EMOTION_WEIGHTS = {
     }
 }
 
-PRIORITY_SCORES = {
-    'High': 3,
-    'Medium': 2,
-    'Low': 1
-}
-
-# Task suggestions per emotion
 TASK_SUGGESTIONS = {
     'Happy': [
         {'title': 'Start a new creative project', 'category': 'Personal', 'priority': 'High'},
@@ -100,13 +91,20 @@ TASK_SUGGESTIONS = {
 }
 
 
+def get_priority_values(priority_pref):
+    if priority_pref == 'High':
+        return {'High': 3, 'Medium': 2, 'Low': 1}
+    elif priority_pref == 'Low':
+        return {'Low': 3, 'Medium': 2, 'High': 1}
+    else:
+        return {'Medium': 3, 'High': 2, 'Low': 2}
+
+
 def calculate_task_score(task, emotion_name):
-    # Get weights for this emotion
     weights = EMOTION_WEIGHTS.get(emotion_name)
     if not weights:
         weights = EMOTION_WEIGHTS['Neutral']
     
-    # Category score (57% weight)
     category = task.category
     if category in weights:
         cat_weight = weights[category]
@@ -114,21 +112,8 @@ def calculate_task_score(task, emotion_name):
         cat_weight = 0.5
     category_score = cat_weight * 57
     
-    # Priority score (43% weight)
-    # Score is based on emotion's preferred priority
     priority_pref = weights.get('priority', 'Medium')
-    
-    # Create priority scores based on emotion preference
-    # The preferred priority gets 3 points, others get less
-    if priority_pref == 'High':
-        # Happy, energetic - prefer difficult tasks
-        priority_values = {'High': 3, 'Medium': 2, 'Low': 1}
-    elif priority_pref == 'Low':
-        # Tired, sad - prefer easy tasks
-        priority_values = {'Low': 3, 'Medium': 2, 'High': 1}
-    else:
-        # Neutral, angry, stressed - prefer medium tasks
-        priority_values = {'Medium': 3, 'High': 2, 'Low': 2}
+    priority_values = get_priority_values(priority_pref)
     
     if task.priority in priority_values:
         p_score = priority_values[task.priority]
@@ -136,10 +121,8 @@ def calculate_task_score(task, emotion_name):
         p_score = 2
     priority_score = p_score * 14.33
     
-    # Calculate total score
     total = category_score + priority_score
     
-    # Keep between 0 and 100
     if total > 100:
         total = 100
     if total < 0:
@@ -148,31 +131,40 @@ def calculate_task_score(task, emotion_name):
     return total
 
 
+def bubble_sort_by_score(items, descending):
+    for i in range(len(items)):
+        for j in range(i + 1, len(items)):
+            should_swap = False
+            if descending:
+                if items[j]['score'] > items[i]['score']:
+                    should_swap = True
+            else:
+                if items[j]['score'] < items[i]['score']:
+                    should_swap = True
+            
+            if should_swap:
+                temp = items[i]
+                items[i] = items[j]
+                items[j] = temp
+    return items
+
+
 def get_recommended_tasks(db, user_id, emotion_name, limit, task_date):
     from models import Task
     
-    # Get incomplete tasks
     query = Task.query.filter_by(user_id=user_id, is_completed=False)
     if task_date:
         query = query.filter_by(task_date=task_date)
     
     tasks = query.all()
     
-    # Calculate score for each task
     scored_tasks = []
     for task in tasks:
         score = calculate_task_score(task, emotion_name)
         scored_tasks.append({'task': task, 'score': score})
     
-    # Sort by score (highest first) using bubble sort
-    for i in range(len(scored_tasks)):
-        for j in range(i + 1, len(scored_tasks)):
-            if scored_tasks[j]['score'] > scored_tasks[i]['score']:
-                temp = scored_tasks[i]
-                scored_tasks[i] = scored_tasks[j]
-                scored_tasks[j] = temp
+    scored_tasks = bubble_sort_by_score(scored_tasks, True)
     
-    # Return top results
     result = []
     count = 0
     for item in scored_tasks:
@@ -188,21 +180,17 @@ def get_recommended_tasks(db, user_id, emotion_name, limit, task_date):
 
 
 def get_suggested_tasks(emotion_name, limit):
-    # Get suggestions for this emotion
     if emotion_name in TASK_SUGGESTIONS:
         suggestions = TASK_SUGGESTIONS[emotion_name]
     else:
         suggestions = TASK_SUGGESTIONS['Neutral']
     
-    # Get weights for this emotion
     weights = EMOTION_WEIGHTS.get(emotion_name)
     if not weights:
         weights = EMOTION_WEIGHTS['Neutral']
     
-    # Calculate score for each suggestion
     scored_suggestions = []
     for suggestion in suggestions:
-        # Category score (57% weight)
         category = suggestion.get('category', 'Personal')
         if category in weights:
             cat_weight = weights[category]
@@ -210,16 +198,9 @@ def get_suggested_tasks(emotion_name, limit):
             cat_weight = 0.5
         category_score = cat_weight * 57
         
-        # Priority score (43% weight)
         priority_pref = weights.get('priority', 'Medium')
         priority = suggestion.get('priority', 'Medium')
-        
-        if priority_pref == 'High':
-            priority_values = {'High': 3, 'Medium': 2, 'Low': 1}
-        elif priority_pref == 'Low':
-            priority_values = {'Low': 3, 'Medium': 2, 'High': 1}
-        else:
-            priority_values = {'Medium': 3, 'High': 2, 'Low': 2}
+        priority_values = get_priority_values(priority_pref)
         
         if priority in priority_values:
             p_score = priority_values[priority]
@@ -230,22 +211,16 @@ def get_suggested_tasks(emotion_name, limit):
         total = category_score + priority_score
         scored_suggestions.append({'suggestion': suggestion, 'score': total})
     
-    # Sort by score (highest first) using bubble sort
-    for i in range(len(scored_suggestions)):
-        for j in range(i + 1, len(scored_suggestions)):
-            if scored_suggestions[j]['score'] > scored_suggestions[i]['score']:
-                temp = scored_suggestions[i]
-                scored_suggestions[i] = scored_suggestions[j]
-                scored_suggestions[j] = temp
+    scored_suggestions = bubble_sort_by_score(scored_suggestions, True)
     
-    # Return top results
     result = []
     count = 0
     for item in scored_suggestions:
         if count >= limit:
             break
-        item['suggestion']['score'] = round(item['score'], 1)
-        result.append(item['suggestion'])
+        suggestion_copy = dict(item['suggestion'])
+        suggestion_copy['score'] = round(item['score'], 1)
+        result.append(suggestion_copy)
         count = count + 1
     
     return result
@@ -257,18 +232,15 @@ def get_emotion_statistics(db, user_id, days):
     
     start_date = datetime.now().date() - timedelta(days=days)
     
-    # Get history
     history = EmotionHistory.query.filter(
         EmotionHistory.user_id == user_id,
         EmotionHistory.date >= start_date
     ).all()
     
-    # Count emotions
     emotion_counts = {}
     daily_emotions = {}
     
     for entry in history:
-        # Get emotion from static data
         emotion = static_data.get_emotion_by_id(entry.emotion_id)
         if emotion:
             emo_name = emotion['name']
@@ -279,28 +251,28 @@ def get_emotion_statistics(db, user_id, days):
             emo_emoji = '😐'
             emo_color = '#95A5A6'
         
-        # Count it
         if emo_name in emotion_counts:
             emotion_counts[emo_name] = emotion_counts[emo_name] + 1
         else:
             emotion_counts[emo_name] = 1
         
-        # Store daily data
         date_str = entry.date.isoformat()
+        has_photo = False
+        if entry.photo_url:
+            has_photo = True
+        
         daily_emotions[date_str] = {
             'emotion': emo_name,
             'emoji': emo_emoji,
             'color': emo_color,
-            'has_photo': True if entry.photo_url else False,
+            'has_photo': has_photo,
             'notes': entry.notes
         }
     
-    # Calculate total
     total = 0
     for emotion in emotion_counts:
         total = total + emotion_counts[emotion]
     
-    # Calculate percentages
     emotion_percentages = {}
     for emotion in emotion_counts:
         count = emotion_counts[emotion]
@@ -310,7 +282,6 @@ def get_emotion_statistics(db, user_id, days):
             pct = 0
         emotion_percentages[emotion] = pct
     
-    # Find most common emotion
     dominant_emotion = 'Neutral'
     max_count = 0
     for emotion in emotion_counts:
