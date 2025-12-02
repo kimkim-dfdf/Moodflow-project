@@ -210,12 +210,9 @@ def register_routes(app, db):
         task = Task(
             user_id=current_user.id,
             title=data['title'],
-            description=data.get('description'),
             category=data.get('category', 'Personal'),
             priority=data.get('priority', 'Medium'),
             task_date=task_date,
-            due_date=datetime.strptime(data['due_date'], '%Y-%m-%d').date() if data.get('due_date') else None,
-            due_time=data.get('due_time'),
             recommended_for_emotion=data.get('recommended_for_emotion')
         )
         
@@ -233,24 +230,12 @@ def register_routes(app, db):
         
         data = request.get_json()
         
-        if 'title' in data:
-            task.title = data['title']
-        if 'description' in data:
-            task.description = data['description']
-        if 'category' in data:
-            task.category = data['category']
-        if 'priority' in data:
-            task.priority = data['priority']
         if 'is_completed' in data:
             task.is_completed = data['is_completed']
             if data['is_completed']:
                 task.completed_at = datetime.utcnow()
             else:
                 task.completed_at = None
-        if 'due_date' in data:
-            task.due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date() if data['due_date'] else None
-        if 'due_time' in data:
-            task.due_time = data['due_time'] if data['due_time'] else None
         
         db.session.commit()
         return jsonify(task.to_dict())
