@@ -57,10 +57,10 @@ const TaskCard = ({ task, onToggle, showScore, mode = 'dashboard', selectedDate 
             <Flag size={14} />
             {task.priority}
           </span>
-          {task.due_date && (
+          {task.due_time && (
             <span className="task-due">
               <Clock size={14} />
-              {format(new Date(task.due_date), 'MMM d')}
+              {task.due_time}
             </span>
           )}
         </div>

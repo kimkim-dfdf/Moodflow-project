@@ -28,7 +28,7 @@ const Tasks = () => {
     description: '',
     category: 'Personal',
     priority: 'Medium',
-    due_date: ''
+    due_time: ''
   });
 
   useEffect(() => {
@@ -116,7 +116,7 @@ const Tasks = () => {
       description: task.description || '',
       category: task.category,
       priority: task.priority,
-      due_date: task.due_date || ''
+      due_time: task.due_time || ''
     });
     setShowModal(true);
   };
@@ -163,7 +163,7 @@ const Tasks = () => {
       description: '',
       category: 'Personal',
       priority: 'Medium',
-      due_date: ''
+      due_time: ''
     });
   };
 
@@ -376,12 +376,12 @@ const Tasks = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="due_date">Due Date</label>
+                <label htmlFor="due_time">Time</label>
                 <input
-                  type="date"
-                  id="due_date"
-                  value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                  type="time"
+                  id="due_time"
+                  value={formData.due_time}
+                  onChange={(e) => setFormData({ ...formData, due_time: e.target.value })}
                 />
               </div>
 

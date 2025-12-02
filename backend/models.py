@@ -97,6 +97,7 @@ class Task(db.Model):
     priority = db.Column(db.String(20), default='Medium')
     is_completed = db.Column(db.Boolean, default=False)
     due_date = db.Column(db.Date)
+    due_time = db.Column(db.String(10))
     task_date = db.Column(db.Date, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime)
@@ -114,6 +115,7 @@ class Task(db.Model):
             'priority': self.priority,
             'is_completed': self.is_completed,
             'due_date': self.due_date.isoformat() if self.due_date else None,
+            'due_time': self.due_time,
             'task_date': self.task_date.isoformat() if self.task_date else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
