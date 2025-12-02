@@ -236,19 +236,6 @@ const Tasks = () => {
         </div>
       )}
 
-      <div className="filters-bar">
-        <div className="filter-group">
-          <Filter size={16} />
-          <select 
-            value={filter.status} 
-            onChange={(e) => setFilter({ ...filter, status: e.target.value })}
-          >
-            <option value="all">All Status</option>
-            <option value="incomplete">Incomplete</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
-      </div>
 
       {showSuggestions && suggestedTasks.length > 0 && (
         <div className="suggestions-panel card">
