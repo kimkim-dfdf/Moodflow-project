@@ -1,9 +1,10 @@
-import { CheckCircle, Clock, Flag, ArrowRight, Check } from 'lucide-react';
+import { CheckCircle, Clock, Flag, ArrowRight, Check, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 function TaskCard(props) {
   var task = props.task;
   var onToggle = props.onToggle;
+  var onDelete = props.onDelete;
   var showScore = props.showScore;
   var mode = props.mode;
   
@@ -44,9 +45,14 @@ function TaskCard(props) {
       
       <div className="task-hover-actions">
         {mode === 'tasks' ? (
-          <button className={'action-btn ' + (task.is_completed ? 'undo' : 'complete')} onClick={function() { onToggle(task); }}>
-            <Check size={16} />{task.is_completed ? 'Undo' : 'Complete'}
-          </button>
+          <>
+            <button className={'action-btn ' + (task.is_completed ? 'undo' : 'complete')} onClick={function() { onToggle(task); }}>
+              <Check size={16} />{task.is_completed ? 'Undo' : 'Complete'}
+            </button>
+            <button className="action-btn delete" onClick={function() { onDelete(task); }}>
+              <Trash2 size={16} />Delete
+            </button>
+          </>
         ) : (
           <button className="action-btn goto" onClick={function() { navigate('/tasks'); }}>
             <ArrowRight size={16} />Go to Todo List

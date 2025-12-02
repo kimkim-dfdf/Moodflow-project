@@ -34,6 +34,10 @@ function Tasks() {
     api.put('/tasks/' + task.id, { is_completed: !task.is_completed }).then(fetchTasks);
   }
 
+  function handleDelete(task) {
+    api.delete('/tasks/' + task.id).then(fetchTasks);
+  }
+
   function handleGenerate() {
     if (!selectedEmotion) return;
     api.get('/tasks/suggestions', { params: { emotion: selectedEmotion.name, limit: 5 } })
@@ -91,11 +95,11 @@ function Tasks() {
       <div className="tasks-content">
         <section className="tasks-section">
           <h2>To Do ({incomplete.length})</h2>
-          {incomplete.length > 0 ? <div className="task-list">{incomplete.map(function(t) { return <TaskCard key={t.id} task={t} onToggle={handleToggle} mode="tasks" />; })}</div> : <p className="empty-state">No tasks</p>}
+          {incomplete.length > 0 ? <div className="task-list">{incomplete.map(function(t) { return <TaskCard key={t.id} task={t} onToggle={handleToggle} onDelete={handleDelete} mode="tasks" />; })}</div> : <p className="empty-state">No tasks</p>}
         </section>
         <section className="tasks-section completed">
           <h2>Done ({complete.length})</h2>
-          {complete.length > 0 ? <div className="task-list">{complete.map(function(t) { return <TaskCard key={t.id} task={t} onToggle={handleToggle} mode="tasks" />; })}</div> : <p className="empty-state">No completed tasks</p>}
+          {complete.length > 0 ? <div className="task-list">{complete.map(function(t) { return <TaskCard key={t.id} task={t} onToggle={handleToggle} onDelete={handleDelete} mode="tasks" />; })}</div> : <p className="empty-state">No completed tasks</p>}
         </section>
       </div>
     </div>
