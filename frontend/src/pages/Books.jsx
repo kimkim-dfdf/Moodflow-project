@@ -31,11 +31,12 @@ const Books = () => {
   const fetchBooks = async () => {
     setLoading(true);
     try {
-      const params = {};
+      let url = '/books';
       if (selectedTags.length > 0) {
-        params.tags = selectedTags;
+        const tagParams = selectedTags.map(t => `tags=${t}`).join('&');
+        url = `/books?${tagParams}`;
       }
-      const res = await api.get('/books', { params });
+      const res = await api.get(url);
       setBooks(res.data);
     } catch (err) {
       console.error('Failed to fetch books:', err);
