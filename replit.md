@@ -45,9 +45,9 @@ MoodFlow is a modern web application that helps users track their emotional stat
 
 ### 4. Books
 - Dedicated page for book recommendations
-- **Tag-based filtering with 18 Korean emotion tags** (e.g., 희망적인, 위로가 필요한, 평온함을 찾는, 성장하고 싶은, etc.)
+- **Tag-based filtering with 10 Korean emotion tags** (희망적인, 위로가 필요한, 평온함을 찾는, 성장하고 싶은, 감성에 젖고 싶은, 현실에서 벗어나고 싶은, 재충전이 필요한, 용기가 필요한, 새로운 시각을 찾는, 집중력을 높이고 싶은)
 - Multi-select tag chips UI for refined book discovery
-- 24 curated books with 2-3 tags each
+- 15 curated books with 3 tags each
 - Book details: title, author, genre, description, associated tags
 
 ### 5. Profile
@@ -106,11 +106,12 @@ The app uses a weighted scoring system that considers:
 ## Recent Changes
 - December 2, 2025: Implemented tag-based book recommendation system
   - Created BookTag and BookTagLink models for granular emotional tags
-  - Added 18 Korean emotion tags (희망적인, 위로가 필요한, 평온함을 찾는, etc.)
-  - Mapped 24 books to 2-3 tags each (72 tag associations)
+  - Added 10 Korean emotion tags (희망적인, 위로가 필요한, 평온함을 찾는, etc.)
+  - Mapped 15 books to 3 tags each (45 tag associations)
   - New API: /api/books/tags (list tags), /api/books (filter by tags)
   - Updated Books page with multi-select tag chips UI
   - BookCard now displays associated tags with color styling
+  - Removed book recommendations from Dashboard (books only in Books page)
 - December 2, 2025: Added book recommendations feature
   - Created BookRecommendation model with 24 books (4 per emotion)
   - Added /api/books/recommendations endpoint
