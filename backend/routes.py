@@ -336,11 +336,16 @@ def register_routes(app, db):
         if not tag_ids:
             return jsonify([])
         
+        from sqlalchemy import func
         book_ids = db.session.query(BookTagLink.book_id)\
             .filter(BookTagLink.tag_id.in_(tag_ids))\
-            .distinct()\
+            .group_by(BookTagLink.book_id)\
+            .having(func.count(BookTagLink.tag_id) == len(tag_ids))\
             .all()
         book_ids = [b[0] for b in book_ids]
+        
+        if not book_ids:
+            return jsonify([])
         
         books = BookRecommendation.query\
             .filter(BookRecommendation.id.in_(book_ids))\
