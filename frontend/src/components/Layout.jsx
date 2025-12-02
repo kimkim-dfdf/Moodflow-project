@@ -1,14 +1,15 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, CheckSquare, Calendar, BookOpen, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, BookOpen, User, LogOut } from 'lucide-react';
 
 function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  async function handleLogout() {
-    await logout();
-    navigate('/login');
+  function handleLogout() {
+    logout().then(function() {
+      navigate('/login');
+    });
   }
 
   function getFirstLetter() {
@@ -16,6 +17,13 @@ function Layout() {
       return user.username[0].toUpperCase();
     }
     return 'U';
+  }
+
+  function getNavClass(isActive) {
+    if (isActive) {
+      return 'nav-link active';
+    }
+    return 'nav-link';
   }
 
   return (
@@ -27,31 +35,25 @@ function Layout() {
         
         <ul className="nav-menu">
           <li>
-            <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/dashboard" className={function({ isActive }) { return getNavClass(isActive); }}>
               <LayoutDashboard size={20} />
               <span>Dashboard</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/tasks" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/tasks" className={function({ isActive }) { return getNavClass(isActive); }}>
               <CheckSquare size={20} />
               <span>Tasks</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/calendar" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-              <Calendar size={20} />
-              <span>Calendar</span>
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/books" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/books" className={function({ isActive }) { return getNavClass(isActive); }}>
               <BookOpen size={20} />
               <span>Books</span>
             </NavLink>
           </li>
           <li>
-            <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/profile" className={function({ isActive }) { return getNavClass(isActive); }}>
               <User size={20} />
               <span>Profile</span>
             </NavLink>
