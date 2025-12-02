@@ -14,7 +14,7 @@ def allowed_file(filename):
 
 
 def register_routes(app, db):
-    from models import User, Task, Emotion, EmotionHistory, CalendarEvent, MusicRecommendation, BookRecommendation
+    from models import User, Task, Emotion, EmotionHistory, CalendarEvent, MusicRecommendation, BookRecommendation, BookTag, BookTagLink
     
     @app.route('/api/auth/register', methods=['POST'])
     def register():
@@ -342,6 +342,56 @@ def register_routes(app, db):
         books = BookRecommendation.query.filter_by(
             emotion_id=emotion.id
         ).order_by(BookRecommendation.popularity_score.desc()).limit(limit).all()
+        
+        return jsonify([b.to_dict() for b in books])
+    
+    @app.route('/api/books/tags', methods=['GET'])
+    def get_book_tags():
+        tags = db.session.query(
+            BookTag,
+            db.func.count(BookTagLink.book_id).label('book_count')
+        ).outerjoin(BookTagLink, BookTag.id == BookTagLink.tag_id)\
+         .group_by(BookTag.id)\
+         .order_by(BookTag.name)\
+         .all()
+        
+        result = []
+        for tag, count in tags:
+            tag_dict = tag.to_dict()
+            tag_dict['book_count'] = count
+            result.append(tag_dict)
+        
+        return jsonify(result)
+    
+    @app.route('/api/books', methods=['GET'])
+    def get_books_by_tags():
+        tag_slugs = request.args.getlist('tags')
+        limit = request.args.get('limit', 24, type=int)
+        
+        if not tag_slugs:
+            books = BookRecommendation.query\
+                .order_by(BookRecommendation.popularity_score.desc())\
+                .limit(limit)\
+                .all()
+            return jsonify([b.to_dict() for b in books])
+        
+        tag_ids = [t.id for t in BookTag.query.filter(BookTag.slug.in_(tag_slugs)).all()]
+        
+        if not tag_ids:
+            return jsonify([])
+        
+        book_ids = db.session.query(BookTagLink.book_id)\
+            .filter(BookTagLink.tag_id.in_(tag_ids))\
+            .group_by(BookTagLink.book_id)\
+            .all()
+        
+        book_ids = [b[0] for b in book_ids]
+        
+        books = BookRecommendation.query\
+            .filter(BookRecommendation.id.in_(book_ids))\
+            .order_by(BookRecommendation.popularity_score.desc())\
+            .limit(limit)\
+            .all()
         
         return jsonify([b.to_dict() for b in books])
     
