@@ -9,45 +9,43 @@ import { format, isToday } from 'date-fns';
 import { Music, CheckCircle2, Calendar, ExternalLink } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-function getEmotionColor(name) {
-  if (name === 'Happy') return '#FFD93D';
-  if (name === 'Sad') return '#6B7FD7';
-  if (name === 'Tired') return '#A8A8A8';
-  if (name === 'Angry') return '#FF6B6B';
-  if (name === 'Stressed') return '#FF9F43';
-  return '#95A5A6';
-}
+const EMOTION_COLORS = {
+  'Happy': '#FFD93D',
+  'Sad': '#6B7FD7',
+  'Tired': '#A8A8A8',
+  'Angry': '#FF6B6B',
+  'Stressed': '#FF9F43',
+  'Neutral': '#95A5A6'
+};
 
-function MusicCard({ music }) {
-  return (
-    <div className="music-card">
-      <div className="music-icon">
-        <Music size={24} />
-      </div>
-      <div className="music-info">
-        <h4 className="music-title">{music.title}</h4>
-        <p className="music-artist">{music.artist}</p>
-        <span className="music-genre">{music.genre}</span>
-      </div>
-      <div className="music-links">
-        {music.youtube_url && (
-          <a 
-            href={music.youtube_url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="music-link youtube"
-          >
-            <ExternalLink size={16} />
-            YouTube
-          </a>
-        )}
-      </div>
+const MusicCard = ({ music }) => (
+  <div className="music-card">
+    <div className="music-icon">
+      <Music size={24} />
     </div>
-  );
-}
+    <div className="music-info">
+      <h4 className="music-title">{music.title}</h4>
+      <p className="music-artist">{music.artist}</p>
+      <span className="music-genre">{music.genre}</span>
+    </div>
+    <div className="music-links">
+      {music.youtube_url && (
+        <a 
+          href={music.youtube_url} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="music-link youtube"
+        >
+          <ExternalLink size={16} />
+          YouTube
+        </a>
+      )}
+    </div>
+  </div>
+);
 
-function MoodStats({ stats }) {
-  if (!stats || !stats.counts) {
+const MoodStats = ({ stats }) => {
+  if (!stats || !stats.counts || Object.keys(stats.counts).length === 0) {
     return (
       <div className="mood-stats empty">
         <p>No mood data yet. Start tracking your emotions!</p>
@@ -55,25 +53,11 @@ function MoodStats({ stats }) {
     );
   }
 
-  var countKeys = Object.keys(stats.counts);
-  if (countKeys.length === 0) {
-    return (
-      <div className="mood-stats empty">
-        <p>No mood data yet. Start tracking your emotions!</p>
-      </div>
-    );
-  }
-
-  var data = [];
-  for (var i = 0; i < countKeys.length; i++) {
-    var name = countKeys[i];
-    var value = stats.counts[name];
-    data.push({
-      name: name,
-      value: value,
-      color: getEmotionColor(name)
-    });
-  }
+  const data = Object.entries(stats.counts).map(([name, value]) => ({
+    name,
+    value,
+    color: EMOTION_COLORS[name] || '#95A5A6'
+  }));
 
   return (
     <div className="mood-stats">
@@ -90,9 +74,9 @@ function MoodStats({ stats }) {
               paddingAngle={2}
               dataKey="value"
             >
-              {data.map(function(entry, index) {
-                return <Cell key={'cell-' + index} fill={entry.color} />;
-              })}
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
             </Pie>
             <Tooltip />
             <Legend />
@@ -105,9 +89,9 @@ function MoodStats({ stats }) {
       </div>
     </div>
   );
-}
+};
 
-function Dashboard() {
+const Dashboard = () => {
   const { user } = useAuth();
   const { selectedDate, setSelectedDate } = useDate();
   const [selectedEmotion, setSelectedEmotion] = useState(null);
@@ -119,38 +103,33 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [addedTasks, setAddedTasks] = useState(new Set());
   const [allTasks, setAllTasks] = useState([]);
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
 
-  useEffect(function() {
+  useEffect(() => {
     fetchDashboardData();
   }, [selectedDate]);
 
-  useEffect(function() {
+  useEffect(() => {
     if (selectedEmotion) {
       fetchRecommendations(selectedEmotion.name);
     }
   }, [selectedEmotion]);
 
-  function fetchDashboardData() {
-    var dateStr = format(selectedDate, 'yyyy-MM-dd');
-    
-    Promise.all([
-      api.get('/dashboard/summary', { params: { date: dateStr } }),
-      api.get('/emotions/diary/' + dateStr),
-      api.get('/tasks', { params: { date: dateStr } })
-    ]).then(function(results) {
-      var summaryRes = results[0];
-      var dateEmotionRes = results[1];
-      var tasksRes = results[2];
+  const fetchDashboardData = async () => {
+    try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const [summaryRes, dateEmotionRes, tasksRes] = await Promise.all([
+        api.get('/dashboard/summary', { params: { date: dateStr } }),
+        api.get(`/emotions/diary/${dateStr}`),
+        api.get('/tasks', { params: { date: dateStr } })
+      ]);
 
-      var summary = summaryRes.data;
+      const summary = summaryRes.data;
       setTaskSummary(summary.task_summary);
       setMoodStats(summary.weekly_mood_stats);
       setAllTasks(tasksRes.data);
       
-      var existingTitles = new Set();
-      for (var i = 0; i < tasksRes.data.length; i++) {
-        existingTitles.add(tasksRes.data[i].title);
-      }
+      const existingTitles = new Set(tasksRes.data.map(t => t.title));
       setAddedTasks(existingTitles);
 
       if (dateEmotionRes.data && dateEmotionRes.data.emotion) {
@@ -161,121 +140,124 @@ function Dashboard() {
         setSuggestedTasks([]);
         setMusicRecommendations([]);
       }
-      setLoading(false);
-    }).catch(function(error) {
+    } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
       setSelectedEmotion(null);
+    } finally {
       setLoading(false);
-    });
-  }
-
-  function fetchRecommendations(emotionName) {
-    var dateStr = format(selectedDate, 'yyyy-MM-dd');
-    
-    Promise.all([
-      api.get('/tasks/recommended', { params: { emotion: emotionName, limit: 3, date: dateStr } }),
-      api.get('/tasks/suggestions', { params: { emotion: emotionName, limit: 3 } }),
-      api.get('/music/recommendations', { params: { emotion: emotionName, limit: 4 } })
-    ]).then(function(results) {
-      setRecommendedTasks(results[0].data);
-      setSuggestedTasks(results[1].data);
-      setMusicRecommendations(results[2].data);
-    }).catch(function(error) {
-      console.error('Failed to fetch recommendations:', error);
-    });
-  }
-
-  function handleTaskToggle(task) {
-    api.put('/tasks/' + task.id, { is_completed: !task.is_completed })
-      .then(function() {
-        fetchDashboardData();
-        if (selectedEmotion) {
-          fetchRecommendations(selectedEmotion.name);
-        }
-      })
-      .catch(function(error) {
-        console.error('Failed to toggle task:', error);
-      });
-  }
-
-  function handleAddSuggestedTask(suggestion) {
-    if (addedTasks.has(suggestion.title)) {
-      return;
     }
-    
-    var dateStr = format(selectedDate, 'yyyy-MM-dd');
-    var emotionName = selectedEmotion ? selectedEmotion.name : null;
-    
-    api.post('/tasks', {
-      title: suggestion.title,
-      category: suggestion.category,
-      priority: suggestion.priority,
-      task_date: dateStr,
-      recommended_for_emotion: emotionName
-    }).then(function() {
-      var newSet = new Set(addedTasks);
-      newSet.add(suggestion.title);
-      setAddedTasks(newSet);
+  };
+
+  const fetchRecommendations = async (emotionName) => {
+    try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const [tasksRes, suggestionsRes, musicRes] = await Promise.all([
+        api.get('/tasks/recommended', { params: { emotion: emotionName, limit: 3, date: dateStr } }),
+        api.get('/tasks/suggestions', { params: { emotion: emotionName, limit: 3 } }),
+        api.get('/music/recommendations', { params: { emotion: emotionName, limit: 4 } })
+      ]);
+
+      setRecommendedTasks(tasksRes.data);
+      setSuggestedTasks(suggestionsRes.data);
+      setMusicRecommendations(musicRes.data);
+    } catch (error) {
+      console.error('Failed to fetch recommendations:', error);
+    }
+  };
+
+  const handleTaskToggle = async (task) => {
+    try {
+      await api.put(`/tasks/${task.id}`, { is_completed: !task.is_completed });
       fetchDashboardData();
       if (selectedEmotion) {
         fetchRecommendations(selectedEmotion.name);
       }
-    }).catch(function(error) {
-      if (error.response && error.response.status === 409) {
-        var newSet = new Set(addedTasks);
-        newSet.add(suggestion.title);
-        setAddedTasks(newSet);
+    } catch (error) {
+      console.error('Failed to toggle task:', error);
+    }
+  };
+
+  const handleAddSuggestedTask = async (suggestion) => {
+    if (addedTasks.has(suggestion.title)) {
+      return;
+    }
+    
+    try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      await api.post('/tasks', {
+        title: suggestion.title,
+        category: suggestion.category,
+        priority: suggestion.priority,
+        task_date: dateStr,
+        recommended_for_emotion: selectedEmotion?.name
+      });
+      setAddedTasks(prev => new Set([...prev, suggestion.title]));
+      fetchDashboardData();
+      if (selectedEmotion) {
+        fetchRecommendations(selectedEmotion.name);
+      }
+    } catch (error) {
+      if (error.response?.status === 409) {
+        setAddedTasks(prev => new Set([...prev, suggestion.title]));
       }
       console.error('Failed to add task:', error);
-    });
-  }
+    }
+  };
 
-  function handleEmotionSelect(emotion) {
-    setSelectedEmotion(emotion);
-    
-    api.post('/emotions/record', {
-      emotion_id: emotion.id,
-      date: format(selectedDate, 'yyyy-MM-dd')
-    }).catch(function(error) {
-      console.error('Failed to record emotion:', error);
-    });
-  }
-
-  function handleDateSelect(date) {
+  const handleDateSelect = (date) => {
     setSelectedDate(date);
     setLoading(true);
-  }
+  };
 
-  function getGreeting() {
-    var hour = new Date().getHours();
+  const handleEmotionSelect = async (emotion) => {
+    setSelectedEmotion(emotion);
+    
+    try {
+      await api.post('/emotions/record', {
+        emotion_id: emotion.id,
+        date: format(selectedDate, 'yyyy-MM-dd')
+      });
+      setCalendarRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Failed to record emotion:', error);
+    }
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
     if (hour < 18) return 'Good Afternoon';
     return 'Good Evening';
-  }
+  };
 
-  function getDateDisplay() {
-    var dateText = format(selectedDate, 'EEEE, MMMM d, yyyy');
+  const getDateDisplay = () => {
     if (isToday(selectedDate)) {
-      return dateText + ' (Today)';
+      return format(selectedDate, 'EEEE, MMMM d, yyyy') + ' (Today)';
     }
-    return dateText;
-  }
+    return format(selectedDate, 'EEEE, MMMM d, yyyy');
+  };
 
   if (loading) {
     return <div className="loading-screen">Loading your dashboard...</div>;
   }
 
-  var username = user ? user.username : 'User';
-
   return (
     <div className="dashboard-page">
       <header className="dashboard-header">
         <div className="greeting">
-          <h1>{getGreeting()}, {username}!</h1>
+          <h1>{getGreeting()}, {user?.username}!</h1>
           <p className="date-display">
             <Calendar size={16} />
             {getDateDisplay()}
           </p>
+          {!isToday(selectedDate) && (
+            <button 
+              className="today-btn"
+              onClick={() => handleDateSelect(new Date())}
+            >
+              Back to Today
+            </button>
+          )}
         </div>
         <div className="task-summary-badges">
           <div className="badge total">
@@ -298,7 +280,7 @@ function Dashboard() {
         <div className="dashboard-main">
           <section className="card emotion-section">
             <div className="emotion-header">
-              <h3>How are you feeling today?</h3>
+              <h3>How are you feeling {isToday(selectedDate) ? 'today' : 'on this day'}?</h3>
               {!selectedEmotion && (
                 <p className="emotion-hint">Select your mood to get personalized recommendations</p>
               )}
@@ -318,18 +300,15 @@ function Dashboard() {
                 </div>
                 {recommendedTasks.length > 0 ? (
                   <div className="task-list">
-                    {recommendedTasks.map(function(item) {
-                      var taskWithScore = Object.assign({}, item.task, { score: item.score });
-                      return (
-                        <TaskCard 
-                          key={item.task.id} 
-                          task={taskWithScore} 
-                          onToggle={handleTaskToggle}
-                          showScore={true}
-                          selectedDate={selectedDate}
-                        />
-                      );
-                    })}
+                    {recommendedTasks.map((item) => (
+                      <TaskCard 
+                        key={item.task.id} 
+                        task={{ ...item.task, score: item.score }} 
+                        onToggle={handleTaskToggle}
+                        showScore={true}
+                        selectedDate={selectedDate}
+                      />
+                    ))}
                   </div>
                 ) : (
                   <p className="empty-state">No tasks yet. Add some tasks to get personalized recommendations!</p>
@@ -341,20 +320,16 @@ function Dashboard() {
                   <h3>Suggested Activities for {selectedEmotion.name} Mood</h3>
                 </div>
                 <div className="suggestions-grid">
-                  {suggestedTasks.map(function(suggestion, index) {
-                    var isAdded = addedTasks.has(suggestion.title);
-                    var btnClass = 'add-btn';
-                    if (isAdded) {
-                      btnClass = 'add-btn added';
-                    }
+                  {suggestedTasks.map((suggestion, index) => {
+                    const isAdded = addedTasks.has(suggestion.title);
                     return (
                       <div key={index} className="suggestion-card">
                         <p>{suggestion.title}</p>
                         <div className="suggestion-meta">
                           <span className="category">{suggestion.category}</span>
                           <button 
-                            className={btnClass}
-                            onClick={function() { handleAddSuggestedTask(suggestion); }}
+                            className={`add-btn ${isAdded ? 'added' : ''}`}
+                            onClick={() => handleAddSuggestedTask(suggestion)}
                             disabled={isAdded}
                           >
                             {isAdded ? 'Added' : 'Add to Tasks'}
@@ -371,9 +346,9 @@ function Dashboard() {
                   <h3><Music size={20} /> Music for Your Mood</h3>
                 </div>
                 <div className="music-grid">
-                  {musicRecommendations.map(function(music) {
-                    return <MusicCard key={music.id} music={music} />;
-                  })}
+                  {musicRecommendations.map((music) => (
+                    <MusicCard key={music.id} music={music} />
+                  ))}
                 </div>
               </section>
             </>
@@ -384,6 +359,7 @@ function Dashboard() {
           <section className="card calendar-section">
             <h3 className="calendar-title">Select a Date</h3>
             <MiniCalendar 
+              key={calendarRefreshKey}
               onDateSelect={handleDateSelect}
               selectedDate={selectedDate}
             />
@@ -396,6 +372,6 @@ function Dashboard() {
       </div>
     </div>
   );
-}
+};
 
 export default Dashboard;

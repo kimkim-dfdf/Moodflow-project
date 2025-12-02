@@ -1,146 +1,131 @@
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, startOfWeek, endOfWeek } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../api/axios';
 
 function MiniCalendar({ onDateSelect, selectedDate }) {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(selectedDate || new Date());
   const [emotionData, setEmotionData] = useState({});
 
-  useEffect(function() {
-    fetchMonthEmotions();
-  }, [currentMonth]);
-
-  function fetchMonthEmotions() {
-    api.get('/emotions/statistics', { params: { days: 60 } })
-      .then(function(response) {
-        if (response.data && response.data.daily_emotions) {
-          setEmotionData(response.data.daily_emotions);
-        }
+  useEffect(() => {
+    api.get('/emotions/statistics', { params: { days: 30 } })
+      .then(response => {
+        setEmotionData(response.data.daily_emotions || {});
       })
-      .catch(function(error) {
-        console.error('Failed to fetch emotions:', error);
+      .catch(error => {
+        console.error('Failed to fetch emotion data:', error);
       });
+  }, [currentDate]);
+
+  const today = new Date();
+  
+  function isFutureDate(date) {
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return dateStart > todayStart;
   }
 
-  function handlePrevMonth() {
-    setCurrentMonth(subMonths(currentMonth, 1));
+  function isCurrentMonth() {
+    return currentDate.getMonth() === today.getMonth() && 
+           currentDate.getFullYear() === today.getFullYear();
   }
 
-  function handleNextMonth() {
-    setCurrentMonth(addMonths(currentMonth, 1));
+  function goToPrevMonth() {
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+    setCurrentDate(newDate);
   }
 
-  function handleDateClick(day) {
-    if (onDateSelect) {
+  function goToNextMonth() {
+    if (!isCurrentMonth()) {
+      const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
+      setCurrentDate(newDate);
+    }
+  }
+
+  function handleDayClick(day) {
+    if (!isFutureDate(day) && onDateSelect) {
       onDateSelect(day);
     }
   }
 
-  function renderHeader() {
-    return (
-      <div className="calendar-header">
-        <button className="nav-btn" onClick={handlePrevMonth}>
-          <ChevronLeft size={18} />
-        </button>
-        <span className="current-month">{format(currentMonth, 'MMMM yyyy')}</span>
-        <button className="nav-btn" onClick={handleNextMonth}>
-          <ChevronRight size={18} />
-        </button>
-      </div>
-    );
-  }
-
-  function renderDays() {
-    var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    var dayElements = [];
+  function getDayClassName(day) {
+    let className = 'calendar-day';
     
-    for (var i = 0; i < days.length; i++) {
-      dayElements.push(
-        <div className="day-name" key={days[i]}>
-          {days[i]}
-        </div>
-      );
+    if (!isSameMonth(day, currentDate)) {
+      className = className + ' other-month';
+    }
+    if (isToday(day)) {
+      className = className + ' today';
+    }
+    if (selectedDate && isSameDay(day, selectedDate)) {
+      className = className + ' selected';
+    }
+    if (isFutureDate(day)) {
+      className = className + ' future-date';
     }
     
-    return <div className="days-row">{dayElements}</div>;
+    return className;
   }
 
-  function renderCells() {
-    var monthStart = startOfMonth(currentMonth);
-    var monthEnd = endOfMonth(monthStart);
-    var startDate = startOfWeek(monthStart);
-    var endDate = endOfWeek(monthEnd);
-
-    var rows = [];
-    var days = [];
-    var day = startDate;
-
-    while (day <= endDate) {
-      for (var i = 0; i < 7; i++) {
-        var dateStr = format(day, 'yyyy-MM-dd');
-        var dayData = emotionData[dateStr];
-        var isCurrentMonth = isSameMonth(day, monthStart);
-        var isSelected = isSameDay(day, selectedDate);
-        var isToday = isSameDay(day, new Date());
-
-        var className = 'calendar-cell';
-        if (!isCurrentMonth) {
-          className = className + ' other-month';
-        }
-        if (isSelected) {
-          className = className + ' selected';
-        }
-        if (isToday) {
-          className = className + ' today';
-        }
-        if (dayData) {
-          className = className + ' has-emotion';
-        }
-
-        var cellStyle = {};
-        if (dayData && dayData.color) {
-          cellStyle = { borderBottom: '3px solid ' + dayData.color };
-        }
-
-        var dayNumber = format(day, 'd');
-        var currentDay = day;
-
-        days.push(
-          <div
-            className={className}
-            key={dateStr}
-            style={cellStyle}
-            onClick={function(d) {
-              return function() { handleDateClick(d); };
-            }(currentDay)}
-          >
-            <span className="day-number">{dayNumber}</span>
-            {dayData && dayData.emoji && (
-              <span className="day-emoji">{dayData.emoji}</span>
-            )}
-          </div>
-        );
-
-        day = addDays(day, 1);
-      }
-
-      rows.push(
-        <div className="calendar-row" key={day.toString()}>
-          {days}
-        </div>
-      );
-      days = [];
-    }
-
-    return <div className="calendar-body">{rows}</div>;
-  }
+  const monthStart = startOfMonth(currentDate);
+  const monthEnd = endOfMonth(currentDate);
+  const calendarStart = startOfWeek(monthStart);
+  const calendarEnd = endOfWeek(monthEnd);
+  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
     <div className="mini-calendar">
-      {renderHeader()}
-      {renderDays()}
-      {renderCells()}
+      <div className="calendar-header">
+        <button onClick={goToPrevMonth} className="nav-btn">
+          <ChevronLeft size={18} />
+        </button>
+        <h3>{format(currentDate, 'MMMM yyyy')}</h3>
+        <button 
+          onClick={goToNextMonth} 
+          className={isCurrentMonth() ? 'nav-btn disabled' : 'nav-btn'}
+          disabled={isCurrentMonth()}
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+
+      <div className="calendar-weekdays">
+        {weekdays.map(function(day) {
+          return <div key={day} className="weekday">{day}</div>;
+        })}
+      </div>
+
+      <div className="calendar-grid">
+        {days.map(function(day) {
+          const dateStr = format(day, 'yyyy-MM-dd');
+          const emotion = emotionData[dateStr];
+          const isFuture = isFutureDate(day);
+          
+          let style = {};
+          if (isFuture) {
+            style = { cursor: 'not-allowed' };
+          } else if (emotion) {
+            style = { backgroundColor: emotion.color + '20' };
+          }
+
+          return (
+            <div
+              key={dateStr}
+              className={getDayClassName(day)}
+              onClick={function() { handleDayClick(day); }}
+              style={style}
+            >
+              <span className="day-number">{format(day, 'd')}</span>
+              {emotion && (
+                <span className="day-emotion" title={emotion.emotion}>
+                  {emotion.emoji}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -2,128 +2,131 @@ import { useState, useEffect } from 'react';
 import { useDate } from '../context/DateContext';
 import api from '../api/axios';
 import TaskCard from '../components/TaskCard';
-import { Sparkles, X } from 'lucide-react';
-import { format } from 'date-fns';
+import MiniCalendar from '../components/MiniCalendar';
+import { Sparkles, X, Calendar, RotateCcw } from 'lucide-react';
+import { format, isToday } from 'date-fns';
 
-function Tasks() {
-  const { selectedDate } = useDate();
+const Tasks = () => {
+  const { selectedDate, setSelectedDate } = useDate();
+
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
-  useEffect(function() {
+  useEffect(() => {
     fetchTasks();
     fetchDateEmotion();
   }, [selectedDate]);
 
-  function fetchTasks() {
-    var dateStr = format(selectedDate, 'yyyy-MM-dd');
-    
-    api.get('/tasks', { params: { date: dateStr } })
-      .then(function(response) {
-        setTasks(response.data);
-        setLoading(false);
-      })
-      .catch(function(error) {
-        console.error('Failed to fetch tasks:', error);
-        setLoading(false);
-      });
-  }
+  const fetchTasks = async () => {
+    try {
+      const params = { date: format(selectedDate, 'yyyy-MM-dd') };
+      const response = await api.get('/tasks', { params });
+      setTasks(response.data);
+    } catch (error) {
+      console.error('Failed to fetch tasks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  function fetchDateEmotion() {
-    var dateStr = format(selectedDate, 'yyyy-MM-dd');
-    
-    api.get('/emotions/diary/' + dateStr)
-      .then(function(response) {
-        if (response.data && response.data.emotion) {
-          setSelectedEmotion(response.data.emotion);
-        } else {
-          setSelectedEmotion(null);
-        }
-      })
-      .catch(function(error) {
-        console.error('Failed to fetch date emotion:', error);
+  const fetchDateEmotion = async () => {
+    try {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const response = await api.get(`/emotions/diary/${dateStr}`);
+      if (response.data && response.data.emotion) {
+        setSelectedEmotion(response.data.emotion);
+      } else {
         setSelectedEmotion(null);
-      });
-  }
+      }
+    } catch (error) {
+      console.error('Failed to fetch date emotion:', error);
+      setSelectedEmotion(null);
+    }
+  };
 
-  function fetchSuggestions(emotionName) {
-    api.get('/tasks/suggestions', { params: { emotion: emotionName, limit: 5 } })
-      .then(function(response) {
-        setSuggestedTasks(response.data);
-        setShowSuggestions(true);
-      })
-      .catch(function(error) {
-        console.error('Failed to fetch suggestions:', error);
+  const fetchSuggestions = async (emotionName) => {
+    try {
+      const response = await api.get('/tasks/suggestions', {
+        params: { emotion: emotionName, limit: 5 }
       });
-  }
+      setSuggestedTasks(response.data);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Failed to fetch suggestions:', error);
+    }
+  };
 
-  function handleToggle(task) {
-    api.put('/tasks/' + task.id, { is_completed: !task.is_completed })
-      .then(function() {
-        fetchTasks();
-      })
-      .catch(function(error) {
-        console.error('Failed to toggle task:', error);
-      });
-  }
-
-  function handleAddSuggestion(suggestion) {
-    var emotionName = selectedEmotion ? selectedEmotion.name : null;
-    
-    api.post('/tasks', {
-      title: suggestion.title,
-      category: suggestion.category,
-      priority: suggestion.priority,
-      task_date: format(selectedDate, 'yyyy-MM-dd'),
-      recommended_for_emotion: emotionName
-    }).then(function() {
+  const handleToggle = async (task) => {
+    try {
+      await api.put(`/tasks/${task.id}`, { is_completed: !task.is_completed });
       fetchTasks();
-    }).catch(function(error) {
+    } catch (error) {
+      console.error('Failed to toggle task:', error);
+    }
+  };
+
+  const handleAddSuggestion = async (suggestion) => {
+    try {
+      await api.post('/tasks', {
+        title: suggestion.title,
+        category: suggestion.category,
+        priority: suggestion.priority,
+        task_date: format(selectedDate, 'yyyy-MM-dd'),
+        recommended_for_emotion: selectedEmotion?.name
+      });
+      fetchTasks();
+    } catch (error) {
       console.error('Failed to add suggestion:', error);
-    });
-  }
-
-  function handleGenerateClick() {
-    if (selectedEmotion) {
-      fetchSuggestions(selectedEmotion.name);
     }
-  }
+  };
 
-  function handleCloseSuggestions() {
-    setShowSuggestions(false);
-  }
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
+    setShowCalendar(false);
+    setLoading(true);
+  };
 
-  // Filter tasks
-  var incompleteTasks = [];
-  var completedTasks = [];
-  for (var i = 0; i < tasks.length; i++) {
-    if (tasks[i].is_completed) {
-      completedTasks.push(tasks[i]);
-    } else {
-      incompleteTasks.push(tasks[i]);
-    }
-  }
+  const handleBackToToday = () => {
+    setSelectedDate(new Date());
+    setLoading(true);
+  };
+
+  const incompleteTasks = tasks.filter(t => !t.is_completed);
+  const completedTasks = tasks.filter(t => t.is_completed);
 
   if (loading) {
     return <div className="loading-screen">Loading tasks...</div>;
   }
-
-  var dateDisplay = format(selectedDate, 'MMM d, yyyy');
 
   return (
     <div className="tasks-page">
       <header className="page-header">
         <div className="header-title-row">
           <h1>My Tasks</h1>
-          <span className="date-display">{dateDisplay}</span>
+          <div className="date-selector">
+            <button 
+              className="date-picker-btn"
+              onClick={() => setShowCalendar(!showCalendar)}
+            >
+              <Calendar size={18} />
+              {format(selectedDate, 'MMM d, yyyy')}
+            </button>
+            {!isToday(selectedDate) && (
+              <button className="back-today-btn" onClick={handleBackToToday}>
+                <RotateCcw size={16} />
+                Back to Today
+              </button>
+            )}
+          </div>
         </div>
         <div className="header-actions">
           <button 
             className="btn-primary"
-            onClick={handleGenerateClick}
+            onClick={() => selectedEmotion && fetchSuggestions(selectedEmotion.name)}
             disabled={!selectedEmotion}
           >
             <Sparkles size={18} />
@@ -132,31 +135,39 @@ function Tasks() {
         </div>
       </header>
 
+      {showCalendar && (
+        <div className="calendar-dropdown card">
+          <MiniCalendar 
+            onDateSelect={handleDateSelect}
+            selectedDate={selectedDate}
+          />
+        </div>
+      )}
+
+
       {showSuggestions && suggestedTasks.length > 0 && (
         <div className="suggestions-panel card">
           <div className="panel-header">
-            <h3>Suggested Tasks for {selectedEmotion ? selectedEmotion.name : ''} Mood</h3>
-            <button className="close-btn" onClick={handleCloseSuggestions}>
+            <h3>Suggested Tasks for {selectedEmotion?.name} Mood</h3>
+            <button className="close-btn" onClick={() => setShowSuggestions(false)}>
               <X size={18} />
             </button>
           </div>
           <div className="suggestions-list">
-            {suggestedTasks.map(function(suggestion, index) {
-              return (
-                <div key={index} className="suggestion-item">
-                  <div className="suggestion-content">
-                    <p>{suggestion.title}</p>
-                    <span className="category-tag">{suggestion.category}</span>
-                  </div>
-                  <button 
-                    className="btn-small"
-                    onClick={function() { handleAddSuggestion(suggestion); }}
-                  >
-                    Add
-                  </button>
+            {suggestedTasks.map((suggestion, index) => (
+              <div key={index} className="suggestion-item">
+                <div className="suggestion-content">
+                  <p>{suggestion.title}</p>
+                  <span className="category-tag">{suggestion.category}</span>
                 </div>
-              );
-            })}
+                <button 
+                  className="btn-small"
+                  onClick={() => handleAddSuggestion(suggestion)}
+                >
+                  Add
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -166,9 +177,9 @@ function Tasks() {
           <h2>To Do ({incompleteTasks.length})</h2>
           {incompleteTasks.length > 0 ? (
             <div className="task-list">
-              {incompleteTasks.map(function(task) {
-                return <TaskCard key={task.id} task={task} onToggle={handleToggle} mode="tasks" />;
-              })}
+              {incompleteTasks.map((task) => (
+                <TaskCard key={task.id} task={task} onToggle={handleToggle} mode="tasks" />
+              ))}
             </div>
           ) : (
             <p className="empty-state">No pending tasks for this date.</p>
@@ -179,9 +190,9 @@ function Tasks() {
           <h2>Completed ({completedTasks.length})</h2>
           {completedTasks.length > 0 ? (
             <div className="task-list">
-              {completedTasks.map(function(task) {
-                return <TaskCard key={task.id} task={task} onToggle={handleToggle} mode="tasks" />;
-              })}
+              {completedTasks.map((task) => (
+                <TaskCard key={task.id} task={task} onToggle={handleToggle} mode="tasks" />
+              ))}
             </div>
           ) : (
             <p className="empty-state">No completed tasks for this date.</p>
@@ -190,6 +201,6 @@ function Tasks() {
       </div>
     </div>
   );
-}
+};
 
 export default Tasks;
