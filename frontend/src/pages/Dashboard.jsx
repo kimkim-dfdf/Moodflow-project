@@ -4,11 +4,12 @@ import { useDate } from '../context/DateContext';
 import EmotionSelector from '../components/EmotionSelector';
 import TaskCard from '../components/TaskCard';
 import MusicCard from '../components/MusicCard';
+import BookCard from '../components/BookCard';
 import MiniCalendar from '../components/MiniCalendar';
 import MoodStats from '../components/MoodStats';
 import api from '../api/axios';
 import { format, isToday } from 'date-fns';
-import { Sparkles, Music, CheckCircle2, Calendar } from 'lucide-react';
+import { Sparkles, Music, BookOpen, CheckCircle2, Calendar } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ const Dashboard = () => {
   const [recommendedTasks, setRecommendedTasks] = useState([]);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
   const [musicRecommendations, setMusicRecommendations] = useState([]);
+  const [bookRecommendations, setBookRecommendations] = useState([]);
   const [taskSummary, setTaskSummary] = useState({ total: 0, completed: 0, pending: 0 });
   const [moodStats, setMoodStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -70,15 +72,17 @@ const Dashboard = () => {
   const fetchRecommendations = async (emotionName) => {
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const [tasksRes, suggestionsRes, musicRes] = await Promise.all([
+      const [tasksRes, suggestionsRes, musicRes, booksRes] = await Promise.all([
         api.get('/tasks/recommended', { params: { emotion: emotionName, limit: 3, date: dateStr } }),
         api.get('/tasks/suggestions', { params: { emotion: emotionName, limit: 3 } }),
-        api.get('/music/recommendations', { params: { emotion: emotionName, limit: 4 } })
+        api.get('/music/recommendations', { params: { emotion: emotionName, limit: 4 } }),
+        api.get('/books/recommendations', { params: { emotion: emotionName, limit: 4 } })
       ]);
 
       setRecommendedTasks(tasksRes.data);
       setSuggestedTasks(suggestionsRes.data);
       setMusicRecommendations(musicRes.data);
+      setBookRecommendations(booksRes.data);
     } catch (error) {
       console.error('Failed to fetch recommendations:', error);
     }
@@ -267,6 +271,17 @@ const Dashboard = () => {
                 <div className="music-grid">
                   {musicRecommendations.map((music) => (
                     <MusicCard key={music.id} music={music} />
+                  ))}
+                </div>
+              </section>
+
+              <section className="card books-section">
+                <div className="section-header">
+                  <h3><BookOpen size={20} /> Books for Your Mood</h3>
+                </div>
+                <div className="books-grid">
+                  {bookRecommendations.map((book) => (
+                    <BookCard key={book.id} book={book} />
                   ))}
                 </div>
               </section>

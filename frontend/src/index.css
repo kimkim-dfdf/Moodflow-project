@@ -899,6 +899,12 @@ body {
   overflow: hidden;
 }
 
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
 .mini-calendar {
   width: 100%;
 }
@@ -1903,6 +1909,10 @@ body {
   
   .suggestions-grid,
   .music-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .books-grid {
     grid-template-columns: 1fr;
   }
   
