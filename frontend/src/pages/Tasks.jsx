@@ -247,15 +247,6 @@ const Tasks = () => {
             <option value="incomplete">Incomplete</option>
             <option value="completed">Completed</option>
           </select>
-          <select 
-            value={filter.category} 
-            onChange={(e) => setFilter({ ...filter, category: e.target.value })}
-          >
-            <option value="all">All Categories</option>
-            {CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
         </div>
       </div>
 
