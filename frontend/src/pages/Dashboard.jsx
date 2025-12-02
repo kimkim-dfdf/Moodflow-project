@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDate } from '../context/DateContext';
 import EmotionSelector from '../components/EmotionSelector';
 import TaskCard from '../components/TaskCard';
+import MiniCalendar from '../components/MiniCalendar';
 import api from '../api/axios';
 import { format, isToday } from 'date-fns';
 import { Music, CheckCircle2, Calendar, ExternalLink } from 'lucide-react';
@@ -240,6 +241,11 @@ function Dashboard() {
     });
   }
 
+  function handleDateSelect(date) {
+    setSelectedDate(date);
+    setLoading(true);
+  }
+
   function getGreeting() {
     var hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -375,6 +381,14 @@ function Dashboard() {
         </div>
 
         <aside className="dashboard-sidebar">
+          <section className="card calendar-section">
+            <h3 className="calendar-title">Select a Date</h3>
+            <MiniCalendar 
+              onDateSelect={handleDateSelect}
+              selectedDate={selectedDate}
+            />
+          </section>
+
           <section className="card stats-section">
             <MoodStats stats={moodStats} />
           </section>
