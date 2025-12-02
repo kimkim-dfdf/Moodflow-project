@@ -194,12 +194,61 @@ def get_suggested_tasks(emotion_name, limit):
     else:
         suggestions = TASK_SUGGESTIONS['Neutral']
     
-    # Return random selection
-    if limit > len(suggestions):
-        limit = len(suggestions)
+    # Get weights for this emotion
+    weights = EMOTION_WEIGHTS.get(emotion_name)
+    if not weights:
+        weights = EMOTION_WEIGHTS['Neutral']
     
-    selected = random.sample(suggestions, limit)
-    return selected
+    # Calculate score for each suggestion
+    scored_suggestions = []
+    for suggestion in suggestions:
+        # Category score (57% weight)
+        category = suggestion.get('category', 'Personal')
+        if category in weights:
+            cat_weight = weights[category]
+        else:
+            cat_weight = 0.5
+        category_score = cat_weight * 57
+        
+        # Priority score (43% weight)
+        priority_pref = weights.get('priority', 'Medium')
+        priority = suggestion.get('priority', 'Medium')
+        
+        if priority_pref == 'High':
+            priority_values = {'High': 3, 'Medium': 2, 'Low': 1}
+        elif priority_pref == 'Low':
+            priority_values = {'Low': 3, 'Medium': 2, 'High': 1}
+        else:
+            priority_values = {'Medium': 3, 'High': 2, 'Low': 2}
+        
+        if priority in priority_values:
+            p_score = priority_values[priority]
+        else:
+            p_score = 2
+        priority_score = p_score * 14.33
+        
+        total = category_score + priority_score
+        scored_suggestions.append({'suggestion': suggestion, 'score': total})
+    
+    # Sort by score (highest first) using bubble sort
+    for i in range(len(scored_suggestions)):
+        for j in range(i + 1, len(scored_suggestions)):
+            if scored_suggestions[j]['score'] > scored_suggestions[i]['score']:
+                temp = scored_suggestions[i]
+                scored_suggestions[i] = scored_suggestions[j]
+                scored_suggestions[j] = temp
+    
+    # Return top results
+    result = []
+    count = 0
+    for item in scored_suggestions:
+        if count >= limit:
+            break
+        item['suggestion']['score'] = round(item['score'], 1)
+        result.append(item['suggestion'])
+        count = count + 1
+    
+    return result
 
 
 def get_music_recommendations(db, emotion_name, user_id, limit):
