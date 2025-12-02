@@ -210,36 +210,24 @@ body {
 
 .task-summary-badges {
   display: flex;
-  gap: 16px;
+  gap: 20px;
+  align-items: center;
 }
 
 .task-summary-badges .badge {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 16px 24px;
-  background: var(--surface);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  min-width: 100px;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
 .task-summary-badges .badge-value {
-  font-size: 28px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
-.task-summary-badges .badge-label {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 4px;
-}
-
-.task-summary-badges .badge.completed {
-  border-color: var(--success);
-  background: #f0fdf4;
-}
+.task-summary-badges .badge-label { font-size: 14px; }
 
 .task-summary-badges .badge.completed .badge-value { color: var(--success); }
 
