@@ -2,17 +2,16 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const Register = () => {
+function Register() {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  function handleSubmit(e) {
     e.preventDefault();
     setError('');
 
@@ -26,17 +25,18 @@ const Register = () => {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      await register(email, username, password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to register');
-    } finally {
-      setLoading(false);
-    }
-  };
+    register(email, username, password)
+      .then(function() {
+        navigate('/dashboard');
+      })
+      .catch(function(err) {
+        if (err.response && err.response.data) {
+          setError(err.response.data.error);
+        } else {
+          setError('Registration failed');
+        }
+      });
+  }
 
   return (
     <div className="auth-page">
@@ -52,55 +52,51 @@ const Register = () => {
           {error && <div className="error-message">{error}</div>}
 
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label>Username</label>
             <input
               type="text"
-              id="username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={function(e) { setUsername(e.target.value); }}
               placeholder="Choose a username"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label>Email</label>
             <input
               type="email"
-              id="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={function(e) { setEmail(e.target.value); }}
               placeholder="Enter your email"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label>Password</label>
             <input
               type="password"
-              id="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={function(e) { setPassword(e.target.value); }}
               placeholder="Create a password"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label>Confirm Password</label>
             <input
               type="password"
-              id="confirmPassword"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={function(e) { setConfirmPassword(e.target.value); }}
               placeholder="Confirm your password"
               required
             />
           </div>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Sign Up'}
+          <button type="submit" className="btn-primary">
+            Sign Up
           </button>
 
           <p className="auth-switch">
@@ -110,6 +106,6 @@ const Register = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Register;
