@@ -30,9 +30,7 @@ class User(UserMixin, db.Model):
             'id': self.id,
             'email': self.email,
             'username': self.username,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'preferred_work_time': self.preferred_work_time,
-            'preferred_categories': self.preferred_categories.split(',') if self.preferred_categories else []
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
 
