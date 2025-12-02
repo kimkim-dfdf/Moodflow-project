@@ -3,30 +3,18 @@ import { useDate } from '../context/DateContext';
 import api from '../api/axios';
 import TaskCard from '../components/TaskCard';
 import MiniCalendar from '../components/MiniCalendar';
-import { Plus, Sparkles, X, Calendar, RotateCcw } from 'lucide-react';
+import { Sparkles, X, Calendar, RotateCcw } from 'lucide-react';
 import { format, isToday } from 'date-fns';
-
-const CATEGORIES = ['Work', 'Study', 'Health', 'Personal'];
-const PRIORITIES = ['Low', 'Medium', 'High'];
 
 const Tasks = () => {
   const { selectedDate, setSelectedDate } = useDate();
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
-
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: 'Personal',
-    priority: 'Medium',
-    due_time: ''
-  });
 
   useEffect(() => {
     fetchTasks();
@@ -72,22 +60,6 @@ const Tasks = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const taskData = {
-        ...formData,
-        task_date: format(selectedDate, 'yyyy-MM-dd')
-      };
-      await api.post('/tasks', taskData);
-      setShowModal(false);
-      resetForm();
-      fetchTasks();
-    } catch (error) {
-      console.error('Failed to save task:', error);
-    }
-  };
-
   const handleToggle = async (task) => {
     try {
       await api.put(`/tasks/${task.id}`, { is_completed: !task.is_completed });
@@ -110,21 +82,6 @@ const Tasks = () => {
     } catch (error) {
       console.error('Failed to add suggestion:', error);
     }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      description: '',
-      category: 'Personal',
-      priority: 'Medium',
-      due_time: ''
-    });
-  };
-
-  const openNewTaskModal = () => {
-    resetForm();
-    setShowModal(true);
   };
 
   const handleDateSelect = (date) => {
@@ -168,16 +125,12 @@ const Tasks = () => {
         </div>
         <div className="header-actions">
           <button 
-            className="btn-secondary"
+            className="btn-primary"
             onClick={() => selectedEmotion && fetchSuggestions(selectedEmotion.name)}
             disabled={!selectedEmotion}
           >
             <Sparkles size={18} />
             Generate Emotion Tasks
-          </button>
-          <button className="btn-primary" onClick={openNewTaskModal}>
-            <Plus size={18} />
-            Add Task
           </button>
         </div>
       </header>
@@ -246,90 +199,6 @@ const Tasks = () => {
           )}
         </section>
       </div>
-
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>New Task</h2>
-              <button className="close-btn" onClick={() => setShowModal(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="title">Title</label>
-                <input
-                  type="text"
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Task title"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Task description (optional)"
-                  rows={3}
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="category">Category</label>
-                  <select
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  >
-                    {CATEGORIES.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="priority">Priority</label>
-                  <select
-                    id="priority"
-                    value={formData.priority}
-                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                  >
-                    {PRIORITIES.map(pri => (
-                      <option key={pri} value={pri}>{pri}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="due_time">Time</label>
-                <input
-                  type="time"
-                  id="due_time"
-                  value={formData.due_time}
-                  onChange={(e) => setFormData({ ...formData, due_time: e.target.value })}
-                />
-              </div>
-
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary">
-                  Create Task
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
