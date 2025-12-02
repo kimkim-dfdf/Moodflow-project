@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, CheckSquare, Calendar, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Calendar, BookOpen, User, LogOut } from 'lucide-react';
 
 const Layout = () => {
   const { user, logout } = useAuth();
@@ -15,6 +15,7 @@ const Layout = () => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/tasks', icon: CheckSquare, label: 'Tasks' },
     { path: '/calendar', icon: Calendar, label: 'Calendar' },
+    { path: '/books', icon: BookOpen, label: 'Books' },
     { path: '/profile', icon: User, label: 'Profile' },
   ];
 

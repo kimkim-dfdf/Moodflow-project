@@ -14,7 +14,7 @@ def allowed_file(filename):
 
 
 def register_routes(app, db):
-    from models import User, Task, Emotion, EmotionHistory, CalendarEvent, MusicRecommendation
+    from models import User, Task, Emotion, EmotionHistory, CalendarEvent, MusicRecommendation, BookRecommendation
     
     @app.route('/api/auth/register', methods=['POST'])
     def register():
@@ -332,8 +332,6 @@ def register_routes(app, db):
     
     @app.route('/api/books/recommendations', methods=['GET'])
     def get_book_recommendations():
-        from models import Emotion, BookRecommendation
-        
         emotion_name = request.args.get('emotion', 'Neutral')
         limit = request.args.get('limit', 4, type=int)
         
