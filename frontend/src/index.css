@@ -1,3 +1,4 @@
+/* MoodFlow - Main Stylesheet */
 * {
   margin: 0;
   padding: 0;
@@ -5,6 +6,7 @@
 }
 
 :root {
+  /* Colors */
   --primary: #6366f1;
   --primary-light: #818cf8;
   --primary-dark: #4f46e5;
@@ -18,9 +20,13 @@
   --success: #22c55e;
   --warning: #f59e0b;
   --danger: #ef4444;
+  
+  /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  /* Border Radius */
   --radius: 12px;
   --radius-sm: 8px;
 }
@@ -41,6 +47,7 @@ body {
   min-height: 100vh;
 }
 
+/* Sidebar Navigation */
 .sidebar {
   width: 260px;
   background: var(--surface);
@@ -146,6 +153,7 @@ body {
   min-height: 100vh;
 }
 
+/* Auth Pages (Login/Register) */
 .auth-page {
   min-height: 100vh;
   display: flex;
@@ -359,6 +367,7 @@ body {
   color: var(--text-secondary);
 }
 
+/* Card Component */
 .card {
   background: var(--surface);
   border-radius: var(--radius);
@@ -384,6 +393,7 @@ body {
   gap: 12px;
 }
 
+/* Dashboard Page */
 .dashboard-page {
   max-width: 1400px;
   margin: 0 auto;
@@ -513,6 +523,7 @@ body {
   gap: 8px;
 }
 
+/* Emotion Selector */
 .emotion-selector h3 {
   margin-bottom: 16px;
   font-size: 18px;
@@ -557,6 +568,7 @@ body {
   font-weight: 500;
 }
 
+/* Task Cards */
 .task-list {
   display: flex;
   flex-direction: column;
@@ -760,6 +772,7 @@ body {
   cursor: not-allowed;
 }
 
+/* Music Recommendations */
 .music-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -838,6 +851,7 @@ body {
   color: white;
 }
 
+/* Book Cards */
 .book-card {
   display: flex;
   gap: 12px;
@@ -977,6 +991,7 @@ body {
   gap: 12px;
 }
 
+/* Mini Calendar */
 .mini-calendar {
   width: 100%;
 }
