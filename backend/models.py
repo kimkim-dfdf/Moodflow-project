@@ -157,6 +157,7 @@ class MusicRecommendation(db.Model):
     title = db.Column(db.String(200), nullable=False)
     artist = db.Column(db.String(100))
     genre = db.Column(db.String(50))
+    spotify_url = db.Column(db.String(500))
     youtube_url = db.Column(db.String(500))
     thumbnail_url = db.Column(db.String(500))
     popularity_score = db.Column(db.Float, default=0.0)
@@ -171,6 +172,7 @@ class MusicRecommendation(db.Model):
             'title': self.title,
             'artist': self.artist,
             'genre': self.genre,
+            'spotify_url': self.spotify_url,
             'youtube_url': self.youtube_url,
             'thumbnail_url': self.thumbnail_url,
             'popularity_score': self.popularity_score
