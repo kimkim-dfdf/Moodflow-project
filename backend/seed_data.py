@@ -1,5 +1,5 @@
 def seed_database(db):
-    from models import Emotion, MusicRecommendation
+    from models import Emotion, MusicRecommendation, BookRecommendation
     
     if Emotion.query.first() is not None:
         return
@@ -126,6 +126,77 @@ def seed_database(db):
                     popularity_score=10.0 - (i * 0.5)
                 )
                 db.session.add(music)
+    
+    book_data = [
+        {
+            'emotion': 'Happy',
+            'books': [
+                {'title': 'The Alchemist', 'author': 'Paulo Coelho', 'genre': 'Fiction', 'description': 'A magical story about following your dreams'},
+                {'title': 'Big Magic', 'author': 'Elizabeth Gilbert', 'genre': 'Self-Help', 'description': 'Creative living beyond fear'},
+                {'title': 'The Happiness Project', 'author': 'Gretchen Rubin', 'genre': 'Self-Help', 'description': 'A year-long journey to discover happiness'},
+                {'title': 'Yes Please', 'author': 'Amy Poehler', 'genre': 'Memoir', 'description': 'Hilarious and inspiring stories'},
+            ]
+        },
+        {
+            'emotion': 'Sad',
+            'books': [
+                {'title': 'When Breath Becomes Air', 'author': 'Paul Kalanithi', 'genre': 'Memoir', 'description': 'A profound reflection on life and death'},
+                {'title': 'The Year of Magical Thinking', 'author': 'Joan Didion', 'genre': 'Memoir', 'description': 'Processing grief and loss'},
+                {'title': 'Tiny Beautiful Things', 'author': 'Cheryl Strayed', 'genre': 'Self-Help', 'description': 'Advice on life and love'},
+                {'title': 'Norwegian Wood', 'author': 'Haruki Murakami', 'genre': 'Fiction', 'description': 'A story of love and melancholy'},
+            ]
+        },
+        {
+            'emotion': 'Tired',
+            'books': [
+                {'title': 'The Little Prince', 'author': 'Antoine de Saint-Exupery', 'genre': 'Fiction', 'description': 'A gentle tale with deep meaning'},
+                {'title': 'Winnie-the-Pooh', 'author': 'A.A. Milne', 'genre': 'Fiction', 'description': 'Comforting adventures in the Hundred Acre Wood'},
+                {'title': 'The House in the Cerulean Sea', 'author': 'TJ Klune', 'genre': 'Fantasy', 'description': 'A cozy, heartwarming fantasy'},
+                {'title': 'Hygge: The Danish Art of Living', 'author': 'Meik Wiking', 'genre': 'Lifestyle', 'description': 'Finding comfort in simple pleasures'},
+            ]
+        },
+        {
+            'emotion': 'Angry',
+            'books': [
+                {'title': 'The Art of War', 'author': 'Sun Tzu', 'genre': 'Philosophy', 'description': 'Ancient wisdom on strategy'},
+                {'title': 'Rage', 'author': 'Bob Woodward', 'genre': 'Non-Fiction', 'description': 'Understanding power and politics'},
+                {'title': 'Anger: Wisdom for Cooling the Flames', 'author': 'Thich Nhat Hanh', 'genre': 'Self-Help', 'description': 'Buddhist approach to managing anger'},
+                {'title': 'The Count of Monte Cristo', 'author': 'Alexandre Dumas', 'genre': 'Classic', 'description': 'An epic tale of revenge and redemption'},
+            ]
+        },
+        {
+            'emotion': 'Stressed',
+            'books': [
+                {'title': 'The Power of Now', 'author': 'Eckhart Tolle', 'genre': 'Self-Help', 'description': 'Living in the present moment'},
+                {'title': 'Wherever You Go, There You Are', 'author': 'Jon Kabat-Zinn', 'genre': 'Self-Help', 'description': 'Mindfulness meditation in everyday life'},
+                {'title': 'The Untethered Soul', 'author': 'Michael Singer', 'genre': 'Self-Help', 'description': 'Journey beyond yourself'},
+                {'title': 'Why Zebras Dont Get Ulcers', 'author': 'Robert Sapolsky', 'genre': 'Science', 'description': 'Understanding stress and health'},
+            ]
+        },
+        {
+            'emotion': 'Neutral',
+            'books': [
+                {'title': 'Sapiens', 'author': 'Yuval Noah Harari', 'genre': 'Non-Fiction', 'description': 'A brief history of humankind'},
+                {'title': 'Thinking, Fast and Slow', 'author': 'Daniel Kahneman', 'genre': 'Psychology', 'description': 'How we make decisions'},
+                {'title': 'Atomic Habits', 'author': 'James Clear', 'genre': 'Self-Help', 'description': 'Tiny changes for remarkable results'},
+                {'title': 'A Short History of Nearly Everything', 'author': 'Bill Bryson', 'genre': 'Science', 'description': 'Exploring the wonders of science'},
+            ]
+        }
+    ]
+    
+    for emotion_books in book_data:
+        emotion = emotion_objects.get(emotion_books['emotion'])
+        if emotion:
+            for i, book in enumerate(emotion_books['books']):
+                book_rec = BookRecommendation(
+                    emotion_id=emotion.id,
+                    title=book['title'],
+                    author=book['author'],
+                    genre=book['genre'],
+                    description=book['description'],
+                    popularity_score=10.0 - (i * 0.5)
+                )
+                db.session.add(book_rec)
     
     db.session.commit()
     print("Database seeded successfully!")

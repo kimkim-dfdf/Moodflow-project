@@ -175,3 +175,31 @@ class MusicRecommendation(db.Model):
             'thumbnail_url': self.thumbnail_url,
             'popularity_score': self.popularity_score
         }
+
+
+class BookRecommendation(db.Model):
+    __tablename__ = 'book_recommendations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    emotion_id = db.Column(db.Integer, db.ForeignKey('emotions.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    author = db.Column(db.String(100))
+    genre = db.Column(db.String(50))
+    description = db.Column(db.Text)
+    cover_url = db.Column(db.String(500))
+    popularity_score = db.Column(db.Float, default=0.0)
+    
+    emotion = db.relationship('Emotion', backref='book_recommendations')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'emotion_id': self.emotion_id,
+            'emotion': self.emotion.name if self.emotion else None,
+            'title': self.title,
+            'author': self.author,
+            'genre': self.genre,
+            'description': self.description,
+            'cover_url': self.cover_url,
+            'popularity_score': self.popularity_score
+        }
