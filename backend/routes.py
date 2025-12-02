@@ -420,48 +420,6 @@ def register_routes(app, db):
         
         return jsonify(result[:limit])
     
-    @app.route('/api/books/related-tags', methods=['GET'])
-    def get_related_tags():
-        # Get tags that co-occur with selected tags (Tag Co-occurrence Algorithm)
-        tag_slugs = request.args.getlist('tags') or request.args.getlist('tags[]')
-        
-        if not tag_slugs:
-            return jsonify([])
-        
-        selected_tags = BookTag.query.filter(BookTag.slug.in_(tag_slugs)).all()
-        selected_tag_ids = [t.id for t in selected_tags]
-        
-        if not selected_tag_ids:
-            return jsonify([])
-        
-        # Find books that have the selected tags
-        books_with_tags = db.session.query(BookTagLink.book_id)\
-            .filter(BookTagLink.tag_id.in_(selected_tag_ids))\
-            .distinct().all()
-        book_ids = [b[0] for b in books_with_tags]
-        
-        if not book_ids:
-            return jsonify([])
-        
-        # Find other tags that appear in these books (co-occurrence)
-        co_occurring = db.session.query(
-            BookTag,
-            db.func.count(BookTagLink.book_id).label('co_count')
-        ).join(BookTagLink, BookTag.id == BookTagLink.tag_id)\
-         .filter(BookTagLink.book_id.in_(book_ids))\
-         .filter(~BookTag.id.in_(selected_tag_ids))\
-         .group_by(BookTag.id)\
-         .order_by(db.func.count(BookTagLink.book_id).desc())\
-         .limit(5).all()
-        
-        result = []
-        for tag, count in co_occurring:
-            tag_dict = tag.to_dict()
-            tag_dict['co_occurrence_count'] = count
-            result.append(tag_dict)
-        
-        return jsonify(result)
-    
     @app.route('/api/calendar/events', methods=['GET'])
     @login_required
     def get_calendar_events():
