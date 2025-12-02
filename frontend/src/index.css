@@ -2,24 +2,24 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --primary: #6366f1;
-  --primary-light: #818cf8;
-  --primary-dark: #4f46e5;
-  --secondary: #f1f5f9;
-  --background: #f8fafc;
+  --primary: #5b6ee1;
+  --primary-light: #7986e8;
+  --primary-dark: #4a5bc4;
+  --secondary: #f0f0f0;
+  --background: #f5f5f5;
   --surface: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-  --border: #e2e8f0;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
-  --radius: 12px;
-  --radius-sm: 8px;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border: #dddddd;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44336;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow: 0 2px 4px rgba(0,0,0,0.1);
+  --shadow-lg: 0 4px 8px rgba(0,0,0,0.12);
+  --radius: 8px;
+  --radius-sm: 6px;
 }
 
 body {
@@ -65,11 +65,10 @@ body {
   padding: 12px 16px;
   color: var(--text-secondary);
   text-decoration: none;
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
   margin-bottom: 4px;
-  transition: all 0.2s;
 }
-.nav-link:hover { background: var(--secondary); color: var(--text-primary); }
+.nav-link:hover { background: #e8e8e8; color: var(--text-primary); }
 .nav-link.active { background: var(--primary); color: white; }
 
 .sidebar-footer {
@@ -184,18 +183,17 @@ body {
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
 .btn-primary:hover { background: var(--primary-dark); }
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-secondary {
   padding: 10px 20px;
@@ -260,10 +258,9 @@ body {
 /* Card */
 .card {
   background: var(--surface);
-  border-radius: var(--radius);
-  padding: 24px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  border: 1px solid #ddd;
 }
 
 .page-header {
@@ -340,12 +337,11 @@ body {
   gap: 8px;
   padding: 16px 12px;
   border: 2px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 6px;
   background: var(--surface);
   cursor: pointer;
-  transition: all 0.2s;
 }
-.emotion-btn:hover { border-color: var(--emotion-color); transform: translateY(-2px); }
+.emotion-btn:hover { border-color: var(--emotion-color); }
 .emotion-btn.selected { border-color: var(--emotion-color); color: white; }
 
 .emotion-emoji { font-size: 28px; }
@@ -355,16 +351,16 @@ body {
 .task-list { display: flex; flex-direction: column; gap: 12px; }
 
 .task-card {
-  background: var(--secondary);
-  border-radius: var(--radius-sm);
+  background: #f8f8f8;
+  border-radius: 6px;
   padding: 16px;
-  transition: all 0.2s;
   position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
+  border: 1px solid #eee;
 }
-.task-card:hover { background: var(--border); }
+.task-card:hover { background: #f0f0f0; }
 .task-card.completed { opacity: 0.6; }
 .task-card.completed .task-title { text-decoration: line-through; }
 
@@ -445,13 +441,13 @@ body {
 /* Music */
 .music-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 
-.music-card { display: flex; gap: 12px; background: var(--secondary); border-radius: var(--radius-sm); padding: 16px; }
+.music-card { display: flex; gap: 12px; background: #f5f5f5; border-radius: 6px; padding: 14px; border: 1px solid #e0e0e0; }
 
 .music-icon {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   background: var(--primary);
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -479,13 +475,13 @@ body {
 .music-link:hover { background: var(--primary); color: white; }
 
 /* Books */
-.book-card { display: flex; gap: 12px; background: var(--secondary); border-radius: var(--radius-sm); padding: 16px; }
+.book-card { display: flex; gap: 12px; background: #f5f5f5; border-radius: 6px; padding: 14px; border: 1px solid #e0e0e0; }
 
 .book-icon {
-  width: 48px;
-  height: 48px;
-  background: #8B5CF6;
-  border-radius: var(--radius-sm);
+  width: 44px;
+  height: 44px;
+  background: #7c6bbf;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
