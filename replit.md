@@ -16,7 +16,7 @@ MoodFlow is a modern web application that helps users track their emotional stat
 - **Key Technologies**: Flask, SQLAlchemy, Flask-Login, Flask-CORS
 
 ### Database (PostgreSQL)
-- Tables: users, tasks, emotions, emotion_history, calendar_events, music_recommendations, book_recommendations
+- Tables: users, tasks, emotions, emotion_history, calendar_events, music_recommendations, book_recommendations, book_tags, book_tag_links
 - Uses SQLAlchemy ORM for database operations
 
 ## Key Features
@@ -45,9 +45,10 @@ MoodFlow is a modern web application that helps users track their emotional stat
 
 ### 4. Books
 - Dedicated page for book recommendations
-- Filter by emotion/mood
-- 24 curated books across 6 emotions
-- Book details: title, author, genre, description
+- **Tag-based filtering with 18 Korean emotion tags** (e.g., 희망적인, 위로가 필요한, 평온함을 찾는, 성장하고 싶은, etc.)
+- Multi-select tag chips UI for refined book discovery
+- 24 curated books with 2-3 tags each
+- Book details: title, author, genre, description, associated tags
 
 ### 5. Profile
 - User settings management
@@ -93,7 +94,9 @@ The app uses a weighted scoring system that considers:
 - DELETE `/api/calendar/events/:id` - Delete event
 
 ### Books
-- GET `/api/books/recommendations` - Get book recommendations (params: emotion, limit)
+- GET `/api/books/tags` - Get all book tags with book counts
+- GET `/api/books` - Get books filtered by tags (params: tags[], limit)
+- GET `/api/books/recommendations` - Get book recommendations by emotion (legacy, params: emotion, limit)
 
 ### Profile
 - GET `/api/user/profile` - Get profile
@@ -101,6 +104,13 @@ The app uses a weighted scoring system that considers:
 - GET `/api/dashboard/summary` - Get dashboard summary
 
 ## Recent Changes
+- December 2, 2025: Implemented tag-based book recommendation system
+  - Created BookTag and BookTagLink models for granular emotional tags
+  - Added 18 Korean emotion tags (희망적인, 위로가 필요한, 평온함을 찾는, etc.)
+  - Mapped 24 books to 2-3 tags each (72 tag associations)
+  - New API: /api/books/tags (list tags), /api/books (filter by tags)
+  - Updated Books page with multi-select tag chips UI
+  - BookCard now displays associated tags with color styling
 - December 2, 2025: Added book recommendations feature
   - Created BookRecommendation model with 24 books (4 per emotion)
   - Added /api/books/recommendations endpoint
