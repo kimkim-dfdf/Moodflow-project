@@ -30,16 +30,13 @@ def create_app():
     login_manager.init_app(app)
     
     with app.app_context():
-        from models import User, Emotion, EmotionHistory, Task, MusicRecommendation
+        from models import User, EmotionHistory, Task
         
         @login_manager.user_loader
         def load_user(user_id):
             return User.query.get(int(user_id))
         
         db.create_all()
-        
-        from seed_data import seed_database
-        seed_database(db)
         
         from routes import register_routes
         register_routes(app, db)

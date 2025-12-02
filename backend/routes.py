@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import recommendation_engine
+import static_data
 import os
 import uuid
 
@@ -18,7 +19,7 @@ def allowed_file(filename):
 
 
 def register_routes(app, db):
-    from models import User, Task, Emotion, EmotionHistory, MusicRecommendation, BookRecommendation, BookTag, BookTagLink
+    from models import User, Task, EmotionHistory
     
     # AUTH API
     @app.route('/api/auth/register', methods=['POST'])
@@ -84,11 +85,7 @@ def register_routes(app, db):
     # EMOTIONS API
     @app.route('/api/emotions', methods=['GET'])
     def get_emotions():
-        emotions = Emotion.query.all()
-        result = []
-        for emotion in emotions:
-            result.append(emotion.to_dict())
-        return jsonify(result)
+        return jsonify(static_data.EMOTIONS)
     
     @app.route('/api/emotions/record', methods=['POST'])
     @login_required
@@ -313,27 +310,23 @@ def register_routes(app, db):
             emotion = 'Neutral'
         
         limit = request.args.get('limit', 4, type=int)
-        
-        user_id = None
-        if current_user.is_authenticated:
-            user_id = current_user.id
-        
-        recommendations = recommendation_engine.get_music_recommendations(db, emotion, user_id, limit)
+        recommendations = static_data.get_music_by_emotion(emotion, limit)
         return jsonify(recommendations)
     
     # BOOKS API
     @app.route('/api/books/tags', methods=['GET'])
     def get_book_tags():
-        tags = BookTag.query.all()
-        
+        tags = static_data.get_all_book_tags()
         result = []
         for tag in tags:
-            tag_dict = tag.to_dict()
-            book_count = BookTagLink.query.filter_by(tag_id=tag.id).count()
-            tag_dict['book_count'] = book_count
-            result.append(tag_dict)
+            tag_copy = dict(tag)
+            count = 0
+            for book in static_data.BOOK_RECOMMENDATIONS:
+                if tag['slug'] in book['tags']:
+                    count = count + 1
+            tag_copy['book_count'] = count
+            result.append(tag_copy)
         
-        # Sort by name
         for i in range(len(result)):
             for j in range(i + 1, len(result)):
                 if result[j]['name'] < result[i]['name']:
@@ -350,48 +343,13 @@ def register_routes(app, db):
             tag_slugs = request.args.getlist('tags[]')
         
         limit = request.args.get('limit', 24, type=int)
-        
-        # If no tags, return all books
-        if not tag_slugs:
-            books = BookRecommendation.query.order_by(BookRecommendation.popularity_score.desc()).limit(limit).all()
-            result = []
-            for book in books:
-                result.append(book.to_dict())
-            return jsonify(result)
-        
-        # Find tag IDs
-        tag_ids = []
-        for slug in tag_slugs:
-            tag = BookTag.query.filter_by(slug=slug).first()
-            if tag:
-                tag_ids.append(tag.id)
-        
-        if not tag_ids:
-            return jsonify([])
-        
-        # Find books with ALL selected tags (AND logic)
-        from sqlalchemy import func
-        
-        book_ids_query = db.session.query(BookTagLink.book_id).filter(
-            BookTagLink.tag_id.in_(tag_ids)
-        ).group_by(BookTagLink.book_id).having(
-            func.count(BookTagLink.tag_id) == len(tag_ids)
-        ).all()
-        
-        book_ids = []
-        for row in book_ids_query:
-            book_ids.append(row[0])
-        
-        if not book_ids:
-            return jsonify([])
-        
-        books = BookRecommendation.query.filter(
-            BookRecommendation.id.in_(book_ids)
-        ).order_by(BookRecommendation.popularity_score.desc()).limit(limit).all()
+        books = static_data.get_books_by_tags(tag_slugs, limit)
         
         result = []
         for book in books:
-            result.append(book.to_dict())
+            book_copy = dict(book)
+            book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+            result.append(book_copy)
         
         return jsonify(result)
     

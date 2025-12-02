@@ -251,27 +251,9 @@ def get_suggested_tasks(emotion_name, limit):
     return result
 
 
-def get_music_recommendations(db, emotion_name, user_id, limit):
-    from models import Emotion, MusicRecommendation
-    
-    # Find emotion
-    emotion = Emotion.query.filter_by(name=emotion_name).first()
-    if not emotion:
-        return []
-    
-    # Get music for this emotion
-    music_list = MusicRecommendation.query.filter_by(emotion_id=emotion.id).order_by(MusicRecommendation.popularity_score.desc()).limit(limit).all()
-    
-    # Convert to list
-    result = []
-    for music in music_list:
-        result.append(music.to_dict())
-    
-    return result
-
-
 def get_emotion_statistics(db, user_id, days):
     from models import EmotionHistory
+    import static_data
     
     start_date = datetime.now().date() - timedelta(days=days)
     
@@ -286,11 +268,16 @@ def get_emotion_statistics(db, user_id, days):
     daily_emotions = {}
     
     for entry in history:
-        # Get emotion name
-        if entry.emotion:
-            emo_name = entry.emotion.name
+        # Get emotion from static data
+        emotion = static_data.get_emotion_by_id(entry.emotion_id)
+        if emotion:
+            emo_name = emotion['name']
+            emo_emoji = emotion['emoji']
+            emo_color = emotion['color']
         else:
             emo_name = 'Unknown'
+            emo_emoji = '😐'
+            emo_color = '#95A5A6'
         
         # Count it
         if emo_name in emotion_counts:
@@ -302,8 +289,8 @@ def get_emotion_statistics(db, user_id, days):
         date_str = entry.date.isoformat()
         daily_emotions[date_str] = {
             'emotion': emo_name,
-            'emoji': entry.emotion.emoji if entry.emotion else '😐',
-            'color': entry.emotion.color if entry.emotion else '#95A5A6',
+            'emoji': emo_emoji,
+            'color': emo_color,
             'has_photo': True if entry.photo_url else False,
             'notes': entry.notes
         }
