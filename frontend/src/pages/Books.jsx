@@ -2,92 +2,98 @@ import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
 import { BookOpen, X } from 'lucide-react';
 
-const BookCard = ({ book, showTags = false }) => (
-  <div className="book-card">
-    <div className="book-icon">
-      <BookOpen size={24} />
+function BookCard(props) {
+  var book = props.book;
+  var showTags = props.showTags || false;
+  
+  return (
+    <div className="book-card">
+      <div className="book-icon"><BookOpen size={24} /></div>
+      <div className="book-info">
+        <h4 className="book-title">{book.title}</h4>
+        <p className="book-author">{book.author}</p>
+        <span className="book-genre">{book.genre}</span>
+        {book.description && <p className="book-description">{book.description}</p>}
+        {showTags && book.tags && book.tags.length > 0 && (
+          <div className="book-tags">
+            {book.tags.map(function(tag) {
+              return <span key={tag.id} className="book-tag-pill">{tag.name}</span>;
+            })}
+          </div>
+        )}
+      </div>
     </div>
-    <div className="book-info">
-      <h4 className="book-title">{book.title}</h4>
-      <p className="book-author">{book.author}</p>
-      <span className="book-genre">{book.genre}</span>
-      {book.description && (
-        <p className="book-description">{book.description}</p>
-      )}
-      {showTags && book.tags && book.tags.length > 0 && (
-        <div className="book-tags">
-          {book.tags.map((tag) => (
-            <span key={tag.id} className="book-tag-pill">
-              {tag.name}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  </div>
-);
+  );
+}
 
-const Books = () => {
+function Books() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [books, setBooks] = useState([]);
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const fetchIdRef = useRef(0);
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const res = await api.get('/books/tags');
-        setTags(res.data);
-      } catch (err) {
-        console.error('Failed to fetch tags:', err);
-      }
-      fetchBooks([]);
-    };
-    init();
+  useEffect(function() {
+    api.get('/books/tags').then(function(res) {
+      setTags(res.data);
+    });
+    fetchBooks([]);
   }, []);
 
-  const fetchBooks = async (tagList) => {
-    const fetchId = ++fetchIdRef.current;
+  function fetchBooks(tagList) {
+    var fetchId = ++fetchIdRef.current;
     setLoading(true);
-    try {
-      let url = '/books';
-      if (tagList.length > 0) {
-        const tagParams = tagList.map(t => `tags=${t}`).join('&');
-        url = `/books?${tagParams}`;
+    
+    var url = '/books';
+    if (tagList.length > 0) {
+      var params = [];
+      for (var i = 0; i < tagList.length; i++) {
+        params.push('tags=' + tagList[i]);
       }
-      const res = await api.get(url);
+      url = '/books?' + params.join('&');
+    }
+    
+    api.get(url).then(function(res) {
       if (fetchId === fetchIdRef.current) {
         setBooks(res.data);
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to fetch books:', err);
-    } finally {
+    }).catch(function() {
       if (fetchId === fetchIdRef.current) {
         setLoading(false);
       }
-    }
-  };
+    });
+  }
 
-  const toggleTag = (slug) => {
-    const newTags = selectedTags.includes(slug)
-      ? selectedTags.filter(t => t !== slug)
-      : [...selectedTags, slug];
+  function toggleTag(slug) {
+    var newTags;
+    if (selectedTags.indexOf(slug) >= 0) {
+      newTags = selectedTags.filter(function(t) { return t !== slug; });
+    } else {
+      newTags = selectedTags.concat([slug]);
+    }
     setSelectedTags(newTags);
     fetchBooks(newTags);
-  };
+  }
 
-  const clearAllTags = () => {
+  function clearAllTags() {
     setSelectedTags([]);
     fetchBooks([]);
-  };
+  }
 
-  const getSelectedTagNames = () => {
-    return selectedTags.map(slug => {
-      const tag = tags.find(t => t.slug === slug);
-      return tag ? tag.name : slug;
-    });
-  };
+  function getSelectedTagNames() {
+    var names = [];
+    for (var i = 0; i < selectedTags.length; i++) {
+      var slug = selectedTags[i];
+      for (var j = 0; j < tags.length; j++) {
+        if (tags[j].slug === slug) {
+          names.push(tags[j].name);
+          break;
+        }
+      }
+    }
+    return names;
+  }
 
   return (
     <div className="books-page">
@@ -100,43 +106,37 @@ const Books = () => {
         <div className="tag-filter-header">
           <span className="tag-filter-label">Filter by Mood Tags</span>
           {selectedTags.length > 0 && (
-            <button className="clear-tags-btn" onClick={clearAllTags}>
-              Clear All
-            </button>
+            <button className="clear-tags-btn" onClick={clearAllTags}>Clear All</button>
           )}
         </div>
         
         <div className="tag-chips-container">
-          {tags.map((tag) => (
-            <button
-              key={tag.id}
-              className={`tag-chip ${selectedTags.includes(tag.slug) ? 'active' : ''}`}
-              onClick={() => toggleTag(tag.slug)}
-            >
-              {tag.name}
-              <span className="tag-count">{tag.book_count}</span>
-            </button>
-          ))}
+          {tags.map(function(tag) {
+            var isActive = selectedTags.indexOf(tag.slug) >= 0;
+            return (
+              <button key={tag.id} className={'tag-chip ' + (isActive ? 'active' : '')} onClick={function() { toggleTag(tag.slug); }}>
+                {tag.name}
+                <span className="tag-count">{tag.book_count}</span>
+              </button>
+            );
+          })}
         </div>
 
         {selectedTags.length > 0 && (
           <div className="selected-tags-display">
             <span>Selected:</span>
             <div className="selected-tags-list">
-              {getSelectedTagNames().map((name, idx) => (
-                <span key={idx} className="selected-tag-pill">
-                  {name}
-                  <X 
-                    size={14} 
-                    onClick={() => toggleTag(selectedTags[idx])}
-                    className="remove-tag-icon"
-                  />
-                </span>
-              ))}
+              {getSelectedTagNames().map(function(name, idx) {
+                return (
+                  <span key={idx} className="selected-tag-pill">
+                    {name}
+                    <X size={14} onClick={function() { toggleTag(selectedTags[idx]); }} className="remove-tag-icon" />
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}
-
       </div>
 
       {loading ? (
@@ -146,19 +146,12 @@ const Books = () => {
           {books.length > 0 ? (
             <>
               <div className="books-result-info">
-                {selectedTags.length > 0 
-                  ? `${books.length} books found`
-                  : `All ${books.length} books`
-                }
+                {selectedTags.length > 0 ? books.length + ' books found' : 'All ' + books.length + ' books'}
               </div>
               <div className="books-full-grid">
-                {books.map((book) => (
-                  <BookCard 
-                    key={book.id} 
-                    book={book} 
-                    showTags={true}
-                  />
-                ))}
+                {books.map(function(book) {
+                  return <BookCard key={book.id} book={book} showTags={true} />;
+                })}
               </div>
             </>
           ) : (
@@ -171,6 +164,6 @@ const Books = () => {
       )}
     </div>
   );
-};
+}
 
 export default Books;

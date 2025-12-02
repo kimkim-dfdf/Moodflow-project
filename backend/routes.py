@@ -192,7 +192,8 @@ def register_routes(app, db):
             return jsonify({'error': 'Invalid file type'}), 400
         
         # Create filename
-        filename = secure_filename(file.filename)
+        original_name = file.filename if file.filename else 'upload'
+        filename = secure_filename(original_name)
         unique_filename = uuid.uuid4().hex + '_' + filename
         
         # Create folder if needed
