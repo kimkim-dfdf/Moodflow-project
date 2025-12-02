@@ -8,7 +8,7 @@ import MiniCalendar from '../components/MiniCalendar';
 import MoodStats from '../components/MoodStats';
 import api from '../api/axios';
 import { format, isToday } from 'date-fns';
-import { Sparkles, Music, CheckCircle2, Calendar } from 'lucide-react';
+import { Music, CheckCircle2, Calendar } from 'lucide-react';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -215,7 +215,7 @@ const Dashboard = () => {
             <>
               <section className="card recommendations-section">
                 <div className="section-header">
-                  <h3><Sparkles size={20} /> Recommended Tasks for You</h3>
+                  <h3>Recommended Tasks for You</h3>
                 </div>
                 {recommendedTasks.length > 0 ? (
                   <div className="task-list">
