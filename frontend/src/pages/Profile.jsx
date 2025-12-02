@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { User, Mail, Save, TrendingUp } from 'lucide-react';
+import { Mail, Save, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const EMOTION_COLORS = {
@@ -76,7 +76,7 @@ const Profile = () => {
 
       <div className="profile-grid">
         <section className="card profile-info">
-          <h2><User size={20} /> Account Settings</h2>
+          <h2>Account Settings</h2>
           
           <form onSubmit={handleSubmit}>
             {message && (
@@ -86,9 +86,7 @@ const Profile = () => {
             )}
 
             <div className="form-group">
-              <label htmlFor="username">
-                <User size={16} /> Username
-              </label>
+              <label htmlFor="username">Username</label>
               <input
                 type="text"
                 id="username"
