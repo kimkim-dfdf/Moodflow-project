@@ -13,9 +13,6 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    preferred_work_time = db.Column(db.String(20), default='morning')
-    preferred_categories = db.Column(db.Text, default='Work,Study,Health,Personal')
-    
     tasks = db.relationship('Task', backref='user', lazy=True, cascade='all, delete-orphan')
     emotions = db.relationship('EmotionHistory', backref='user', lazy=True, cascade='all, delete-orphan')
     
