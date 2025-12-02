@@ -365,7 +365,8 @@ def register_routes(app, db):
     
     @app.route('/api/books', methods=['GET'])
     def get_books_by_tags():
-        tag_slugs = request.args.getlist('tags')
+        # Handle both 'tags' and 'tags[]' formats (axios sends tags[]=value)
+        tag_slugs = request.args.getlist('tags') or request.args.getlist('tags[]')
         limit = request.args.get('limit', 24, type=int)
         
         if not tag_slugs:
