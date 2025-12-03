@@ -109,12 +109,17 @@ def register_routes(app):
         """
         Log in with a demo account.
         Only 3 accounts are available.
+        Name is saved to session for display.
         """
         data = request.get_json()
         
         # Check if data was provided
         if not data:
             return jsonify({'error': 'No data provided'}), 400
+        
+        # Check if name was provided
+        if not data.get('name'):
+            return jsonify({'error': 'Name is required'}), 400
         
         # Check if email was provided
         if not data.get('email'):
@@ -136,12 +141,17 @@ def register_routes(app):
         if not password_correct:
             return jsonify({'error': 'Invalid email or password'}), 401
         
-        # Log user in by saving user_id to session
+        # Log user in by saving user_id and name to session
         session['user_id'] = user['id']
+        session['user_name'] = data['name']
+        
+        # Create user dict with custom name
+        user_dict = repository.user_to_dict(user)
+        user_dict['username'] = data['name']
         
         return jsonify({
             'message': 'Login successful',
-            'user': repository.user_to_dict(user)
+            'user': user_dict
         })
     
     
@@ -158,7 +168,13 @@ def register_routes(app):
     def get_current_user_route():
         """Get the currently logged in user's information."""
         user = get_current_user()
-        return jsonify({'user': repository.user_to_dict(user)})
+        user_dict = repository.user_to_dict(user)
+        
+        # Use custom name from session if available
+        if 'user_name' in session:
+            user_dict['username'] = session['user_name']
+        
+        return jsonify({'user': user_dict})
     
     
     # ==========================================

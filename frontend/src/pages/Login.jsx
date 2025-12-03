@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 function Login() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -13,7 +14,7 @@ function Login() {
     e.preventDefault();
     setError('');
     
-    login(email, password)
+    login(email, password, name)
       .then(function() {
         navigate('/dashboard');
       })
@@ -38,6 +39,17 @@ function Login() {
           <h2>Welcome Back</h2>
           
           {error && <div className="error-message">{error}</div>}
+
+          <div className="form-group">
+            <label>Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={function(e) { setName(e.target.value); }}
+              placeholder="Enter your name"
+              required
+            />
+          </div>
 
           <div className="form-group">
             <label>Email</label>
