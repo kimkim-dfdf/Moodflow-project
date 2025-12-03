@@ -8,7 +8,6 @@
 from flask import request, jsonify, session, send_from_directory
 from datetime import datetime
 from functools import wraps
-from werkzeug.utils import secure_filename
 import os
 import uuid
 
@@ -41,7 +40,8 @@ def allowed_file(filename):
         return False
     
     # Get the file extension
-    extension = filename.rsplit('.', 1)[1].lower()
+    parts = filename.rsplit('.', 1)
+    extension = parts[1].lower()
     
     if extension in ALLOWED_EXTENSIONS:
         return True
@@ -84,84 +84,59 @@ def register_routes(app):
     """
     
     # ==========================================
-    # Authentication Routes
+    # Authentication Routes (Simplified for Demo)
+    # ==========================================
+    # Only 3 demo accounts can log in:
+    # - seven@gmail.com
+    # - elly@gmail.com
+    # - nicole@gmail.com
+    # Password for all: ekdus123
     # ==========================================
     
     @app.route('/api/auth/register', methods=['POST'])
     def register():
         """
-        Register a new user account.
-        Required fields: email, username, password
+        Registration is disabled for demo.
+        Only pre-defined demo accounts can log in.
         """
-        data = request.get_json()
-        
-        # Validate input
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        if not data.get('email'):
-            return jsonify({'error': 'Email is required'}), 400
-        
-        if not data.get('password'):
-            return jsonify({'error': 'Password is required'}), 400
-        
-        if not data.get('username'):
-            return jsonify({'error': 'Username is required'}), 400
-        
-        # Check if email already exists
-        existing_email = repository.get_user_by_email(data['email'])
-        if existing_email:
-            return jsonify({'error': 'Email already registered'}), 400
-        
-        # Check if username already exists
-        existing_username = repository.get_user_by_username(data['username'])
-        if existing_username:
-            return jsonify({'error': 'Username already taken'}), 400
-        
-        # Create user
-        user = repository.create_user(
-            data['email'],
-            data['username'],
-            data['password']
-        )
-        
-        # Log user in
-        session['user_id'] = user['id']
-        
         return jsonify({
-            'message': 'Registration successful',
-            'user': repository.user_to_dict(user)
-        }), 201
+            'error': 'Registration is disabled. Please use a demo account.'
+        }), 400
     
     
     @app.route('/api/auth/login', methods=['POST'])
     def login():
         """
-        Log in a user.
-        Required fields: email, password
+        Log in with a demo account.
+        Only 3 accounts are available.
         """
         data = request.get_json()
         
-        # Validate input
+        # Check if data was provided
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
+        # Check if email was provided
         if not data.get('email'):
             return jsonify({'error': 'Email is required'}), 400
         
+        # Check if password was provided
         if not data.get('password'):
             return jsonify({'error': 'Password is required'}), 400
         
         # Find user by email
         user = repository.get_user_by_email(data['email'])
+        
+        # Check if user exists
         if not user:
             return jsonify({'error': 'Invalid email or password'}), 401
         
-        # Check password
-        if not repository.check_user_password(user, data['password']):
+        # Check if password is correct
+        password_correct = repository.check_user_password(user, data['password'])
+        if not password_correct:
             return jsonify({'error': 'Invalid email or password'}), 401
         
-        # Log user in
+        # Log user in by saving user_id to session
         session['user_id'] = user['id']
         
         return jsonify({

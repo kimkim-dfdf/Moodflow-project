@@ -75,11 +75,21 @@ backend/
 - Happy/energetic = prefer High priority tasks
 - Tired/sad = prefer Low priority tasks
 
+## Demo Accounts (Simplified Login)
+
+Only 3 fixed accounts can log in (no registration):
+
+| Email | Password |
+|-------|----------|
+| seven@gmail.com | ekdus123 |
+| elly@gmail.com | ekdus123 |
+| nicole@gmail.com | ekdus123 |
+
 ## API Endpoints
 
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
+### Authentication (Simplified)
+- `POST /api/auth/register` - Disabled (returns error)
+- `POST /api/auth/login` - Login with demo account
 - `POST /api/auth/logout` - User logout
 - `GET /api/auth/me` - Get current user
 
@@ -125,6 +135,12 @@ This project uses **student-friendly** code patterns:
 - Comprehensive comments
 
 ## Recent Changes
+
+- December 3, 2025: Simplified authentication
+  - Removed password hashing (no security for demo)
+  - Only 3 demo accounts can log in
+  - Registration disabled
+  - Login page shows demo account info
 
 - December 3, 2025: Complete backend refactoring
   - Added comprehensive comments to all files

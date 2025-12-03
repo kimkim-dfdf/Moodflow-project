@@ -9,7 +9,6 @@
 import json
 import os
 from datetime import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # ==============================================
@@ -20,14 +19,43 @@ DATA_FILE = os.path.join(os.path.dirname(__file__), 'data.json')
 
 
 # ==============================================
+# Demo Users (Fixed Accounts)
+# ==============================================
+# Only these 3 users can log in
+# Password is the same for all: ekdus123
+
+DEMO_USERS = [
+    {
+        'id': 1,
+        'email': 'seven@gmail.com',
+        'username': 'Seven',
+        'password': 'ekdus123',
+        'created_at': '2024-01-01T00:00:00'
+    },
+    {
+        'id': 2,
+        'email': 'elly@gmail.com',
+        'username': 'Elly',
+        'password': 'ekdus123',
+        'created_at': '2024-01-01T00:00:00'
+    },
+    {
+        'id': 3,
+        'email': 'nicole@gmail.com',
+        'username': 'Nicole',
+        'password': 'ekdus123',
+        'created_at': '2024-01-01T00:00:00'
+    }
+]
+
+
+# ==============================================
 # In-Memory Data Storage
 # ==============================================
 
-users = []
 tasks = []
 emotion_history = []
 
-next_user_id = 1
 next_task_id = 1
 next_emotion_id = 1
 
@@ -41,8 +69,8 @@ def load_data():
     Load all data from the JSON file into memory.
     This is called when the app starts.
     """
-    global users, tasks, emotion_history
-    global next_user_id, next_task_id, next_emotion_id
+    global tasks, emotion_history
+    global next_task_id, next_emotion_id
     
     # Check if data file exists
     if not os.path.exists(DATA_FILE):
@@ -54,12 +82,10 @@ def load_data():
     file.close()
     
     # Load each data type
-    users = data.get('users', [])
     tasks = data.get('tasks', [])
     emotion_history = data.get('emotion_history', [])
     
     # Calculate next IDs based on existing data
-    next_user_id = find_max_id(users) + 1
     next_task_id = find_max_id(tasks) + 1
     next_emotion_id = find_max_id(emotion_history) + 1
 
@@ -70,7 +96,6 @@ def save_data():
     This is called after any data modification.
     """
     data = {
-        'users': users,
         'tasks': tasks,
         'emotion_history': emotion_history
     }
@@ -97,77 +122,39 @@ def find_max_id(items):
 
 
 # ==============================================
-# User Operations
+# User Operations (Simplified)
 # ==============================================
 
-def create_user(email, username, password):
-    """
-    Create a new user account.
-    Password is hashed for security.
-    """
-    global next_user_id
-    
-    user = {
-        'id': next_user_id,
-        'email': email,
-        'username': username,
-        'password_hash': generate_password_hash(password),
-        'created_at': datetime.utcnow().isoformat()
-    }
-    
-    users.append(user)
-    next_user_id = next_user_id + 1
-    save_data()
-    
-    return user
-
-
 def get_user_by_id(user_id):
-    """Find a user by their ID."""
-    for user in users:
+    """Find a demo user by their ID."""
+    for user in DEMO_USERS:
         if user['id'] == user_id:
             return user
     return None
 
 
 def get_user_by_email(email):
-    """Find a user by their email address."""
-    for user in users:
+    """Find a demo user by their email address."""
+    for user in DEMO_USERS:
         if user['email'] == email:
-            return user
-    return None
-
-
-def get_user_by_username(username):
-    """Find a user by their username."""
-    for user in users:
-        if user['username'] == username:
             return user
     return None
 
 
 def check_user_password(user, password):
     """
-    Check if the provided password matches the user's password.
-    Returns True if password is correct, False otherwise.
+    Check if the provided password is correct.
+    Simple string comparison (no hashing for demo).
     """
-    return check_password_hash(user['password_hash'], password)
-
-
-def update_user(user_id, username):
-    """Update a user's username."""
-    for user in users:
-        if user['id'] == user_id:
-            user['username'] = username
-            save_data()
-            return user
-    return None
+    if user['password'] == password:
+        return True
+    return False
 
 
 def user_to_dict(user):
     """
     Convert a user object to a dictionary for API responses.
-    Excludes sensitive data like password_hash.
+    Excludes password from the response.
     """
     return {
         'id': user['id'],
