@@ -231,29 +231,6 @@ def register_routes(app):
         return jsonify(None)
     
     
-    @app.route('/api/emotions/history', methods=['GET'])
-    @login_required
-    def get_emotion_history():
-        """
-        Get emotion history for the current user.
-        Optional query param: days (default 30)
-        """
-        user = get_current_user()
-        days = request.args.get('days', 30, type=int)
-        
-        history = repository.get_emotion_history_by_user(user['id'], days)
-        
-        # Add emotion details to each entry
-        result = []
-        for entry in history:
-            emotion = static_data.get_emotion_by_id(entry['emotion_id'])
-            entry_dict = dict(entry)
-            entry_dict['emotion'] = emotion
-            result.append(entry_dict)
-        
-        return jsonify(result)
-    
-    
     @app.route('/api/emotions/statistics', methods=['GET'])
     @login_required
     def get_emotion_statistics():
@@ -571,14 +548,6 @@ def register_routes(app):
     # ==========================================
     # Profile Routes
     # ==========================================
-    
-    @app.route('/api/user/profile', methods=['GET'])
-    @login_required
-    def get_profile():
-        """Get the current user's profile."""
-        user = get_current_user()
-        return jsonify(repository.user_to_dict(user))
-    
     
     @app.route('/api/user/profile', methods=['PUT'])
     @login_required

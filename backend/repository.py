@@ -420,28 +420,6 @@ def get_emotion_entry_by_date(user_id, date):
     return None
 
 
-def get_emotion_history_by_user(user_id, limit):
-    """
-    Get emotion history for a user.
-    Results are sorted by date (newest first).
-    """
-    result = []
-    
-    # Filter by user
-    for entry in emotion_history:
-        if entry['user_id'] == user_id:
-            result.append(entry)
-    
-    # Sort by date (newest first) using bubble sort
-    result = bubble_sort_by_date(result, 'date', True)
-    
-    # Apply limit if specified
-    if limit and limit < len(result):
-        return result[:limit]
-    
-    return result
-
-
 def get_emotion_history_since(user_id, start_date):
     """
     Get emotion entries since a specific date.

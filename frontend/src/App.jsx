@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { DateProvider } from './context/DateContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
@@ -40,11 +39,6 @@ function App() {
           <Route path="/login" element={
             <PublicRoute>
               <Login />
-            </PublicRoute>
-          } />
-          <Route path="/register" element={
-            <PublicRoute>
-              <Register />
             </PublicRoute>
           } />
           <Route path="/" element={
