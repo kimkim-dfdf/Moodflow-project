@@ -13,12 +13,12 @@ MoodFlow is a modern web application that helps users track their emotional stat
 ### Backend (Python Flask)
 - **Location**: `/backend`
 - **Port**: 8000
-- **Key Technologies**: Flask, SQLAlchemy, Flask-Login, Flask-CORS
+- **Key Technologies**: Flask, Flask-CORS
 
-### Database (SQLite)
-- **File**: `backend/moodflow.db`
-- **Tables**: users, tasks, emotion_history
-- Uses SQLAlchemy ORM for database operations
+### Data Storage (JSON File)
+- **File**: `backend/data.json` (created automatically)
+- **No database connection required**
+- Data persists in JSON file
 - Static data (emotions, music, books) stored in `static_data.py`
 
 ## Key Features
@@ -94,28 +94,28 @@ Category (57%) + Priority (43%) weighted scoring:
 - GET `/api/dashboard/summary` - Get dashboard summary
 
 ## Backend Files
-- `app.py` - Flask app setup (48 lines)
-- `models.py` - Database models (107 lines)
+- `app.py` - Flask app setup (21 lines)
+- `repository.py` - JSON file storage (270 lines)
 - `static_data.py` - Static data: emotions, music, books (122 lines)
-- `recommendation_engine.py` - Scoring algorithm (197 lines)
-- `routes.py` - API endpoints (320 lines)
+- `recommendation_engine.py` - Scoring algorithm (230 lines)
+- `routes.py` - API endpoints (330 lines)
 - `run.py` - Entry point (6 lines)
 
 ## Recent Changes
-- December 3, 2025: Switched from PostgreSQL to SQLite
-  - Simplified database setup (no external DB needed)
-  - Data stored in `backend/moodflow.db` file
+- December 3, 2025: Removed database completely
+  - No PostgreSQL, no SQLite
+  - Data stored in JSON file (`data.json`)
+  - Created `repository.py` for data operations
+  - Removed SQLAlchemy dependency
 - December 3, 2025: Backend refactoring
   - Clean, student-friendly code style
   - Simple patterns (no lambdas, no list comprehensions)
   - Bubble sort for sorting
   - Explicit if/else statements
-- December 2, 2025: Database simplified to 3 tables
-  - Removed static tables (emotions, music, books)
-  - All static data now in `static_data.py`
 
 ## User Preferences
 - Clean, minimal interface
 - Soft colors and rounded cards
 - Student-friendly code style (simple patterns)
 - Left-side navigation with 5 menu items
+- No database connection required
