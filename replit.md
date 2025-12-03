@@ -21,6 +21,20 @@ MoodFlow is a modern web application that helps users track their emotional stat
 - Data persists in JSON file
 - Static data (emotions, music, books) stored in `static_data.py`
 
+## Backend File Structure
+
+```
+backend/
+├── app.py                    # Flask app factory (40 lines)
+├── run.py                    # Entry point (17 lines)
+├── repository.py             # JSON data storage (340 lines)
+├── static_data.py            # Static data (400 lines)
+├── recommendation_engine.py  # Task scoring algorithm (340 lines)
+├── routes.py                 # API endpoints (530 lines)
+├── data.json                 # User data (auto-generated)
+└── uploads/                  # Photo uploads
+```
+
 ## Key Features
 
 ### 1. Dashboard
@@ -53,65 +67,75 @@ MoodFlow is a modern web application that helps users track their emotional stat
 - User settings management
 
 ## Recommendation Algorithm
-Category (57%) + Priority (43%) weighted scoring:
+
+**Total Score = Category Score (57%) + Priority Score (43%)**
+
 - Category weight from emotion-to-category mapping
 - Priority scoring inverts based on emotion preference
-- Happy/energetic = prefer High priority
-- Tired/sad = prefer Low priority
+- Happy/energetic = prefer High priority tasks
+- Tired/sad = prefer Low priority tasks
 
 ## API Endpoints
 
 ### Authentication
-- POST `/api/auth/register` - Register new user
-- POST `/api/auth/login` - User login
-- POST `/api/auth/logout` - User logout
-- GET `/api/auth/me` - Get current user
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Get current user
 
 ### Emotions
-- GET `/api/emotions` - List all emotions
-- POST `/api/emotions/record` - Record emotion for a day
-- GET `/api/emotions/history` - Get emotion history
-- GET `/api/emotions/statistics` - Get emotion statistics
+- `GET /api/emotions` - List all emotions
+- `POST /api/emotions/record` - Record emotion for a day
+- `GET /api/emotions/history` - Get emotion history
+- `GET /api/emotions/statistics` - Get emotion statistics
+- `GET /api/emotions/diary/<date>` - Get diary entry for date
 
 ### Tasks
-- GET `/api/tasks` - List tasks
-- POST `/api/tasks` - Create task
-- PUT `/api/tasks/:id` - Update task
-- DELETE `/api/tasks/:id` - Delete task
-- GET `/api/tasks/recommended` - Get recommended tasks
-- GET `/api/tasks/suggestions` - Get AI task suggestions
+- `GET /api/tasks` - List tasks
+- `POST /api/tasks` - Create task
+- `PUT /api/tasks/:id` - Update task
+- `DELETE /api/tasks/:id` - Delete task
+- `GET /api/tasks/recommended` - Get recommended tasks
+- `GET /api/tasks/suggestions` - Get AI task suggestions
 
 ### Music
-- GET `/api/music/recommendations` - Get music by emotion
+- `GET /api/music/recommendations` - Get music by emotion
 
 ### Books
-- GET `/api/books/tags` - Get all book tags
-- GET `/api/books` - Get books filtered by tags (AND logic)
+- `GET /api/books/tags` - Get all book tags
+- `GET /api/books` - Get books filtered by tags (AND logic)
 
 ### Profile
-- GET `/api/user/profile` - Get profile
-- PUT `/api/user/profile` - Update profile
-- GET `/api/dashboard/summary` - Get dashboard summary
+- `GET /api/user/profile` - Get profile
+- `PUT /api/user/profile` - Update profile
+- `GET /api/dashboard/summary` - Get dashboard summary
 
-## Backend Files
-- `app.py` - Flask app setup (21 lines)
-- `repository.py` - JSON file storage (270 lines)
-- `static_data.py` - Static data: emotions, music, books (122 lines)
-- `recommendation_engine.py` - Scoring algorithm (230 lines)
-- `routes.py` - API endpoints (330 lines)
-- `run.py` - Entry point (6 lines)
+### File Upload
+- `POST /api/upload/photo` - Upload photo
+- `GET /api/uploads/<filename>` - Serve uploaded file
+
+## Code Style Guidelines
+
+This project uses **student-friendly** code patterns:
+- Regular functions (no lambdas)
+- Explicit if/else statements (no ternary operators)
+- For loops (no list comprehensions)
+- Bubble sort for sorting
+- Clear variable names
+- Comprehensive comments
 
 ## Recent Changes
-- December 3, 2025: Removed database completely
+
+- December 3, 2025: Complete backend refactoring
+  - Added comprehensive comments to all files
+  - Organized code into clear sections
+  - Improved function documentation
+  - Maintained student-friendly code style
+
+- December 3, 2025: Removed database
   - No PostgreSQL, no SQLite
   - Data stored in JSON file (`data.json`)
   - Created `repository.py` for data operations
-  - Removed SQLAlchemy dependency
-- December 3, 2025: Backend refactoring
-  - Clean, student-friendly code style
-  - Simple patterns (no lambdas, no list comprehensions)
-  - Bubble sort for sorting
-  - Explicit if/else statements
 
 ## User Preferences
 - Clean, minimal interface
@@ -119,3 +143,23 @@ Category (57%) + Priority (43%) weighted scoring:
 - Student-friendly code style (simple patterns)
 - Left-side navigation with 5 menu items
 - No database connection required
+
+## Running Locally
+
+### Backend
+```bash
+cd backend
+pip install flask flask-cors flask-login python-dotenv werkzeug
+python run.py
+```
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Ports
+- Backend: http://localhost:8000
+- Frontend: http://localhost:5000
