@@ -100,12 +100,12 @@ def get_priority_values(priority_pref):
         return {'Medium': 3, 'High': 2, 'Low': 2}
 
 
-def calculate_task_score(task, emotion_name):
+def calculate_task_score_dict(task, emotion_name):
     weights = EMOTION_WEIGHTS.get(emotion_name)
     if not weights:
         weights = EMOTION_WEIGHTS['Neutral']
     
-    category = task.category
+    category = task.get('category', 'Personal')
     if category in weights:
         cat_weight = weights[category]
     else:
@@ -115,8 +115,9 @@ def calculate_task_score(task, emotion_name):
     priority_pref = weights.get('priority', 'Medium')
     priority_values = get_priority_values(priority_pref)
     
-    if task.priority in priority_values:
-        p_score = priority_values[task.priority]
+    priority = task.get('priority', 'Medium')
+    if priority in priority_values:
+        p_score = priority_values[priority]
     else:
         p_score = 2
     priority_score = p_score * 14.33
@@ -149,18 +150,14 @@ def bubble_sort_by_score(items, descending):
     return items
 
 
-def get_recommended_tasks(db, user_id, emotion_name, limit, task_date):
-    from models import Task
+def get_recommended_tasks_from_repo(user_id, emotion_name, limit, task_date):
+    import repository
     
-    query = Task.query.filter_by(user_id=user_id, is_completed=False)
-    if task_date:
-        query = query.filter_by(task_date=task_date)
-    
-    tasks = query.all()
+    tasks = repository.get_incomplete_tasks_by_user(user_id, task_date)
     
     scored_tasks = []
     for task in tasks:
-        score = calculate_task_score(task, emotion_name)
+        score = calculate_task_score_dict(task, emotion_name)
         scored_tasks.append({'task': task, 'score': score})
     
     scored_tasks = bubble_sort_by_score(scored_tasks, True)
@@ -171,7 +168,7 @@ def get_recommended_tasks(db, user_id, emotion_name, limit, task_date):
         if count >= limit:
             break
         result.append({
-            'task': item['task'].to_dict(),
+            'task': item['task'],
             'score': item['score']
         })
         count = count + 1
@@ -226,22 +223,19 @@ def get_suggested_tasks(emotion_name, limit):
     return result
 
 
-def get_emotion_statistics(db, user_id, days):
-    from models import EmotionHistory
+def get_emotion_statistics_from_repo(user_id, days):
+    import repository
     import static_data
     
-    start_date = datetime.now().date() - timedelta(days=days)
+    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     
-    history = EmotionHistory.query.filter(
-        EmotionHistory.user_id == user_id,
-        EmotionHistory.date >= start_date
-    ).all()
+    history = repository.get_emotion_history_since(user_id, start_date)
     
     emotion_counts = {}
     daily_emotions = {}
     
     for entry in history:
-        emotion = static_data.get_emotion_by_id(entry.emotion_id)
+        emotion = static_data.get_emotion_by_id(entry['emotion_id'])
         if emotion:
             emo_name = emotion['name']
             emo_emoji = emotion['emoji']
@@ -256,9 +250,9 @@ def get_emotion_statistics(db, user_id, days):
         else:
             emotion_counts[emo_name] = 1
         
-        date_str = entry.date.isoformat()
+        date_str = entry['date']
         has_photo = False
-        if entry.photo_url:
+        if entry.get('photo_url'):
             has_photo = True
         
         daily_emotions[date_str] = {
@@ -266,7 +260,7 @@ def get_emotion_statistics(db, user_id, days):
             'emoji': emo_emoji,
             'color': emo_color,
             'has_photo': has_photo,
-            'notes': entry.notes
+            'notes': entry.get('notes')
         }
     
     total = 0

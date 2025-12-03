@@ -1,7 +1,8 @@
-from flask import request, jsonify, send_from_directory
-from flask_login import login_user, logout_user, login_required, current_user
-from datetime import datetime
+from flask import request, jsonify, session, send_from_directory
+from datetime import datetime, timedelta
+from functools import wraps
 from werkzeug.utils import secure_filename
+import repository
 import recommendation_engine
 import static_data
 import os
@@ -24,9 +25,22 @@ def allowed_file(filename):
     return False
 
 
-def register_routes(app, db):
-    from models import User, Task, EmotionHistory
-    
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'error': 'Login required'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def get_current_user():
+    if 'user_id' not in session:
+        return None
+    return repository.get_user_by_id(session['user_id'])
+
+
+def register_routes(app):
     
     @app.route('/api/auth/register', methods=['POST'])
     def register():
@@ -41,21 +55,18 @@ def register_routes(app, db):
         if not data.get('username'):
             return jsonify({'error': 'Username is required'}), 400
         
-        existing_email = User.query.filter_by(email=data['email']).first()
+        existing_email = repository.get_user_by_email(data['email'])
         if existing_email:
             return jsonify({'error': 'Email already registered'}), 400
         
-        existing_username = User.query.filter_by(username=data['username']).first()
+        existing_username = repository.get_user_by_username(data['username'])
         if existing_username:
             return jsonify({'error': 'Username already taken'}), 400
         
-        user = User(email=data['email'], username=data['username'])
-        user.set_password(data['password'])
-        db.session.add(user)
-        db.session.commit()
-        login_user(user)
+        user = repository.create_user(data['email'], data['username'], data['password'])
+        session['user_id'] = user['id']
         
-        return jsonify({'message': 'Registration successful', 'user': user.to_dict()}), 201
+        return jsonify({'message': 'Registration successful', 'user': repository.user_to_dict(user)}), 201
     
     
     @app.route('/api/auth/login', methods=['POST'])
@@ -69,27 +80,28 @@ def register_routes(app, db):
         if not data.get('password'):
             return jsonify({'error': 'Password is required'}), 400
         
-        user = User.query.filter_by(email=data['email']).first()
+        user = repository.get_user_by_email(data['email'])
         if not user:
             return jsonify({'error': 'Invalid email or password'}), 401
-        if not user.check_password(data['password']):
+        if not repository.check_user_password(user, data['password']):
             return jsonify({'error': 'Invalid email or password'}), 401
         
-        login_user(user)
-        return jsonify({'message': 'Login successful', 'user': user.to_dict()})
+        session['user_id'] = user['id']
+        return jsonify({'message': 'Login successful', 'user': repository.user_to_dict(user)})
     
     
     @app.route('/api/auth/logout', methods=['POST'])
     @login_required
     def logout():
-        logout_user()
+        session.pop('user_id', None)
         return jsonify({'message': 'Logged out successfully'})
     
     
     @app.route('/api/auth/me', methods=['GET'])
     @login_required
-    def get_current_user():
-        return jsonify({'user': current_user.to_dict()})
+    def get_current_user_route():
+        user = get_current_user()
+        return jsonify({'user': repository.user_to_dict(user)})
     
     
     @app.route('/api/emotions', methods=['GET'])
@@ -101,6 +113,7 @@ def register_routes(app, db):
     @login_required
     def record_emotion():
         data = request.get_json()
+        user = get_current_user()
         
         if not data:
             return jsonify({'error': 'No data provided'}), 400
@@ -108,45 +121,36 @@ def register_routes(app, db):
             return jsonify({'error': 'Emotion ID is required'}), 400
         
         if data.get('date'):
-            date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            date = data['date']
         else:
-            date = datetime.now().date()
+            date = datetime.now().strftime('%Y-%m-%d')
         
-        existing = EmotionHistory.query.filter_by(user_id=current_user.id, date=date).first()
+        entry = repository.create_emotion_entry(
+            user['id'],
+            data['emotion_id'],
+            date,
+            data.get('notes'),
+            data.get('photo_url')
+        )
         
-        if existing:
-            existing.emotion_id = data['emotion_id']
-            if data.get('notes'):
-                existing.notes = data['notes']
-            if data.get('photo_url'):
-                existing.photo_url = data['photo_url']
-            existing.recorded_at = datetime.utcnow()
-            entry = existing
-        else:
-            entry = EmotionHistory(
-                user_id=current_user.id,
-                emotion_id=data['emotion_id'],
-                date=date,
-                notes=data.get('notes'),
-                photo_url=data.get('photo_url')
-            )
-            db.session.add(entry)
+        emotion = static_data.get_emotion_by_id(entry['emotion_id'])
+        entry_dict = dict(entry)
+        entry_dict['emotion'] = emotion
         
-        db.session.commit()
-        return jsonify({'message': 'Emotion recorded', 'entry': entry.to_dict()})
+        return jsonify({'message': 'Emotion recorded', 'entry': entry_dict})
     
     
     @app.route('/api/emotions/diary/<date_str>', methods=['GET'])
     @login_required
     def get_diary_entry(date_str):
-        try:
-            date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        except:
-            return jsonify({'error': 'Invalid date format'}), 400
+        user = get_current_user()
+        entry = repository.get_emotion_entry_by_date(user['id'], date_str)
         
-        entry = EmotionHistory.query.filter_by(user_id=current_user.id, date=date).first()
         if entry:
-            return jsonify(entry.to_dict())
+            emotion = static_data.get_emotion_by_id(entry['emotion_id'])
+            entry_dict = dict(entry)
+            entry_dict['emotion'] = emotion
+            return jsonify(entry_dict)
         return jsonify(None)
     
     
@@ -183,44 +187,41 @@ def register_routes(app, db):
     @app.route('/api/emotions/history', methods=['GET'])
     @login_required
     def get_emotion_history():
+        user = get_current_user()
         days = request.args.get('days', 30, type=int)
-        history = EmotionHistory.query.filter_by(user_id=current_user.id).order_by(EmotionHistory.date.desc()).limit(days).all()
+        history = repository.get_emotion_history_by_user(user['id'], days)
         
         result = []
         for entry in history:
-            result.append(entry.to_dict())
+            emotion = static_data.get_emotion_by_id(entry['emotion_id'])
+            entry_dict = dict(entry)
+            entry_dict['emotion'] = emotion
+            result.append(entry_dict)
         return jsonify(result)
     
     
     @app.route('/api/emotions/statistics', methods=['GET'])
     @login_required
     def get_emotion_statistics():
+        user = get_current_user()
         days = request.args.get('days', 30, type=int)
-        stats = recommendation_engine.get_emotion_statistics(db, current_user.id, days)
+        stats = recommendation_engine.get_emotion_statistics_from_repo(user['id'], days)
         return jsonify(stats)
     
     
     @app.route('/api/tasks', methods=['GET'])
     @login_required
     def get_tasks():
-        query = Task.query.filter_by(user_id=current_user.id)
-        
+        user = get_current_user()
         date_str = request.args.get('date')
-        if date_str:
-            task_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            query = query.filter_by(task_date=task_date)
-        
-        tasks = query.order_by(Task.created_at.desc()).all()
-        
-        result = []
-        for task in tasks:
-            result.append(task.to_dict())
-        return jsonify(result)
+        tasks = repository.get_tasks_by_user(user['id'], date_str)
+        return jsonify(tasks)
     
     
     @app.route('/api/tasks', methods=['POST'])
     @login_required
     def create_task():
+        user = get_current_user()
         data = request.get_json()
         
         if not data:
@@ -229,72 +230,62 @@ def register_routes(app, db):
             return jsonify({'error': 'Title is required'}), 400
         
         if data.get('task_date'):
-            task_date = datetime.strptime(data['task_date'], '%Y-%m-%d').date()
+            task_date = data['task_date']
         else:
-            task_date = datetime.now().date()
+            task_date = datetime.now().strftime('%Y-%m-%d')
         
-        existing = Task.query.filter_by(
-            user_id=current_user.id,
-            title=data['title'],
-            task_date=task_date,
-            is_completed=False
-        ).first()
-        
+        existing = repository.get_existing_task(user['id'], data['title'], task_date)
         if existing:
-            return jsonify({'error': 'Task already exists', 'task': existing.to_dict()}), 409
+            return jsonify({'error': 'Task already exists', 'task': existing}), 409
         
         category = data.get('category', 'Personal')
         priority = data.get('priority', 'Medium')
         
-        task = Task(
-            user_id=current_user.id,
-            title=data['title'],
-            category=category,
-            priority=priority,
-            task_date=task_date,
-            recommended_for_emotion=data.get('recommended_for_emotion')
+        task = repository.create_task(
+            user['id'],
+            data['title'],
+            category,
+            priority,
+            task_date,
+            data.get('recommended_for_emotion')
         )
-        db.session.add(task)
-        db.session.commit()
         
-        return jsonify(task.to_dict()), 201
+        return jsonify(task), 201
     
     
     @app.route('/api/tasks/<int:task_id>', methods=['PUT'])
     @login_required
     def update_task(task_id):
-        task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
+        user = get_current_user()
+        task = repository.get_task_by_id(task_id, user['id'])
+        
         if not task:
             return jsonify({'error': 'Task not found'}), 404
         
         data = request.get_json()
         
         if 'is_completed' in data:
-            task.is_completed = data['is_completed']
-            if data['is_completed']:
-                task.completed_at = datetime.utcnow()
-            else:
-                task.completed_at = None
+            task = repository.update_task(task_id, user['id'], data['is_completed'])
         
-        db.session.commit()
-        return jsonify(task.to_dict())
+        return jsonify(task)
     
     
     @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
     @login_required
     def delete_task(task_id):
-        task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
-        if not task:
+        user = get_current_user()
+        success = repository.delete_task(task_id, user['id'])
+        
+        if not success:
             return jsonify({'error': 'Task not found'}), 404
         
-        db.session.delete(task)
-        db.session.commit()
         return jsonify({'message': 'Task deleted'})
     
     
     @app.route('/api/tasks/recommended', methods=['GET'])
     @login_required
     def get_recommended_tasks():
+        user = get_current_user()
         emotion = request.args.get('emotion')
         if not emotion:
             emotion = 'Neutral'
@@ -302,11 +293,7 @@ def register_routes(app, db):
         limit = request.args.get('limit', 5, type=int)
         date_str = request.args.get('date')
         
-        task_date = None
-        if date_str:
-            task_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        
-        recommendations = recommendation_engine.get_recommended_tasks(db, current_user.id, emotion, limit, task_date)
+        recommendations = recommendation_engine.get_recommended_tasks_from_repo(user['id'], emotion, limit, date_str)
         return jsonify(recommendations)
     
     
@@ -378,55 +365,56 @@ def register_routes(app, db):
     @app.route('/api/user/profile', methods=['GET'])
     @login_required
     def get_profile():
-        return jsonify(current_user.to_dict())
+        user = get_current_user()
+        return jsonify(repository.user_to_dict(user))
     
     
     @app.route('/api/user/profile', methods=['PUT'])
     @login_required
     def update_profile():
+        user = get_current_user()
         data = request.get_json()
         
         if 'username' in data:
-            existing = User.query.filter_by(username=data['username']).first()
-            if existing and existing.id != current_user.id:
+            existing = repository.get_user_by_username(data['username'])
+            if existing and existing['id'] != user['id']:
                 return jsonify({'error': 'Username already taken'}), 400
-            current_user.username = data['username']
+            user = repository.update_user(user['id'], data['username'])
         
-        db.session.commit()
-        return jsonify(current_user.to_dict())
+        return jsonify(repository.user_to_dict(user))
     
     
     @app.route('/api/dashboard/summary', methods=['GET'])
     @login_required
     def get_dashboard_summary():
-        today = datetime.now().date()
+        user = get_current_user()
+        today = datetime.now().strftime('%Y-%m-%d')
         
-        today_emotion = EmotionHistory.query.filter_by(user_id=current_user.id, date=today).first()
+        today_emotion = repository.get_emotion_entry_by_date(user['id'], today)
         
-        total_tasks = Task.query.filter_by(user_id=current_user.id).count()
-        completed_tasks = Task.query.filter_by(user_id=current_user.id, is_completed=True).count()
+        task_counts = repository.count_tasks(user['id'])
+        total_tasks = task_counts['total']
+        completed_tasks = task_counts['completed']
         pending_tasks = total_tasks - completed_tasks
         
-        today_tasks = Task.query.filter_by(user_id=current_user.id, due_date=today, is_completed=False).all()
+        today_tasks = repository.get_today_due_tasks(user['id'], today)
         
-        today_tasks_list = []
-        for task in today_tasks:
-            today_tasks_list.append(task.to_dict())
-        
-        emotion_stats = recommendation_engine.get_emotion_statistics(db, current_user.id, 7)
+        emotion_stats = recommendation_engine.get_emotion_statistics_from_repo(user['id'], 7)
         
         today_emotion_dict = None
         if today_emotion:
-            today_emotion_dict = today_emotion.to_dict()
+            emotion = static_data.get_emotion_by_id(today_emotion['emotion_id'])
+            today_emotion_dict = dict(today_emotion)
+            today_emotion_dict['emotion'] = emotion
         
         return jsonify({
-            'user': current_user.to_dict(),
+            'user': repository.user_to_dict(user),
             'today_emotion': today_emotion_dict,
             'task_summary': {
                 'total': total_tasks,
                 'completed': completed_tasks,
                 'pending': pending_tasks
             },
-            'today_tasks': today_tasks_list,
+            'today_tasks': today_tasks,
             'weekly_mood_stats': emotion_stats
         })
