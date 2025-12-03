@@ -164,6 +164,26 @@ def user_to_dict(user):
     }
 
 
+def get_user_by_username(username):
+    """Find a demo user by their username."""
+    for user in DEMO_USERS:
+        if user['username'] == username:
+            return user
+    return None
+
+
+def update_user(user_id, new_username):
+    """
+    Update a demo user's username.
+    Changes the username in the DEMO_USERS list.
+    """
+    for user in DEMO_USERS:
+        if user['id'] == user_id:
+            user['username'] = new_username
+            return user
+    return None
+
+
 # ==============================================
 # Task Operations
 # ==============================================
