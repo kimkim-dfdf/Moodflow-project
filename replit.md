@@ -60,7 +60,6 @@ backend/
 ### 4. Books
 - Tag-based filtering with 10 emotion tags
 - AND logic for multi-tag filtering
-- Match score showing relevance percentage
 - 15 curated books with 3 tags each
 
 ### 5. Profile

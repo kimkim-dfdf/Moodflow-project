@@ -467,7 +467,6 @@ def get_all_book_tags():
 def get_books_by_tags(tag_slugs, limit):
     """
     Get books that match ALL of the specified tags (AND logic).
-    Books are sorted by match score (highest first).
     """
     # If no tags specified, return all books
     if not tag_slugs:
@@ -487,18 +486,7 @@ def get_books_by_tags(tag_slugs, limit):
         
         # Only include if ALL tags match
         if match_count == len(tag_slugs):
-            book_copy = dict(book)
-            # Calculate match score as percentage
-            book_copy['match_score'] = match_count / len(book['tags']) * 100
-            result.append(book_copy)
-    
-    # Sort by match score using bubble sort (highest first)
-    for i in range(len(result)):
-        for j in range(i + 1, len(result)):
-            if result[j]['match_score'] > result[i]['match_score']:
-                temp = result[i]
-                result[i] = result[j]
-                result[j] = temp
+            result.append(book)
     
     # Apply limit if specified
     if limit and limit < len(result):
