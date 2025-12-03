@@ -441,14 +441,6 @@ def get_emotion_by_id(emotion_id):
     return None
 
 
-def get_emotion_by_name(name):
-    """Find an emotion by its name."""
-    for emotion in EMOTIONS:
-        if emotion['name'] == name:
-            return emotion
-    return None
-
-
 def get_music_by_emotion(emotion_name, limit):
     """
     Get music recommendations for a specific emotion.
