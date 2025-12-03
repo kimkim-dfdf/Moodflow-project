@@ -1,4 +1,47 @@
 {
-  "tasks": [],
-  "emotion_history": []
+  "tasks": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "title": "Go for a calming walk",
+      "description": null,
+      "category": "Health",
+      "priority": "Medium",
+      "is_completed": true,
+      "due_date": null,
+      "due_time": null,
+      "task_date": "2025-12-03",
+      "created_at": "2025-12-03T07:11:55.748083",
+      "completed_at": "2025-12-03T07:12:08.329570",
+      "recommended_for_emotion": "Stressed",
+      "emotion_score": 0.0
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "title": "Make a prioritized to-do list",
+      "description": null,
+      "category": "Personal",
+      "priority": "Medium",
+      "is_completed": true,
+      "due_date": null,
+      "due_time": null,
+      "task_date": "2025-12-03",
+      "created_at": "2025-12-03T07:11:57.401164",
+      "completed_at": "2025-12-03T07:12:04.604187",
+      "recommended_for_emotion": "Stressed",
+      "emotion_score": 0.0
+    }
+  ],
+  "emotion_history": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "emotion_id": 5,
+      "date": "2025-12-03",
+      "notes": null,
+      "photo_url": null,
+      "recorded_at": "2025-12-03T07:11:53.616499"
+    }
+  ]
 }
