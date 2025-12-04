@@ -189,7 +189,7 @@ def get_recommended_tasks_from_repo(user_id, emotion_name, limit, task_date):
 
 
 def get_suggested_tasks(emotion_name, limit):
-    """Get AI-suggested tasks for an emotion."""
+    """Get suggested tasks for an emotion."""
     if emotion_name in TASK_SUGGESTIONS:
         suggestions = TASK_SUGGESTIONS[emotion_name]
     else:

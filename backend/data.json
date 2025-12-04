@@ -47,6 +47,70 @@
       "completed_at": null,
       "recommended_for_emotion": "Stressed",
       "emotion_score": 0.0
+    },
+    {
+      "id": 4,
+      "user_id": 1,
+      "title": "Tackle that challenging work task",
+      "description": null,
+      "category": "Work",
+      "priority": "High",
+      "is_completed": false,
+      "due_date": null,
+      "due_time": null,
+      "task_date": "2025-12-04",
+      "created_at": "2025-12-04T03:35:02.820819",
+      "completed_at": null,
+      "recommended_for_emotion": "Happy",
+      "emotion_score": 0.0
+    },
+    {
+      "id": 5,
+      "user_id": 1,
+      "title": "Start a new creative project",
+      "description": null,
+      "category": "Personal",
+      "priority": "High",
+      "is_completed": false,
+      "due_date": null,
+      "due_time": null,
+      "task_date": "2025-12-04",
+      "created_at": "2025-12-04T03:35:04.309623",
+      "completed_at": null,
+      "recommended_for_emotion": "Happy",
+      "emotion_score": 0.0
+    },
+    {
+      "id": 6,
+      "user_id": 1,
+      "title": "Learn something new",
+      "description": null,
+      "category": "Study",
+      "priority": "Medium",
+      "is_completed": true,
+      "due_date": null,
+      "due_time": null,
+      "task_date": "2025-12-04",
+      "created_at": "2025-12-04T03:35:06.006988",
+      "completed_at": "2025-12-04T03:36:01.458265",
+      "recommended_for_emotion": "Happy",
+      "emotion_score": 0.0
+    },
+    {
+      "id": 7,
+      "user_id": 1,
+      "title": "Work on medium-priority tasks",
+      "description": null,
+      "category": "Work",
+      "priority": "Medium",
+      "is_completed": true,
+      "due_date": null,
+      "due_time": null,
+      "task_date": "2025-12-04",
+      "created_at": "2025-12-04T03:35:18.947070",
+      "completed_at": "2025-12-04T03:35:57.643978",
+      "recommended_for_emotion": "Neutral",
+      "emotion_score": 0.0
     }
   ],
   "emotion_history": [
@@ -58,6 +122,15 @@
       "notes": null,
       "photo_url": null,
       "recorded_at": "2025-12-03T07:11:53.616499"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "emotion_id": 2,
+      "date": "2025-12-04",
+      "notes": null,
+      "photo_url": null,
+      "recorded_at": "2025-12-04T03:37:28.974729"
     }
   ]
 }
