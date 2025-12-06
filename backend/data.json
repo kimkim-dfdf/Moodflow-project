@@ -71,12 +71,12 @@
       "description": null,
       "category": "Personal",
       "priority": "High",
-      "is_completed": false,
+      "is_completed": true,
       "due_date": null,
       "due_time": null,
       "task_date": "2025-12-04",
       "created_at": "2025-12-04T03:35:04.309623",
-      "completed_at": null,
+      "completed_at": "2025-12-04T15:11:24.282226",
       "recommended_for_emotion": "Happy",
       "emotion_score": 0.0
     },
@@ -111,6 +111,38 @@
       "completed_at": "2025-12-04T03:35:57.643978",
       "recommended_for_emotion": "Neutral",
       "emotion_score": 0.0
+    },
+    {
+      "id": 8,
+      "user_id": 1,
+      "title": "Learn something new",
+      "description": null,
+      "category": "Study",
+      "priority": "Medium",
+      "is_completed": true,
+      "due_date": null,
+      "due_time": null,
+      "task_date": "2025-12-01",
+      "created_at": "2025-12-04T15:00:14.474411",
+      "completed_at": "2025-12-04T15:00:33.928958",
+      "recommended_for_emotion": "Happy",
+      "emotion_score": 0.0
+    },
+    {
+      "id": 9,
+      "user_id": 1,
+      "title": "Start a new creative project",
+      "description": null,
+      "category": "Personal",
+      "priority": "High",
+      "is_completed": true,
+      "due_date": null,
+      "due_time": null,
+      "task_date": "2025-12-01",
+      "created_at": "2025-12-04T15:00:25.931167",
+      "completed_at": "2025-12-04T15:00:32.651251",
+      "recommended_for_emotion": "Happy",
+      "emotion_score": 0.0
     }
   ],
   "emotion_history": [
@@ -126,11 +158,20 @@
     {
       "id": 2,
       "user_id": 1,
-      "emotion_id": 2,
+      "emotion_id": 1,
       "date": "2025-12-04",
       "notes": null,
       "photo_url": "/api/uploads/ed2c06bd9b0c4befb6b764a709d7d985_baby-duck.jpg",
-      "recorded_at": "2025-12-04T03:39:28.471477"
+      "recorded_at": "2025-12-04T14:59:52.755548"
+    },
+    {
+      "id": 3,
+      "user_id": 1,
+      "emotion_id": 1,
+      "date": "2025-12-01",
+      "notes": null,
+      "photo_url": null,
+      "recorded_at": "2025-12-04T15:00:01.273728"
     }
   ]
 }
