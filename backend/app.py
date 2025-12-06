@@ -7,6 +7,7 @@
 import os
 from flask import Flask
 from flask_cors import CORS
+from flask_login import LoginManager
 
 
 def create_app():
@@ -32,9 +33,20 @@ def create_app():
     
     app.secret_key = secret_key
     
+    # Initialize Flask-Login
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    
+    # User loader function for Flask-Login
+    import repository
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        """Load user by ID for Flask-Login session management."""
+        return repository.get_user_by_id(user_id)
+    
     # Initialize the data repository
     # This loads any existing data from the JSON file
-    import repository
     repository.load_data()
     
     # Register all API routes

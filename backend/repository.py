@@ -9,6 +9,7 @@
 import json
 import os
 from datetime import datetime
+from flask_login import UserMixin
 
 
 # ==============================================
@@ -16,6 +17,34 @@ from datetime import datetime
 # ==============================================
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), 'data.json')
+
+
+# ==============================================
+# User Class for Flask-Login
+# ==============================================
+
+class User(UserMixin):
+    """User class for Flask-Login integration."""
+    
+    def __init__(self, user_data):
+        self.id = user_data['id']
+        self.email = user_data['email']
+        self.username = user_data['username']
+        self.password = user_data['password']
+        self.created_at = user_data['created_at']
+    
+    def get_id(self):
+        """Return user ID as string for Flask-Login."""
+        return str(self.id)
+    
+    def to_dict(self):
+        """Convert user to dictionary for API responses."""
+        return {
+            'id': self.id,
+            'email': self.email,
+            'username': self.username,
+            'created_at': self.created_at
+        }
 
 
 # ==============================================
@@ -126,18 +155,18 @@ def find_max_id(items):
 # ==============================================
 
 def get_user_by_id(user_id):
-    """Find a demo user by their ID."""
-    for user in DEMO_USERS:
-        if user['id'] == user_id:
-            return user
+    """Find a demo user by their ID and return User object."""
+    for user_data in DEMO_USERS:
+        if user_data['id'] == int(user_id):
+            return User(user_data)
     return None
 
 
 def get_user_by_email(email):
-    """Find a demo user by their email address."""
-    for user in DEMO_USERS:
-        if user['email'] == email:
-            return user
+    """Find a demo user by their email address and return User object."""
+    for user_data in DEMO_USERS:
+        if user_data['email'] == email:
+            return User(user_data)
     return None
 
 
@@ -146,7 +175,7 @@ def check_user_password(user, password):
     Check if the provided password is correct.
     Simple string comparison (no hashing for demo).
     """
-    if user['password'] == password:
+    if user.password == password:
         return True
     return False
 
@@ -156,19 +185,14 @@ def user_to_dict(user):
     Convert a user object to a dictionary for API responses.
     Excludes password from the response.
     """
-    return {
-        'id': user['id'],
-        'email': user['email'],
-        'username': user['username'],
-        'created_at': user['created_at']
-    }
+    return user.to_dict()
 
 
 def get_user_by_username(username):
-    """Find a demo user by their username."""
-    for user in DEMO_USERS:
-        if user['username'] == username:
-            return user
+    """Find a demo user by their username and return User object."""
+    for user_data in DEMO_USERS:
+        if user_data['username'] == username:
+            return User(user_data)
     return None
 
 
@@ -177,10 +201,10 @@ def update_user(user_id, new_username):
     Update a demo user's username.
     Changes the username in the DEMO_USERS list.
     """
-    for user in DEMO_USERS:
-        if user['id'] == user_id:
-            user['username'] = new_username
-            return user
+    for user_data in DEMO_USERS:
+        if user_data['id'] == user_id:
+            user_data['username'] = new_username
+            return User(user_data)
     return None
 
 

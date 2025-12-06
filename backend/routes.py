@@ -5,10 +5,10 @@
 # All routes are registered with the Flask app
 # ==============================================
 
-from flask import request, jsonify, session, send_from_directory
+from flask import request, jsonify, send_from_directory
+from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from functools import wraps
 import os
 import uuid
 
@@ -48,30 +48,6 @@ def allowed_file(filename):
         return True
     
     return False
-
-
-def login_required(f):
-    """
-    Decorator to require login for a route.
-    Returns 401 error if user is not logged in.
-    """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return jsonify({'error': 'Login required'}), 401
-        return f(*args, **kwargs)
-    return decorated_function
-
-
-def get_current_user():
-    """
-    Get the currently logged in user.
-    Returns None if not logged in.
-    """
-    if 'user_id' not in session:
-        return None
-    
-    return repository.get_user_by_id(session['user_id'])
 
 
 # ==============================================
@@ -137,8 +113,8 @@ def register_routes(app):
         if not password_correct:
             return jsonify({'error': 'Invalid email or password'}), 401
         
-        # Log user in by saving user_id to session
-        session['user_id'] = user['id']
+        # Log user in using Flask-Login
+        login_user(user)
         
         return jsonify({
             'message': 'Login successful',
@@ -149,8 +125,8 @@ def register_routes(app):
     @app.route('/api/auth/logout', methods=['POST'])
     @login_required
     def logout():
-        """Log out the current user."""
-        session.pop('user_id', None)
+        """Log out the current user using Flask-Login."""
+        logout_user()
         return jsonify({'message': 'Logged out successfully'})
     
     
@@ -158,8 +134,7 @@ def register_routes(app):
     @login_required
     def get_current_user_route():
         """Get the currently logged in user's information."""
-        user = get_current_user()
-        return jsonify({'user': repository.user_to_dict(user)})
+        return jsonify({'user': current_user.to_dict()})
     
     
     # ==========================================
@@ -181,7 +156,7 @@ def register_routes(app):
         Optional fields: date, notes, photo_url
         """
         data = request.get_json()
-        user = get_current_user()
+        user = current_user
         
         # Validate input
         if not data:
@@ -198,7 +173,7 @@ def register_routes(app):
         
         # Create emotion entry
         entry = repository.create_emotion_entry(
-            user['id'],
+            user.id,
             data['emotion_id'],
             date,
             data.get('notes'),
@@ -220,8 +195,8 @@ def register_routes(app):
     @login_required
     def get_diary_entry(date_str):
         """Get the emotion diary entry for a specific date."""
-        user = get_current_user()
-        entry = repository.get_emotion_entry_by_date(user['id'], date_str)
+        user = current_user
+        entry = repository.get_emotion_entry_by_date(user.id, date_str)
         
         if entry:
             emotion = static_data.get_emotion_by_id(entry['emotion_id'])
@@ -239,11 +214,11 @@ def register_routes(app):
         Get emotion statistics for the current user.
         Optional query param: days (default 30)
         """
-        user = get_current_user()
+        user = current_user
         days = request.args.get('days', 30, type=int)
         
         stats = recommendation_engine.get_emotion_statistics_from_repo(
-            user['id'],
+            user.id,
             days
         )
         
@@ -313,10 +288,10 @@ def register_routes(app):
         Get all tasks for the current user.
         Optional query param: date (filter by task_date)
         """
-        user = get_current_user()
+        user = current_user
         date_str = request.args.get('date')
         
-        tasks = repository.get_tasks_by_user(user['id'], date_str)
+        tasks = repository.get_tasks_by_user(user.id, date_str)
         
         return jsonify(tasks)
     
@@ -329,7 +304,7 @@ def register_routes(app):
         Required fields: title
         Optional fields: category, priority, task_date, recommended_for_emotion
         """
-        user = get_current_user()
+        user = current_user
         data = request.get_json()
         
         # Validate input
@@ -347,7 +322,7 @@ def register_routes(app):
         
         # Check for duplicate task
         existing = repository.get_existing_task(
-            user['id'],
+            user.id,
             data['title'],
             task_date
         )
@@ -364,7 +339,7 @@ def register_routes(app):
         
         # Create task
         task = repository.create_task(
-            user['id'],
+            user.id,
             data['title'],
             category,
             priority,
@@ -382,10 +357,10 @@ def register_routes(app):
         Update a task.
         Currently supports updating: is_completed
         """
-        user = get_current_user()
+        user = current_user
         
         # Find the task
-        task = repository.get_task_by_id(task_id, user['id'])
+        task = repository.get_task_by_id(task_id, user.id)
         if not task:
             return jsonify({'error': 'Task not found'}), 404
         
@@ -395,7 +370,7 @@ def register_routes(app):
         if 'is_completed' in data:
             task = repository.update_task(
                 task_id,
-                user['id'],
+                user.id,
                 data['is_completed']
             )
         
@@ -406,9 +381,9 @@ def register_routes(app):
     @login_required
     def delete_task(task_id):
         """Delete a task."""
-        user = get_current_user()
+        user = current_user
         
-        success = repository.delete_task(task_id, user['id'])
+        success = repository.delete_task(task_id, user.id)
         
         if not success:
             return jsonify({'error': 'Task not found'}), 404
@@ -423,7 +398,7 @@ def register_routes(app):
         Get recommended tasks based on current emotion.
         Query params: emotion, limit (default 5), date
         """
-        user = get_current_user()
+        user = current_user
         
         # Get parameters
         emotion = request.args.get('emotion')
@@ -435,7 +410,7 @@ def register_routes(app):
         
         # Get recommendations
         recommendations = recommendation_engine.get_recommended_tasks_from_repo(
-            user['id'],
+            user.id,
             emotion,
             limit,
             date_str
@@ -557,17 +532,17 @@ def register_routes(app):
         Update the current user's profile.
         Supports updating: username
         """
-        user = get_current_user()
+        user = current_user
         data = request.get_json()
         
         if 'username' in data:
             # Check if username is taken
             existing = repository.get_user_by_username(data['username'])
-            if existing and existing['id'] != user['id']:
+            if existing and existing.id != user.id:
                 return jsonify({'error': 'Username already taken'}), 400
             
             # Update username
-            user = repository.update_user(user['id'], data['username'])
+            user = repository.update_user(user.id, data['username'])
         
         return jsonify(repository.user_to_dict(user))
     
@@ -583,24 +558,24 @@ def register_routes(app):
         Get a summary of data for the dashboard.
         Includes: user info, today's emotion, task counts, weekly stats
         """
-        user = get_current_user()
+        user = current_user
         today = datetime.now().strftime('%Y-%m-%d')
         
         # Get today's emotion
-        today_emotion = repository.get_emotion_entry_by_date(user['id'], today)
+        today_emotion = repository.get_emotion_entry_by_date(user.id, today)
         
         # Get task counts
-        task_counts = repository.count_tasks(user['id'])
+        task_counts = repository.count_tasks(user.id)
         total_tasks = task_counts['total']
         completed_tasks = task_counts['completed']
         pending_tasks = total_tasks - completed_tasks
         
         # Get tasks due today
-        today_tasks = repository.get_today_due_tasks(user['id'], today)
+        today_tasks = repository.get_today_due_tasks(user.id, today)
         
         # Get weekly emotion statistics
         emotion_stats = recommendation_engine.get_emotion_statistics_from_repo(
-            user['id'],
+            user.id,
             7
         )
         
