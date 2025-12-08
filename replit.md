@@ -13,11 +13,27 @@ MoodFlow is a modern web application that helps users track their emotional stat
 ### Backend (Python Flask)
 - **Location**: `/backend`
 - **Port**: 8000
-- **Key Technologies**: Flask, SQLAlchemy, Flask-Login, Flask-CORS
+- **Key Technologies**: Flask, Flask-CORS
 
-### Database (PostgreSQL)
-- Tables: users, tasks, emotions, emotion_history, calendar_events, music_recommendations, book_recommendations, book_tags, book_tag_links
-- Uses SQLAlchemy ORM for database operations
+### Data Storage (PostgreSQL Database)
+- **Database**: PostgreSQL (Neon-backed)
+- **ORM**: SQLAlchemy with Flask-SQLAlchemy
+- **Environment**: DATABASE_URL environment variable
+- Static data (emotions, music, books) stored in `static_data.py`
+
+## Backend File Structure
+
+```
+backend/
+├── app.py                    # Flask app factory with DB config
+├── run.py                    # Entry point
+├── models.py                 # SQLAlchemy database models
+├── repository.py             # Database operations (CRUD)
+├── static_data.py            # Static data (emotions, music, books)
+├── recommendation_engine.py  # Task scoring algorithm
+├── routes.py                 # API endpoints
+└── uploads/                  # Photo uploads
+```
 
 ## Key Features
 
@@ -26,108 +42,141 @@ MoodFlow is a modern web application that helps users track their emotional stat
 - Emotion selection (Happy, Sad, Tired, Angry, Stressed, Neutral)
 - Personalized task recommendations based on mood
 - Music recommendations with YouTube links
-- Book recommendations based on mood
 - Mini calendar with emotion tracking
 - Weekly mood statistics chart
 
 ### 2. Tasks
-- Full CRUD operations
+- AI-based task suggestions (no manual input)
 - Categories: Work, Study, Health, Personal
 - Priority levels: Low, Medium, High
 - Emotion-based task generation
-- Filter by status and category
+- Delete tasks with trash icon
 
 ### 3. Calendar
 - Monthly calendar view
-- Add/edit/delete events
 - Record emotions for any day
 - Visual emotion indicators on calendar
 
 ### 4. Books
-- Dedicated page for book recommendations
-- **Tag-based filtering with 10 emotion tags** (Hopeful, Comforting, Peaceful, Growth, Emotional, Escapism, Recharge, Courage, New Perspective, Focus)
-- **Jaccard Similarity Algorithm**: Books scored by tag match percentage
-- **Tag Co-occurrence Algorithm**: Suggests related tags based on frequently paired tags
-- Multi-select tag chips UI for refined book discovery
-- Match score badge showing relevance percentage
+- Tag-based filtering with 10 emotion tags
+- AND logic for multi-tag filtering
 - 15 curated books with 3 tags each
-- Book details: title, author, genre, description, associated tags
 
 ### 5. Profile
 - User settings management
-- Preferred work time configuration
-- Category preferences
-- Emotion history with charts
-- Energy level trends
 
 ## Recommendation Algorithm
-The app uses a weighted scoring system that considers:
-- Emotion-to-category mapping
-- Priority preferences per emotion
-- Task urgency (due date)
-- User's personal category preferences
+
+**Total Score = Category Score (57%) + Priority Score (43%)**
+
+- Category weight from emotion-to-category mapping
+- Priority scoring inverts based on emotion preference
+- Happy/energetic = prefer High priority tasks
+- Tired/sad = prefer Low priority tasks
+
+## Demo Accounts (Simplified Login)
+
+Only 4 fixed accounts can log in (no registration):
+
+| Email | Password | Role |
+|-------|----------|------|
+| seven@gmail.com | ekdus123 | User |
+| elly@gmail.com | ekdus123 | User |
+| nicole@gmail.com | ekdus123 | User |
+| admin@gmail.com | ekdus123 | Admin |
 
 ## API Endpoints
 
-### Authentication
-- POST `/api/auth/register` - Register new user
-- POST `/api/auth/login` - User login
-- POST `/api/auth/logout` - User logout
-- GET `/api/auth/me` - Get current user
+### Authentication (Simplified)
+- `POST /api/auth/register` - Disabled (returns error)
+- `POST /api/auth/login` - Login with demo account
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Get current user
 
 ### Emotions
-- GET `/api/emotions` - List all emotions
-- POST `/api/emotions/record` - Record emotion for a day
-- GET `/api/emotions/today` - Get today's emotion
-- GET `/api/emotions/history` - Get emotion history
-- GET `/api/emotions/statistics` - Get emotion statistics
+- `GET /api/emotions` - List all emotions
+- `POST /api/emotions/record` - Record emotion for a day
+- `GET /api/emotions/history` - Get emotion history
+- `GET /api/emotions/statistics` - Get emotion statistics
+- `GET /api/emotions/diary/<date>` - Get diary entry for date
 
 ### Tasks
-- GET `/api/tasks` - List tasks (with filters)
-- POST `/api/tasks` - Create task
-- PUT `/api/tasks/:id` - Update task
-- DELETE `/api/tasks/:id` - Delete task
-- GET `/api/tasks/recommended` - Get recommended tasks
-- GET `/api/tasks/suggestions` - Get task suggestions
+- `GET /api/tasks` - List tasks
+- `POST /api/tasks` - Create task
+- `PUT /api/tasks/:id` - Update task
+- `DELETE /api/tasks/:id` - Delete task
+- `GET /api/tasks/recommended` - Get recommended tasks
+- `GET /api/tasks/suggestions` - Get AI task suggestions
 
-### Calendar
-- GET `/api/calendar/events` - List events
-- POST `/api/calendar/events` - Create event
-- PUT `/api/calendar/events/:id` - Update event
-- DELETE `/api/calendar/events/:id` - Delete event
+### Music
+- `GET /api/music/recommendations` - Get music by emotion
 
 ### Books
-- GET `/api/books/tags` - Get all book tags with book counts
-- GET `/api/books` - Get books filtered by tags (params: tags[], limit)
-- GET `/api/books/recommendations` - Get book recommendations by emotion (legacy, params: emotion, limit)
+- `GET /api/books/tags` - Get all book tags
+- `GET /api/books` - Get books filtered by tags (AND logic)
 
 ### Profile
-- GET `/api/user/profile` - Get profile
-- PUT `/api/user/profile` - Update profile
-- GET `/api/dashboard/summary` - Get dashboard summary
+- `GET /api/user/profile` - Get profile
+- `PUT /api/user/profile` - Update profile
+- `GET /api/dashboard/summary` - Get dashboard summary
+
+### File Upload
+- `POST /api/upload/photo` - Upload photo
+- `GET /api/uploads/<filename>` - Serve uploaded file
+
+## Code Style Guidelines
+
+This project uses **student-friendly** code patterns:
+- Regular functions (no lambdas)
+- Explicit if/else statements (no ternary operators)
+- For loops (no list comprehensions)
+- Bubble sort for sorting
+- Clear variable names
+- Comprehensive comments
 
 ## Recent Changes
-- December 2, 2025: Implemented tag-based book recommendation system
-  - Created BookTag and BookTagLink models for granular emotional tags
-  - Added 10 Korean emotion tags (희망적인, 위로가 필요한, 평온함을 찾는, etc.)
-  - Mapped 15 books to 3 tags each (45 tag associations)
-  - New API: /api/books/tags (list tags), /api/books (filter by tags)
-  - Updated Books page with multi-select tag chips UI
-  - BookCard now displays associated tags with color styling
-  - Removed book recommendations from Dashboard (books only in Books page)
-- December 2, 2025: Added book recommendations feature
-  - Created BookRecommendation model with 24 books (4 per emotion)
-  - Added /api/books/recommendations endpoint
-  - Created BookCard component and Books page
-  - Added Books to navigation (now 5 pages)
-  - Integrated book recommendations into Dashboard
-- December 1, 2025: Initial project setup with complete MVP features
-- Implemented emotion-based recommendation engine
-- Created all 4 main pages: Dashboard, Tasks, Calendar, Profile
-- Added music recommendations with YouTube links
-- Implemented responsive design
+
+- December 8, 2025: PostgreSQL database migration
+  - Changed from JSON file storage to PostgreSQL database
+  - Created models.py with SQLAlchemy models (User, Task, EmotionHistory, etc.)
+  - Updated app.py with database configuration
+  - Updated repository.py to use SQLAlchemy queries
+  - Demo users are seeded on application startup
+
+- December 8, 2025: Backend code cleanup
+  - Removed unused `is_favorite` function from repository.py
+  - Verified all functions in static_data.py and recommendation_engine.py are in use
+  - Updated line counts in documentation
+
+- December 3, 2025: Simplified authentication
+  - Removed password hashing (no security for demo)
+  - Only 4 demo accounts can log in
+  - Registration disabled
+  - Login page shows demo account info
 
 ## User Preferences
-- Clean, minimal interface preferred
+- Clean, minimal interface
 - Soft colors and rounded cards
-- Left-side navigation with 5 menu items (Dashboard, Tasks, Calendar, Books, Profile)
+- Student-friendly code style (simple patterns)
+- Left-side navigation with 5 menu items
+- PostgreSQL database required for professor's requirements
+
+## Running Locally
+
+### Backend
+```bash
+cd backend
+pip install flask flask-cors flask-login python-dotenv werkzeug
+python run.py
+```
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Ports
+- Backend: http://localhost:8000
+- Frontend: http://localhost:5000

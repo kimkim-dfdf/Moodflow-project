@@ -1,806 +1,968 @@
+# ==============================================
+# MoodFlow - API Routes
+# ==============================================
+# This file contains all API endpoints
+# All routes are registered with the Flask app
+# ==============================================
+
 from flask import request, jsonify, send_from_directory
 from flask_login import login_user, logout_user, login_required, current_user
-from datetime import datetime
-from recommendation_engine import EmotionRecommendationEngine
 from werkzeug.utils import secure_filename
+from datetime import datetime
 import os
 import uuid
+import hashlib
+
+import repository
+import recommendation_engine
+import static_data
+
+
+# ==============================================
+# Configuration
+# ==============================================
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
+
+# ==============================================
+# Helper Functions
+# ==============================================
+
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def register_routes(app, db):
-    from models import User, Task, Emotion, EmotionHistory, CalendarEvent, MusicRecommendation, BookRecommendation, BookTag, BookTagLink
+    """
+    Check if a file extension is allowed for upload.
+    Returns True if allowed, False otherwise.
+    """
+    if not filename:
+        return False
     
-    @app.route('/api/auth/register', methods=['POST'])
-    def register():
-        data = request.get_json()
-        
-        if not data or not data.get('email') or not data.get('password') or not data.get('username'):
-            return jsonify({'error': 'Email, username, and password are required'}), 400
-        
-        if User.query.filter_by(email=data['email']).first():
-            return jsonify({'error': 'Email already registered'}), 400
-        
-        if User.query.filter_by(username=data['username']).first():
-            return jsonify({'error': 'Username already taken'}), 400
-        
-        user = User(
-            email=data['email'],
-            username=data['username']
-        )
-        user.set_password(data['password'])
-        
-        db.session.add(user)
-        db.session.commit()
-        
-        login_user(user)
-        return jsonify({'message': 'Registration successful', 'user': user.to_dict()}), 201
+    if '.' not in filename:
+        return False
+    
+    # Get the file extension
+    parts = filename.rsplit('.', 1)
+    extension = parts[1].lower()
+    
+    if extension in ALLOWED_EXTENSIONS:
+        return True
+    
+    return False
+
+
+# ==============================================
+# Route Registration
+# ==============================================
+
+def register_routes(app):
+    """
+    Register all API routes with the Flask app.
+    This function is called from app.py during initialization.
+    """
+    
+    # ==========================================
+    # Authentication Routes (Simplified for Demo)
+    # ==========================================
+    # Only 3 demo accounts can log in:
+    # - seven@gmail.com
+    # - elly@gmail.com
+    # - nicole@gmail.com
+    # Password for all: ekdus123
+    # ==========================================
     
     @app.route('/api/auth/login', methods=['POST'])
     def login():
+        """
+        Log in with a demo account.
+        Only 3 accounts are available.
+        """
         data = request.get_json()
         
-        if not data or not data.get('email') or not data.get('password'):
-            return jsonify({'error': 'Email and password are required'}), 400
+        # Check if data was provided
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
         
-        user = User.query.filter_by(email=data['email']).first()
+        # Check if email was provided
+        if not data.get('email'):
+            return jsonify({'error': 'Email is required'}), 400
         
-        if not user or not user.check_password(data['password']):
+        # Check if password was provided
+        if not data.get('password'):
+            return jsonify({'error': 'Password is required'}), 400
+        
+        # Find user by email
+        user = repository.get_user_by_email(data['email'])
+        
+        # Check if user exists
+        if not user:
             return jsonify({'error': 'Invalid email or password'}), 401
         
+        # Check if password is correct
+        password_correct = repository.check_user_password(user, data['password'])
+        if not password_correct:
+            return jsonify({'error': 'Invalid email or password'}), 401
+        
+        # Log user in using Flask-Login
         login_user(user)
-        return jsonify({'message': 'Login successful', 'user': user.to_dict()})
+        
+        return jsonify({
+            'message': 'Login successful',
+            'user': repository.user_to_dict(user)
+        })
+    
     
     @app.route('/api/auth/logout', methods=['POST'])
     @login_required
     def logout():
+        """Log out the current user using Flask-Login."""
         logout_user()
         return jsonify({'message': 'Logged out successfully'})
     
+    
     @app.route('/api/auth/me', methods=['GET'])
     @login_required
-    def get_current_user():
+    def get_current_user_route():
+        """Get the currently logged in user's information."""
         return jsonify({'user': current_user.to_dict()})
+    
+    
+    # ==========================================
+    # Emotion Routes
+    # ==========================================
     
     @app.route('/api/emotions', methods=['GET'])
     def get_emotions():
-        emotions = Emotion.query.all()
-        return jsonify([e.to_dict() for e in emotions])
+        """Get list of all available emotions."""
+        return jsonify(static_data.EMOTIONS)
+    
     
     @app.route('/api/emotions/record', methods=['POST'])
     @login_required
     def record_emotion():
+        """
+        Record an emotion for a specific date.
+        Required fields: emotion_id
+        Optional fields: date, notes, photo_url
+        """
         data = request.get_json()
+        user = current_user
         
-        if not data or not data.get('emotion_id'):
+        # Validate input
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        if not data.get('emotion_id'):
             return jsonify({'error': 'Emotion ID is required'}), 400
         
-        date = datetime.now().date()
+        # Get date (default to today)
         if data.get('date'):
-            date = datetime.strptime(data['date'], '%Y-%m-%d').date()
-        
-        existing = EmotionHistory.query.filter_by(
-            user_id=current_user.id,
-            date=date
-        ).first()
-        
-        if existing:
-            existing.emotion_id = data['emotion_id']
-            existing.notes = data.get('notes', existing.notes)
-            if data.get('photo_url'):
-                existing.photo_url = data['photo_url']
-            existing.recorded_at = datetime.utcnow()
-            entry = existing
+            date = data['date']
         else:
-            entry = EmotionHistory(
-                user_id=current_user.id,
-                emotion_id=data['emotion_id'],
-                date=date,
-                notes=data.get('notes'),
-                photo_url=data.get('photo_url')
-            )
-            db.session.add(entry)
+            date = datetime.now().strftime('%Y-%m-%d')
         
-        db.session.commit()
-        return jsonify({'message': 'Emotion recorded successfully', 'entry': entry.to_dict()})
+        # Create emotion entry
+        entry = repository.create_emotion_entry(
+            user.id,
+            data['emotion_id'],
+            date,
+            data.get('notes'),
+            data.get('photo_url')
+        )
+        
+        # Add emotion details to response
+        emotion = static_data.get_emotion_by_id(entry['emotion_id'])
+        entry_dict = dict(entry)
+        entry_dict['emotion'] = emotion
+        
+        return jsonify({
+            'message': 'Emotion recorded',
+            'entry': entry_dict
+        })
+    
     
     @app.route('/api/emotions/diary/<date_str>', methods=['GET'])
     @login_required
     def get_diary_entry(date_str):
-        try:
-            date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        except ValueError:
-            return jsonify({'error': 'Invalid date format'}), 400
-        
-        entry = EmotionHistory.query.filter_by(
-            user_id=current_user.id,
-            date=date
-        ).first()
+        """Get the emotion diary entry for a specific date."""
+        user = current_user
+        entry = repository.get_emotion_entry_by_date(user.id, date_str)
         
         if entry:
-            return jsonify(entry.to_dict())
+            emotion = static_data.get_emotion_by_id(entry['emotion_id'])
+            entry_dict = dict(entry)
+            entry_dict['emotion'] = emotion
+            return jsonify(entry_dict)
+        
         return jsonify(None)
     
-    @app.route('/api/upload/photo', methods=['POST'])
-    @login_required
-    def upload_photo():
-        if 'photo' not in request.files:
-            return jsonify({'error': 'No photo provided'}), 400
-        
-        file = request.files['photo']
-        if file.filename == '':
-            return jsonify({'error': 'No file selected'}), 400
-        
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            unique_filename = f"{uuid.uuid4().hex}_{filename}"
-            
-            if not os.path.exists(UPLOAD_FOLDER):
-                os.makedirs(UPLOAD_FOLDER)
-            
-            file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
-            file.save(file_path)
-            
-            photo_url = f"/api/uploads/{unique_filename}"
-            return jsonify({'photo_url': photo_url, 'filename': unique_filename})
-        
-        return jsonify({'error': 'Invalid file type'}), 400
-    
-    @app.route('/api/uploads/<filename>')
-    def serve_upload(filename):
-        return send_from_directory(UPLOAD_FOLDER, filename)
-    
-    @app.route('/api/emotions/today', methods=['GET'])
-    @login_required
-    def get_today_emotion():
-        today = datetime.now().date()
-        entry = EmotionHistory.query.filter_by(
-            user_id=current_user.id,
-            date=today
-        ).first()
-        
-        if entry:
-            return jsonify(entry.to_dict())
-        return jsonify(None)
-    
-    @app.route('/api/emotions/history', methods=['GET'])
-    @login_required
-    def get_emotion_history():
-        days = request.args.get('days', 30, type=int)
-        history = EmotionHistory.query.filter_by(
-            user_id=current_user.id
-        ).order_by(EmotionHistory.date.desc()).limit(days).all()
-        return jsonify([h.to_dict() for h in history])
     
     @app.route('/api/emotions/statistics', methods=['GET'])
     @login_required
     def get_emotion_statistics():
+        """
+        Get emotion statistics for the current user.
+        Optional query param: days (default 30)
+        """
+        user = current_user
         days = request.args.get('days', 30, type=int)
-        stats = EmotionRecommendationEngine.get_emotion_statistics(db, current_user.id, days)
+        
+        stats = recommendation_engine.get_emotion_statistics_from_repo(
+            user.id,
+            days
+        )
+        
         return jsonify(stats)
+    
+    
+    # ==========================================
+    # File Upload Routes
+    # ==========================================
+    
+    @app.route('/api/upload/photo', methods=['POST'])
+    @login_required
+    def upload_photo():
+        """
+        Upload a photo for an emotion diary entry.
+        Requires a 'photo' file in the request.
+        """
+        # Check if file was uploaded
+        if 'photo' not in request.files:
+            return jsonify({'error': 'No photo provided'}), 400
+        
+        file = request.files['photo']
+        
+        # Check if filename is empty
+        if not file.filename:
+            return jsonify({'error': 'No file selected'}), 400
+        
+        # Check if file type is allowed
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'Invalid file type'}), 400
+        
+        # Create unique filename
+        filename = secure_filename(file.filename)
+        unique_filename = uuid.uuid4().hex + '_' + filename
+        
+        # Create upload folder if it doesn't exist
+        if not os.path.exists(UPLOAD_FOLDER):
+            os.makedirs(UPLOAD_FOLDER)
+        
+        # Save file
+        file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+        file.save(file_path)
+        
+        # Return URL to access the file
+        photo_url = '/api/uploads/' + unique_filename
+        
+        return jsonify({
+            'photo_url': photo_url,
+            'filename': unique_filename
+        })
+    
+    
+    @app.route('/api/uploads/<filename>')
+    def serve_upload(filename):
+        """Serve an uploaded file."""
+        return send_from_directory(UPLOAD_FOLDER, filename)
+    
+    
+    # ==========================================
+    # Task Routes
+    # ==========================================
     
     @app.route('/api/tasks', methods=['GET'])
     @login_required
     def get_tasks():
-        status = request.args.get('status')
-        category = request.args.get('category')
+        """
+        Get all tasks for the current user.
+        Optional query param: date (filter by task_date)
+        """
+        user = current_user
         date_str = request.args.get('date')
         
-        query = Task.query.filter_by(user_id=current_user.id)
+        tasks = repository.get_tasks_by_user(user.id, date_str)
         
-        if date_str:
-            task_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            query = query.filter_by(task_date=task_date)
-        
-        if status == 'completed':
-            query = query.filter_by(is_completed=True)
-        elif status == 'incomplete':
-            query = query.filter_by(is_completed=False)
-        
-        if category:
-            query = query.filter_by(category=category)
-        
-        tasks = query.order_by(Task.created_at.desc()).all()
-        return jsonify([t.to_dict() for t in tasks])
+        return jsonify(tasks)
+    
     
     @app.route('/api/tasks', methods=['POST'])
     @login_required
     def create_task():
+        """
+        Create a new task.
+        Required fields: title
+        Optional fields: category, priority, task_date, recommended_for_emotion
+        """
+        user = current_user
         data = request.get_json()
         
-        if not data or not data.get('title'):
+        # Validate input
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        if not data.get('title'):
             return jsonify({'error': 'Title is required'}), 400
         
-        task_date = datetime.now().date()
+        # Get task date (default to today)
         if data.get('task_date'):
-            task_date = datetime.strptime(data['task_date'], '%Y-%m-%d').date()
+            task_date = data['task_date']
+        else:
+            task_date = datetime.now().strftime('%Y-%m-%d')
         
-        existing_task = Task.query.filter_by(
-            user_id=current_user.id,
-            title=data['title'],
-            task_date=task_date,
-            is_completed=False
-        ).first()
-        
-        if existing_task:
-            return jsonify({'error': 'This task already exists for this date', 'task': existing_task.to_dict()}), 409
-        
-        task = Task(
-            user_id=current_user.id,
-            title=data['title'],
-            description=data.get('description'),
-            category=data.get('category', 'Personal'),
-            priority=data.get('priority', 'Medium'),
-            task_date=task_date,
-            due_date=datetime.strptime(data['due_date'], '%Y-%m-%d').date() if data.get('due_date') else None,
-            recommended_for_emotion=data.get('recommended_for_emotion')
+        # Check for duplicate task
+        existing = repository.get_existing_task(
+            user.id,
+            data['title'],
+            task_date
         )
         
-        db.session.add(task)
-        db.session.commit()
+        if existing:
+            return jsonify({
+                'error': 'Task already exists',
+                'task': existing
+            }), 409
         
-        return jsonify(task.to_dict()), 201
+        # Set defaults
+        category = data.get('category', 'Personal')
+        priority = data.get('priority', 'Medium')
+        
+        # Create task
+        task = repository.create_task(
+            user.id,
+            data['title'],
+            category,
+            priority,
+            task_date,
+            data.get('recommended_for_emotion')
+        )
+        
+        return jsonify(task), 201
     
-    @app.route('/api/tasks/<int:task_id>', methods=['GET'])
-    @login_required
-    def get_task(task_id):
-        task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
-        if not task:
-            return jsonify({'error': 'Task not found'}), 404
-        return jsonify(task.to_dict())
     
     @app.route('/api/tasks/<int:task_id>', methods=['PUT'])
     @login_required
     def update_task(task_id):
-        task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
+        """
+        Update a task.
+        Currently supports updating: is_completed
+        """
+        user = current_user
+        
+        # Find the task
+        task = repository.get_task_by_id(task_id, user.id)
         if not task:
             return jsonify({'error': 'Task not found'}), 404
         
         data = request.get_json()
         
-        if 'title' in data:
-            task.title = data['title']
-        if 'description' in data:
-            task.description = data['description']
-        if 'category' in data:
-            task.category = data['category']
-        if 'priority' in data:
-            task.priority = data['priority']
+        # Update completion status
         if 'is_completed' in data:
-            task.is_completed = data['is_completed']
-            if data['is_completed']:
-                task.completed_at = datetime.utcnow()
-            else:
-                task.completed_at = None
-        if 'due_date' in data:
-            task.due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date() if data['due_date'] else None
+            task = repository.update_task(
+                task_id,
+                user.id,
+                data['is_completed']
+            )
         
-        db.session.commit()
-        return jsonify(task.to_dict())
+        return jsonify(task)
+    
     
     @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
     @login_required
     def delete_task(task_id):
-        task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
-        if not task:
+        """Delete a task."""
+        user = current_user
+        
+        success = repository.delete_task(task_id, user.id)
+        
+        if not success:
             return jsonify({'error': 'Task not found'}), 404
         
-        db.session.delete(task)
-        db.session.commit()
-        return jsonify({'message': 'Task deleted successfully'})
+        return jsonify({'message': 'Task deleted'})
+    
     
     @app.route('/api/tasks/recommended', methods=['GET'])
     @login_required
     def get_recommended_tasks():
-        emotion_name = request.args.get('emotion', 'Neutral')
+        """
+        Get recommended tasks based on current emotion.
+        Query params: emotion, limit (default 5), date
+        """
+        user = current_user
+        
+        # Get parameters
+        emotion = request.args.get('emotion')
+        if not emotion:
+            emotion = 'Neutral'
+        
         limit = request.args.get('limit', 5, type=int)
         date_str = request.args.get('date')
         
-        task_date = None
-        if date_str:
-            task_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        
-        recommendations = EmotionRecommendationEngine.get_recommended_tasks(
-            db, current_user.id, emotion_name, limit, task_date
+        # Get recommendations
+        recommendations = recommendation_engine.get_recommended_tasks_from_repo(
+            user.id,
+            emotion,
+            limit,
+            date_str
         )
+        
         return jsonify(recommendations)
+    
     
     @app.route('/api/tasks/suggestions', methods=['GET'])
     @login_required
     def get_task_suggestions():
-        emotion_name = request.args.get('emotion', 'Neutral')
+        """
+        Get AI-suggested tasks based on current emotion.
+        Query params: emotion, limit (default 3)
+        """
+        emotion = request.args.get('emotion')
+        if not emotion:
+            emotion = 'Neutral'
+        
         limit = request.args.get('limit', 3, type=int)
         
-        suggestions = EmotionRecommendationEngine.get_suggested_tasks(emotion_name, limit)
+        suggestions = recommendation_engine.get_suggested_tasks(emotion, limit)
+        
         return jsonify(suggestions)
+    
+    
+    # ==========================================
+    # Music Routes
+    # ==========================================
     
     @app.route('/api/music/recommendations', methods=['GET'])
     def get_music_recommendations():
-        emotion_name = request.args.get('emotion', 'Neutral')
-        limit = request.args.get('limit', 4, type=int)
-        
-        user_id = current_user.id if current_user.is_authenticated else None
-        recommendations = EmotionRecommendationEngine.get_music_recommendations(
-            db, emotion_name, user_id, limit
-        )
-        return jsonify(recommendations)
-    
-    @app.route('/api/books/recommendations', methods=['GET'])
-    def get_book_recommendations():
-        emotion_name = request.args.get('emotion', 'Neutral')
-        limit = request.args.get('limit', 4, type=int)
-        
-        emotion = Emotion.query.filter_by(name=emotion_name).first()
+        """
+        Get music recommendations based on emotion.
+        Query params: emotion, limit (default 4)
+        Includes both static music and custom music added by admin.
+        """
+        emotion = request.args.get('emotion')
         if not emotion:
-            return jsonify([])
+            emotion = 'Neutral'
         
-        books = BookRecommendation.query.filter_by(
-            emotion_id=emotion.id
-        ).order_by(BookRecommendation.popularity_score.desc()).limit(limit).all()
+        limit = request.args.get('limit', 4, type=int)
         
-        return jsonify([b.to_dict() for b in books])
+        # Get custom music from repository first
+        custom_music = repository.get_all_custom_music()
+        
+        # Filter custom music by emotion
+        filtered_custom = []
+        for music in custom_music:
+            if music.get('emotion') == emotion:
+                filtered_custom.append(music)
+        
+        # Get static music recommendations
+        static_music = static_data.get_music_by_emotion(emotion, limit)
+        
+        # Combine: custom music first, then static music
+        all_music = filtered_custom + list(static_music)
+        
+        # Limit results
+        if len(all_music) > limit:
+            all_music = all_music[:limit]
+        
+        return jsonify(all_music)
+    
+    
+    # ==========================================
+    # Book Routes
+    # ==========================================
     
     @app.route('/api/books/tags', methods=['GET'])
     def get_book_tags():
-        tags = db.session.query(
-            BookTag,
-            db.func.count(BookTagLink.book_id).label('book_count')
-        ).outerjoin(BookTagLink, BookTag.id == BookTagLink.tag_id)\
-         .group_by(BookTag.id)\
-         .order_by(BookTag.name)\
-         .all()
+        """
+        Get all book tags with their book counts.
+        Tags are sorted alphabetically by name.
+        """
+        tags = static_data.get_all_book_tags()
         
+        # Add book count for each tag
         result = []
-        for tag, count in tags:
-            tag_dict = tag.to_dict()
-            tag_dict['book_count'] = count
-            result.append(tag_dict)
+        for tag in tags:
+            tag_copy = dict(tag)
+            
+            # Count books with this tag
+            count = 0
+            for book in static_data.BOOK_RECOMMENDATIONS:
+                if tag['slug'] in book['tags']:
+                    count = count + 1
+            
+            tag_copy['book_count'] = count
+            result.append(tag_copy)
+        
+        # Sort alphabetically using bubble sort
+        for i in range(len(result)):
+            for j in range(i + 1, len(result)):
+                if result[j]['name'] < result[i]['name']:
+                    temp = result[i]
+                    result[i] = result[j]
+                    result[j] = temp
         
         return jsonify(result)
+    
     
     @app.route('/api/books', methods=['GET'])
     def get_books_by_tags():
-        # Handle both 'tags' and 'tags[]' formats (axios sends tags[]=value)
-        tag_slugs = request.args.getlist('tags') or request.args.getlist('tags[]')
+        """
+        Get books filtered by tags (AND logic).
+        Query params: tags (array), limit (default 24)
+        Includes both static books and custom books added by admin.
+        """
+        # Get tags from query parameters
+        tag_slugs = request.args.getlist('tags')
+        if not tag_slugs:
+            tag_slugs = request.args.getlist('tags[]')
+        
         limit = request.args.get('limit', 24, type=int)
         
-        if not tag_slugs:
-            books = BookRecommendation.query\
-                .order_by(BookRecommendation.popularity_score.desc())\
-                .limit(limit)\
-                .all()
-            return jsonify([b.to_dict() for b in books])
+        # Get custom books from repository first
+        custom_books = repository.get_all_custom_books()
         
-        selected_tags = BookTag.query.filter(BookTag.slug.in_(tag_slugs)).all()
-        tag_ids = [t.id for t in selected_tags]
+        # Filter custom books by tags if tags are specified
+        filtered_custom = []
+        for book in custom_books:
+            if not tag_slugs:
+                filtered_custom.append(book)
+            else:
+                has_all_tags = True
+                for tag in tag_slugs:
+                    if tag not in book.get('tags', []):
+                        has_all_tags = False
+                        break
+                if has_all_tags:
+                    filtered_custom.append(book)
         
-        if not tag_ids:
-            return jsonify([])
+        # Get static books matching tags
+        static_books = static_data.get_books_by_tags(tag_slugs, limit)
         
-        # Jaccard-style matching: count how many selected tags each book has
-        book_match_counts = db.session.query(
-            BookTagLink.book_id,
-            db.func.count(BookTagLink.tag_id).label('match_count')
-        ).filter(BookTagLink.tag_id.in_(tag_ids))\
-         .group_by(BookTagLink.book_id)\
-         .all()
+        # Combine: custom books first, then static books
+        all_books = filtered_custom + list(static_books)
         
-        book_scores = {book_id: count for book_id, count in book_match_counts}
-        book_ids = list(book_scores.keys())
+        # Limit results
+        if len(all_books) > limit:
+            all_books = all_books[:limit]
         
-        books = BookRecommendation.query\
-            .filter(BookRecommendation.id.in_(book_ids))\
-            .all()
-        
-        # Calculate match score and sort by it
-        total_selected = len(tag_slugs)
+        # Add full tag objects to each book
         result = []
-        for book in books:
-            book_dict = book.to_dict()
-            match_count = book_scores.get(book.id, 0)
-            book_tags_count = len(book_dict.get('tags', []))
-            # Jaccard similarity: intersection / union
-            union = total_selected + book_tags_count - match_count
-            jaccard_score = match_count / union if union > 0 else 0
-            book_dict['match_count'] = match_count
-            book_dict['total_selected'] = total_selected
-            book_dict['match_score'] = round(jaccard_score * 100)
-            result.append(book_dict)
-        
-        # Sort by match_count (desc), then by popularity_score (desc)
-        result.sort(key=lambda x: (-x['match_count'], -x.get('popularity_score', 0)))
-        
-        return jsonify(result[:limit])
-    
-    @app.route('/api/books/related-tags', methods=['GET'])
-    def get_related_tags():
-        # Get tags that co-occur with selected tags (Tag Co-occurrence Algorithm)
-        tag_slugs = request.args.getlist('tags') or request.args.getlist('tags[]')
-        
-        if not tag_slugs:
-            return jsonify([])
-        
-        selected_tags = BookTag.query.filter(BookTag.slug.in_(tag_slugs)).all()
-        selected_tag_ids = [t.id for t in selected_tags]
-        
-        if not selected_tag_ids:
-            return jsonify([])
-        
-        # Find books that have the selected tags
-        books_with_tags = db.session.query(BookTagLink.book_id)\
-            .filter(BookTagLink.tag_id.in_(selected_tag_ids))\
-            .distinct().all()
-        book_ids = [b[0] for b in books_with_tags]
-        
-        if not book_ids:
-            return jsonify([])
-        
-        # Find other tags that appear in these books (co-occurrence)
-        co_occurring = db.session.query(
-            BookTag,
-            db.func.count(BookTagLink.book_id).label('co_count')
-        ).join(BookTagLink, BookTag.id == BookTagLink.tag_id)\
-         .filter(BookTagLink.book_id.in_(book_ids))\
-         .filter(~BookTag.id.in_(selected_tag_ids))\
-         .group_by(BookTag.id)\
-         .order_by(db.func.count(BookTagLink.book_id).desc())\
-         .limit(5).all()
-        
-        result = []
-        for tag, count in co_occurring:
-            tag_dict = tag.to_dict()
-            tag_dict['co_occurrence_count'] = count
-            result.append(tag_dict)
+        for book in all_books:
+            book_copy = dict(book)
+            book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+            result.append(book_copy)
         
         return jsonify(result)
     
-    @app.route('/api/calendar/events', methods=['GET'])
-    @login_required
-    def get_calendar_events():
-        month = request.args.get('month', type=int)
-        year = request.args.get('year', type=int)
-        
-        query = CalendarEvent.query.filter_by(user_id=current_user.id)
-        
-        if month and year:
-            start_date = datetime(year, month, 1)
-            if month == 12:
-                end_date = datetime(year + 1, 1, 1)
-            else:
-                end_date = datetime(year, month + 1, 1)
-            query = query.filter(
-                CalendarEvent.start_date >= start_date,
-                CalendarEvent.start_date < end_date
-            )
-        
-        events = query.order_by(CalendarEvent.start_date).all()
-        return jsonify([e.to_dict() for e in events])
     
-    @app.route('/api/calendar/events', methods=['POST'])
-    @login_required
-    def create_calendar_event():
-        data = request.get_json()
+    @app.route('/api/books/search', methods=['GET'])
+    def search_books():
+        """
+        Search books by title or author.
+        Query params: q (search query), limit (default 24)
+        """
+        query = request.args.get('q', '')
+        limit = request.args.get('limit', 24, type=int)
         
-        if not data or not data.get('title') or not data.get('start_date'):
-            return jsonify({'error': 'Title and start date are required'}), 400
+        if not query:
+            return jsonify([])
         
-        event = CalendarEvent(
-            user_id=current_user.id,
-            title=data['title'],
-            description=data.get('description'),
-            start_date=datetime.fromisoformat(data['start_date'].replace('Z', '+00:00')),
-            end_date=datetime.fromisoformat(data['end_date'].replace('Z', '+00:00')) if data.get('end_date') else None,
-            all_day=data.get('all_day', False),
-            color=data.get('color', '#6366f1')
-        )
+        # Convert query to lowercase for case-insensitive search
+        query_lower = query.lower()
         
-        db.session.add(event)
-        db.session.commit()
+        # Search in static books
+        result = []
+        for book in static_data.BOOK_RECOMMENDATIONS:
+            title_lower = book['title'].lower()
+            author_lower = book['author'].lower()
+            
+            # Check if query matches title or author
+            title_match = query_lower in title_lower
+            author_match = query_lower in author_lower
+            
+            if title_match or author_match:
+                book_copy = dict(book)
+                book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+                result.append(book_copy)
         
-        return jsonify(event.to_dict()), 201
+        # Search in custom books
+        custom_books = repository.get_all_custom_books()
+        for book in custom_books:
+            title_lower = book['title'].lower()
+            author_lower = book.get('author', '').lower()
+            
+            title_match = query_lower in title_lower
+            author_match = query_lower in author_lower
+            
+            if title_match or author_match:
+                book_copy = dict(book)
+                book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+                result.append(book_copy)
+        
+        # Limit results
+        if len(result) > limit:
+            result = result[:limit]
+        
+        return jsonify(result)
     
-    @app.route('/api/calendar/events/<int:event_id>', methods=['PUT'])
-    @login_required
-    def update_calendar_event(event_id):
-        event = CalendarEvent.query.filter_by(id=event_id, user_id=current_user.id).first()
-        if not event:
-            return jsonify({'error': 'Event not found'}), 404
-        
-        data = request.get_json()
-        
-        if 'title' in data:
-            event.title = data['title']
-        if 'description' in data:
-            event.description = data['description']
-        if 'start_date' in data:
-            event.start_date = datetime.fromisoformat(data['start_date'].replace('Z', '+00:00'))
-        if 'end_date' in data:
-            event.end_date = datetime.fromisoformat(data['end_date'].replace('Z', '+00:00')) if data['end_date'] else None
-        if 'all_day' in data:
-            event.all_day = data['all_day']
-        if 'color' in data:
-            event.color = data['color']
-        
-        db.session.commit()
-        return jsonify(event.to_dict())
     
-    @app.route('/api/calendar/events/<int:event_id>', methods=['DELETE'])
-    @login_required
-    def delete_calendar_event(event_id):
-        event = CalendarEvent.query.filter_by(id=event_id, user_id=current_user.id).first()
-        if not event:
-            return jsonify({'error': 'Event not found'}), 404
-        
-        db.session.delete(event)
-        db.session.commit()
-        return jsonify({'message': 'Event deleted successfully'})
+    # ==========================================
+    # Book Favorites Routes
+    # ==========================================
     
-    @app.route('/api/user/profile', methods=['GET'])
+    @app.route('/api/books/favorites', methods=['GET'])
     @login_required
-    def get_profile():
-        return jsonify(current_user.to_dict())
+    def get_favorites():
+        """
+        Get all favorite books for the current user.
+        """
+        user = current_user
+        favorite_ids = repository.get_user_favorites(user.id)
+        
+        # Get full book details for each favorite
+        result = []
+        for book_id in favorite_ids:
+            # Search in static books
+            found = False
+            for book in static_data.BOOK_RECOMMENDATIONS:
+                if book['id'] == book_id:
+                    book_copy = dict(book)
+                    book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+                    book_copy['is_favorite'] = True
+                    result.append(book_copy)
+                    found = True
+                    break
+            
+            # Search in custom books if not found
+            if not found:
+                custom_books = repository.get_all_custom_books()
+                for book in custom_books:
+                    if book['id'] == book_id:
+                        book_copy = dict(book)
+                        book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+                        book_copy['is_favorite'] = True
+                        result.append(book_copy)
+                        break
+        
+        return jsonify(result)
+    
+    
+    @app.route('/api/books/favorites/ids', methods=['GET'])
+    @login_required
+    def get_favorite_ids():
+        """
+        Get list of favorite book IDs for the current user.
+        """
+        user = current_user
+        favorite_ids = repository.get_user_favorites(user.id)
+        return jsonify(favorite_ids)
+    
+    
+    @app.route('/api/books/<int:book_id>/favorite', methods=['POST'])
+    @login_required
+    def add_to_favorites(book_id):
+        """
+        Add a book to favorites.
+        """
+        user = current_user
+        success = repository.add_favorite(user.id, book_id)
+        
+        if success:
+            return jsonify({'message': 'Added to favorites'})
+        else:
+            return jsonify({'message': 'Already in favorites'})
+    
+    
+    @app.route('/api/books/<int:book_id>/favorite', methods=['DELETE'])
+    @login_required
+    def remove_from_favorites(book_id):
+        """
+        Remove a book from favorites.
+        """
+        user = current_user
+        success = repository.remove_favorite(user.id, book_id)
+        
+        if success:
+            return jsonify({'message': 'Removed from favorites'})
+        else:
+            return jsonify({'error': 'Not in favorites'}), 404
+    
+    
+    # ==========================================
+    # Profile Routes
+    # ==========================================
     
     @app.route('/api/user/profile', methods=['PUT'])
     @login_required
     def update_profile():
+        """
+        Update the current user's profile.
+        Supports updating: username
+        """
+        user = current_user
         data = request.get_json()
         
         if 'username' in data:
-            existing = User.query.filter_by(username=data['username']).first()
-            if existing and existing.id != current_user.id:
+            # Check if username is taken
+            existing = repository.get_user_by_username(data['username'])
+            if existing and existing.id != user.id:
                 return jsonify({'error': 'Username already taken'}), 400
-            current_user.username = data['username']
+            
+            # Update username
+            user = repository.update_user(user.id, data['username'])
         
-        if 'preferred_work_time' in data:
-            current_user.preferred_work_time = data['preferred_work_time']
+        return jsonify(repository.user_to_dict(user))
+    
+    
+    # ==========================================
+    # Admin Routes
+    # ==========================================
+    
+    def admin_required(f):
+        """Decorator to require admin access."""
+        from functools import wraps
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return jsonify({'error': 'Login required'}), 401
+            if not current_user.is_admin:
+                return jsonify({'error': 'Admin access required'}), 403
+            return f(*args, **kwargs)
+        return decorated_function
+    
+    @app.route('/api/admin/stats', methods=['GET'])
+    @admin_required
+    def get_admin_stats():
+        """Get overall statistics for admin dashboard."""
+        user_stats = repository.get_all_users_stats()
+        emotion_stats = repository.get_overall_emotion_stats()
+        task_stats = repository.get_overall_task_stats()
         
-        if 'preferred_categories' in data:
-            if isinstance(data['preferred_categories'], list):
-                current_user.preferred_categories = ','.join(data['preferred_categories'])
-            else:
-                current_user.preferred_categories = data['preferred_categories']
+        emotion_details = []
+        for emotion_id, count in emotion_stats.items():
+            emotion = static_data.get_emotion_by_id(int(emotion_id))
+            if emotion:
+                emotion_details.append({
+                    'emotion': emotion,
+                    'count': count
+                })
         
-        if 'notification_enabled' in data:
-            current_user.notification_enabled = data['notification_enabled']
+        return jsonify({
+            'users': user_stats,
+            'emotions': emotion_details,
+            'tasks': task_stats,
+            'total_users': len(user_stats)
+        })
+    
+    @app.route('/api/admin/music', methods=['GET'])
+    @admin_required
+    def get_all_music():
+        """Get all music (static + custom)."""
+        all_music = []
+        for m in static_data.MUSIC_RECOMMENDATIONS:
+            music_copy = dict(m)
+            music_copy['is_custom'] = False
+            all_music.append(music_copy)
+        custom = repository.get_all_custom_music()
+        for m in custom:
+            all_music.append(m)
+        return jsonify(all_music)
+    
+    @app.route('/api/admin/music', methods=['POST'])
+    @admin_required
+    def create_music():
+        """Create a new music recommendation."""
+        data = request.get_json()
         
-        db.session.commit()
-        return jsonify(current_user.to_dict())
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        if not data.get('title'):
+            return jsonify({'error': 'Title is required'}), 400
+        if not data.get('emotion'):
+            return jsonify({'error': 'Emotion is required'}), 400
+        
+        music = repository.create_music(
+            data['emotion'],
+            data['title'],
+            data.get('artist', ''),
+            data.get('genre', ''),
+            data.get('youtube_url', '')
+        )
+        
+        return jsonify(music), 201
+    
+    @app.route('/api/admin/music/<int:music_id>', methods=['PUT'])
+    @admin_required
+    def update_music(music_id):
+        """Update a custom music entry."""
+        data = request.get_json()
+        
+        music = repository.update_music(
+            music_id,
+            data.get('emotion'),
+            data.get('title'),
+            data.get('artist'),
+            data.get('genre'),
+            data.get('youtube_url')
+        )
+        
+        if not music:
+            return jsonify({'error': 'Music not found or is static'}), 404
+        
+        return jsonify(music)
+    
+    @app.route('/api/admin/music/<int:music_id>', methods=['DELETE'])
+    @admin_required
+    def delete_music(music_id):
+        """Delete a custom music entry."""
+        success = repository.delete_music(music_id)
+        
+        if not success:
+            return jsonify({'error': 'Music not found or is static'}), 404
+        
+        return jsonify({'message': 'Music deleted'})
+    
+    @app.route('/api/admin/books', methods=['GET'])
+    @admin_required
+    def get_all_books_admin():
+        """Get all books (static + custom) for admin."""
+        all_books = []
+        for b in static_data.BOOK_RECOMMENDATIONS:
+            book_copy = dict(b)
+            book_copy['is_custom'] = False
+            all_books.append(book_copy)
+        custom = repository.get_all_custom_books()
+        for b in custom:
+            all_books.append(b)
+        return jsonify(all_books)
+    
+    @app.route('/api/admin/books', methods=['POST'])
+    @admin_required
+    def create_book():
+        """Create a new book recommendation."""
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        if not data.get('title'):
+            return jsonify({'error': 'Title is required'}), 400
+        
+        book = repository.create_book(
+            data.get('emotion', 'Neutral'),
+            data['title'],
+            data.get('author', ''),
+            data.get('genre', ''),
+            data.get('description', ''),
+            data.get('tags', [])
+        )
+        
+        return jsonify(book), 201
+    
+    @app.route('/api/admin/books/<int:book_id>', methods=['PUT'])
+    @admin_required
+    def update_book(book_id):
+        """Update a custom book entry."""
+        data = request.get_json()
+        
+        book = repository.update_book(
+            book_id,
+            data.get('emotion'),
+            data.get('title'),
+            data.get('author'),
+            data.get('genre'),
+            data.get('description'),
+            data.get('tags', [])
+        )
+        
+        if not book:
+            return jsonify({'error': 'Book not found or is static'}), 404
+        
+        return jsonify(book)
+    
+    @app.route('/api/admin/books/<int:book_id>', methods=['DELETE'])
+    @admin_required
+    def delete_book(book_id):
+        """Delete a custom book entry."""
+        success = repository.delete_book(book_id)
+        
+        if not success:
+            return jsonify({'error': 'Book not found or is static'}), 404
+        
+        return jsonify({'message': 'Book deleted'})
+    
+    @app.route('/api/admin/tags', methods=['GET'])
+    @admin_required
+    def get_all_tags_admin():
+        """Get all book tags for admin including custom book tags."""
+        all_tags = []
+        existing_slugs = set()
+        
+        for tag in static_data.BOOK_TAGS:
+            all_tags.append(dict(tag))
+            existing_slugs.add(tag['slug'])
+        
+        custom_books = repository.get_all_custom_books()
+        for book in custom_books:
+            for tag_slug in book.get('tags', []):
+                if tag_slug not in existing_slugs:
+                    hash_digest = hashlib.md5(tag_slug.encode()).hexdigest()
+                    stable_id = 1000 + int(hash_digest[:8], 16) % 9000
+                    all_tags.append({
+                        'id': stable_id,
+                        'slug': tag_slug,
+                        'name': tag_slug.replace('-', ' ').title(),
+                        'color': '#6B7280'
+                    })
+                    existing_slugs.add(tag_slug)
+        
+        return jsonify(all_tags)
+    
+    # ==========================================
+    # Dashboard Routes
+    # ==========================================
     
     @app.route('/api/dashboard/summary', methods=['GET'])
     @login_required
     def get_dashboard_summary():
-        today = datetime.now().date()
+        """
+        Get a summary of data for the dashboard.
+        Includes: user info, today's emotion, task counts, weekly stats
+        """
+        user = current_user
+        today = datetime.now().strftime('%Y-%m-%d')
         
-        today_emotion = EmotionHistory.query.filter_by(
-            user_id=current_user.id,
-            date=today
-        ).first()
+        # Get today's emotion
+        today_emotion = repository.get_emotion_entry_by_date(user.id, today)
         
-        total_tasks = Task.query.filter_by(user_id=current_user.id).count()
-        completed_tasks = Task.query.filter_by(user_id=current_user.id, is_completed=True).count()
+        # Get task counts
+        task_counts = repository.count_tasks(user.id)
+        total_tasks = task_counts['total']
+        completed_tasks = task_counts['completed']
         pending_tasks = total_tasks - completed_tasks
         
-        today_tasks = Task.query.filter_by(
-            user_id=current_user.id,
-            due_date=today,
-            is_completed=False
-        ).all()
+        # Get tasks due today
+        today_tasks = repository.get_today_due_tasks(user.id, today)
         
-        emotion_stats = EmotionRecommendationEngine.get_emotion_statistics(db, current_user.id, 7)
+        # Get weekly emotion statistics
+        emotion_stats = recommendation_engine.get_emotion_statistics_from_repo(
+            user.id,
+            7
+        )
+        
+        # Format today's emotion for response
+        today_emotion_dict = None
+        if today_emotion:
+            emotion = static_data.get_emotion_by_id(today_emotion['emotion_id'])
+            today_emotion_dict = dict(today_emotion)
+            today_emotion_dict['emotion'] = emotion
         
         return jsonify({
-            'user': current_user.to_dict(),
-            'today_emotion': today_emotion.to_dict() if today_emotion else None,
+            'user': repository.user_to_dict(user),
+            'today_emotion': today_emotion_dict,
             'task_summary': {
                 'total': total_tasks,
                 'completed': completed_tasks,
                 'pending': pending_tasks
             },
-            'today_tasks': [t.to_dict() for t in today_tasks],
+            'today_tasks': today_tasks,
             'weekly_mood_stats': emotion_stats
         })
-
-    def admin_required(f):
-        from functools import wraps
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            if not current_user.is_authenticated or not current_user.is_admin:
-                return jsonify({'error': 'Admin access required'}), 403
-            return f(*args, **kwargs)
-        return decorated_function
-
-    @app.route('/api/admin/statistics', methods=['GET'])
-    @login_required
-    @admin_required
-    def get_admin_statistics():
-        total_users = User.query.count()
-        total_tasks = Task.query.count()
-        completed_tasks = Task.query.filter_by(is_completed=True).count()
-        total_emotions = EmotionHistory.query.count()
-        total_music = MusicRecommendation.query.count()
-        total_books = BookRecommendation.query.count()
-        
-        recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
-        
-        emotion_stats = db.session.query(
-            Emotion.name,
-            db.func.count(EmotionHistory.id).label('count')
-        ).join(EmotionHistory).group_by(Emotion.name).all()
-        
-        return jsonify({
-            'total_users': total_users,
-            'total_tasks': total_tasks,
-            'completed_tasks': completed_tasks,
-            'total_emotions': total_emotions,
-            'total_music': total_music,
-            'total_books': total_books,
-            'recent_users': [u.to_dict() for u in recent_users],
-            'emotion_distribution': [{'name': name, 'count': count} for name, count in emotion_stats]
-        })
-
-    @app.route('/api/admin/music', methods=['GET'])
-    @login_required
-    @admin_required
-    def get_all_music():
-        music = MusicRecommendation.query.order_by(MusicRecommendation.id.desc()).all()
-        return jsonify([m.to_dict() for m in music])
-
-    @app.route('/api/admin/music', methods=['POST'])
-    @login_required
-    @admin_required
-    def create_music():
-        data = request.get_json()
-        
-        if not data or not data.get('title') or not data.get('emotion_id'):
-            return jsonify({'error': 'Title and emotion are required'}), 400
-        
-        music = MusicRecommendation(
-            emotion_id=data['emotion_id'],
-            title=data['title'],
-            artist=data.get('artist'),
-            genre=data.get('genre'),
-            youtube_url=data.get('youtube_url'),
-            thumbnail_url=data.get('thumbnail_url'),
-            popularity_score=data.get('popularity_score', 0.0)
-        )
-        
-        db.session.add(music)
-        db.session.commit()
-        
-        return jsonify(music.to_dict()), 201
-
-    @app.route('/api/admin/music/<int:music_id>', methods=['PUT'])
-    @login_required
-    @admin_required
-    def update_music(music_id):
-        music = MusicRecommendation.query.get(music_id)
-        if not music:
-            return jsonify({'error': 'Music not found'}), 404
-        
-        data = request.get_json()
-        
-        if 'title' in data:
-            music.title = data['title']
-        if 'artist' in data:
-            music.artist = data['artist']
-        if 'genre' in data:
-            music.genre = data['genre']
-        if 'emotion_id' in data:
-            music.emotion_id = data['emotion_id']
-        if 'youtube_url' in data:
-            music.youtube_url = data['youtube_url']
-        if 'thumbnail_url' in data:
-            music.thumbnail_url = data['thumbnail_url']
-        if 'popularity_score' in data:
-            music.popularity_score = data['popularity_score']
-        
-        db.session.commit()
-        return jsonify(music.to_dict())
-
-    @app.route('/api/admin/music/<int:music_id>', methods=['DELETE'])
-    @login_required
-    @admin_required
-    def delete_music(music_id):
-        music = MusicRecommendation.query.get(music_id)
-        if not music:
-            return jsonify({'error': 'Music not found'}), 404
-        
-        db.session.delete(music)
-        db.session.commit()
-        return jsonify({'message': 'Music deleted successfully'})
-
-    @app.route('/api/admin/books', methods=['GET'])
-    @login_required
-    @admin_required
-    def get_all_books():
-        books = BookRecommendation.query.order_by(BookRecommendation.id.desc()).all()
-        return jsonify([b.to_dict() for b in books])
-
-    @app.route('/api/admin/books', methods=['POST'])
-    @login_required
-    @admin_required
-    def create_book():
-        data = request.get_json()
-        
-        if not data or not data.get('title') or not data.get('emotion_id'):
-            return jsonify({'error': 'Title and emotion are required'}), 400
-        
-        book = BookRecommendation(
-            emotion_id=data['emotion_id'],
-            title=data['title'],
-            author=data.get('author'),
-            genre=data.get('genre'),
-            description=data.get('description'),
-            cover_url=data.get('cover_url'),
-            popularity_score=data.get('popularity_score', 0.0)
-        )
-        
-        db.session.add(book)
-        db.session.commit()
-        
-        if data.get('tag_ids'):
-            for tag_id in data['tag_ids']:
-                link = BookTagLink(book_id=book.id, tag_id=tag_id)
-                db.session.add(link)
-            db.session.commit()
-        
-        return jsonify(book.to_dict()), 201
-
-    @app.route('/api/admin/books/<int:book_id>', methods=['PUT'])
-    @login_required
-    @admin_required
-    def update_book(book_id):
-        book = BookRecommendation.query.get(book_id)
-        if not book:
-            return jsonify({'error': 'Book not found'}), 404
-        
-        data = request.get_json()
-        
-        if 'title' in data:
-            book.title = data['title']
-        if 'author' in data:
-            book.author = data['author']
-        if 'genre' in data:
-            book.genre = data['genre']
-        if 'emotion_id' in data:
-            book.emotion_id = data['emotion_id']
-        if 'description' in data:
-            book.description = data['description']
-        if 'cover_url' in data:
-            book.cover_url = data['cover_url']
-        if 'popularity_score' in data:
-            book.popularity_score = data['popularity_score']
-        
-        if 'tag_ids' in data:
-            BookTagLink.query.filter_by(book_id=book.id).delete()
-            for tag_id in data['tag_ids']:
-                link = BookTagLink(book_id=book.id, tag_id=tag_id)
-                db.session.add(link)
-        
-        db.session.commit()
-        return jsonify(book.to_dict())
-
-    @app.route('/api/admin/books/<int:book_id>', methods=['DELETE'])
-    @login_required
-    @admin_required
-    def delete_book(book_id):
-        book = BookRecommendation.query.get(book_id)
-        if not book:
-            return jsonify({'error': 'Book not found'}), 404
-        
-        BookTagLink.query.filter_by(book_id=book.id).delete()
-        db.session.delete(book)
-        db.session.commit()
-        return jsonify({'message': 'Book deleted successfully'})
-
-    @app.route('/api/admin/tags', methods=['GET'])
-    @login_required
-    @admin_required
-    def get_all_tags():
-        tags = BookTag.query.order_by(BookTag.name).all()
-        return jsonify([t.to_dict() for t in tags])

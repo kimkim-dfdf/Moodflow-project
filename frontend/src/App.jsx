@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { DateProvider } from './context/DateContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
@@ -29,7 +28,22 @@ const PublicRoute = ({ children }) => {
     return <div className="loading-screen">Loading...</div>;
   }
   
-  return !user ? children : <Navigate to="/dashboard" />;
+  if (user) {
+    if (user.is_admin) {
+      return <Navigate to="/admin" />;
+    }
+    return <Navigate to="/dashboard" />;
+  }
+  
+  return children;
+};
+
+const DefaultRedirect = () => {
+  const { user } = useAuth();
+  if (user && user.is_admin) {
+    return <Navigate to="/admin" />;
+  }
+  return <Navigate to="/dashboard" />;
 };
 
 function App() {
@@ -43,17 +57,12 @@ function App() {
               <Login />
             </PublicRoute>
           } />
-          <Route path="/register" element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          } />
           <Route path="/" element={
             <PrivateRoute>
               <Layout />
             </PrivateRoute>
           }>
-            <Route index element={<Navigate to="/dashboard" />} />
+            <Route index element={<DefaultRedirect />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="calendar" element={<Calendar />} />
@@ -61,7 +70,7 @@ function App() {
             <Route path="profile" element={<Profile />} />
             <Route path="admin" element={<Admin />} />
           </Route>
-          <Route path="*" element={<Navigate to="/dashboard" />} />
+          <Route path="*" element={<DefaultRedirect />} />
           </Routes>
         </Router>
       </DateProvider>

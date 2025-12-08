@@ -1,29 +1,30 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const Login = () => {
+function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    setLoading(true);
-
-    try {
-      await login(email, password);
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to login');
-    } finally {
-      setLoading(false);
-    }
-  };
+    
+    login(email, password)
+      .then(function() {
+        navigate('/dashboard');
+      })
+      .catch(function(err) {
+        if (err.response && err.response.data) {
+          setError(err.response.data.error);
+        } else {
+          setError('Login failed');
+        }
+      });
+  }
 
   return (
     <div className="auth-page">
@@ -39,40 +40,40 @@ const Login = () => {
           {error && <div className="error-message">{error}</div>}
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label>Email</label>
             <input
               type="email"
-              id="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={function(e) { setEmail(e.target.value); }}
               placeholder="Enter your email"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label>Password</label>
             <input
               type="password"
-              id="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={function(e) { setPassword(e.target.value); }}
               placeholder="Enter your password"
               required
             />
           </div>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+          <button type="submit" className="btn-primary">
+            Sign In
           </button>
 
-          <p className="auth-switch">
-            Don't have an account? <Link to="/register">Sign Up</Link>
-          </p>
+          <div className="demo-accounts">
+            <p>Demo Accounts:</p>
+            <p>seven@gmail.com / elly@gmail.com / nicole@gmail.com</p>
+            <p>Password: ekdus123</p>
+          </div>
         </form>
       </div>
     </div>
   );
-};
+}
 
 export default Login;
