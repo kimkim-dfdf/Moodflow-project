@@ -175,6 +175,14 @@ class Music(db.Model):
     genre = db.Column(db.String(100), nullable=False)
     youtube_url = db.Column(db.String(500), nullable=False)
     
+    def __init__(self, emotion=None, title=None, artist=None, genre=None, youtube_url=None):
+        """Initialize a Music object."""
+        self.emotion = emotion
+        self.title = title
+        self.artist = artist
+        self.genre = genre
+        self.youtube_url = youtube_url
+    
     def to_dict(self):
         """Convert music to dictionary for API responses."""
         result = {
@@ -233,6 +241,15 @@ class Book(db.Model):
     genre = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
     tags = db.Column(db.String(500), nullable=False)
+    
+    def __init__(self, emotion=None, title=None, author=None, genre=None, description=None, tags=None):
+        """Initialize a Book object."""
+        self.emotion = emotion
+        self.title = title
+        self.author = author
+        self.genre = genre
+        self.description = description
+        self.tags = tags
     
     def to_dict(self):
         """Convert book to dictionary for API responses."""

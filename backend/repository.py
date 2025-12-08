@@ -14,12 +14,6 @@ from models import db, User, Task, EmotionHistory, Emotion, Music, BookTag, Book
 # User Operations
 # ==============================================
 
-def get_user_by_id(user_id):
-    """Find a user by their ID and return User object."""
-    user = db.session.get(User, int(user_id))
-    return user
-
-
 def get_user_by_email(email):
     """Find a user by their email address and return User object."""
     user = User.query.filter_by(email=email).first()

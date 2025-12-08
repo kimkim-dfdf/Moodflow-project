@@ -367,9 +367,6 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .content-table th { font-size: 12px; font-weight: 600; color: var(--text-light); text-transform: uppercase; }
 .content-table td { font-size: 14px; }
 .emotion-badge { display: inline-block; padding: 4px 10px; background: var(--secondary); border-radius: 12px; font-size: 12px; }
-.type-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; }
-.type-badge.static { background: #e5e7eb; color: #6b7280; }
-.type-badge.custom { background: #dbeafe; color: #2563eb; }
 .tag-list { display: flex; gap: 4px; flex-wrap: wrap; }
 .tag-mini { font-size: 10px; padding: 2px 6px; background: #e8e8ff; color: #5b6ee1; border-radius: 8px; }
 .tag-more { font-size: 10px; color: var(--text-light); }
