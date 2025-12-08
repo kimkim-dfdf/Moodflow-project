@@ -73,17 +73,13 @@ def create_task(user_id, title, category, priority, task_date, recommended_for_e
     task = Task()
     task.user_id = user_id
     task.title = title
-    task.description = None
     task.category = category
     task.priority = priority
     task.is_completed = False
-    task.due_date = None
-    task.due_time = None
     task.task_date = task_date
     task.created_at = datetime.utcnow()
     task.completed_at = None
     task.recommended_for_emotion = recommended_for_emotion
-    task.emotion_score = 0.0
     
     db.session.add(task)
     db.session.commit()

@@ -35,11 +35,9 @@ function TaskCard(props) {
           </h4>
           {showScore && task.score !== undefined && <span className="task-score">{Math.round(task.score)}%</span>}
         </div>
-        {task.description && <p className="task-description">{task.description}</p>}
         <div className="task-meta">
           <span className="task-category" style={{ backgroundColor: getCategoryColor(task.category) }}>{task.category}</span>
           <span className="task-priority" style={{ color: getPriorityColor(task.priority) }}><Flag size={14} />{task.priority}</span>
-          {task.due_time && <span className="task-due"><Clock size={14} />{task.due_time}</span>}
         </div>
       </div>
       

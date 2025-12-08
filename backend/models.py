@@ -72,17 +72,13 @@ class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, nullable=False)
     title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=True)
     category = db.Column(db.String(50), nullable=False)
     priority = db.Column(db.String(20), nullable=False)
     is_completed = db.Column(db.Boolean, default=False)
-    due_date = db.Column(db.String(20), nullable=True)
-    due_time = db.Column(db.String(10), nullable=True)
     task_date = db.Column(db.String(20), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime, nullable=True)
     recommended_for_emotion = db.Column(db.String(50), nullable=True)
-    emotion_score = db.Column(db.Float, default=0.0)
     
     def to_dict(self):
         """Convert task to dictionary for API responses."""
@@ -90,17 +86,13 @@ class Task(db.Model):
             'id': self.id,
             'user_id': self.user_id,
             'title': self.title,
-            'description': self.description,
             'category': self.category,
             'priority': self.priority,
             'is_completed': self.is_completed,
-            'due_date': self.due_date,
-            'due_time': self.due_time,
             'task_date': self.task_date,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
-            'recommended_for_emotion': self.recommended_for_emotion,
-            'emotion_score': self.emotion_score
+            'recommended_for_emotion': self.recommended_for_emotion
         }
         return result
 
