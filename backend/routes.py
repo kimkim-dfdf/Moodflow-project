@@ -447,6 +447,7 @@ def register_routes(app):
         """
         Get music recommendations based on emotion.
         Query params: emotion, limit (default 4)
+        Includes both static music and custom music added by admin.
         """
         emotion = request.args.get('emotion')
         if not emotion:
@@ -454,9 +455,26 @@ def register_routes(app):
         
         limit = request.args.get('limit', 4, type=int)
         
-        recommendations = static_data.get_music_by_emotion(emotion, limit)
+        # Get static music recommendations
+        static_music = static_data.get_music_by_emotion(emotion, limit)
         
-        return jsonify(recommendations)
+        # Get custom music from repository
+        custom_music = repository.get_all_custom_music()
+        
+        # Filter custom music by emotion
+        filtered_custom = []
+        for music in custom_music:
+            if music.get('emotion') == emotion:
+                filtered_custom.append(music)
+        
+        # Combine static and custom music
+        all_music = list(static_music) + filtered_custom
+        
+        # Limit results
+        if len(all_music) > limit:
+            all_music = all_music[:limit]
+        
+        return jsonify(all_music)
     
     
     # ==========================================
@@ -501,6 +519,7 @@ def register_routes(app):
         """
         Get books filtered by tags (AND logic).
         Query params: tags (array), limit (default 24)
+        Includes both static books and custom books added by admin.
         """
         # Get tags from query parameters
         tag_slugs = request.args.getlist('tags')
@@ -509,12 +528,36 @@ def register_routes(app):
         
         limit = request.args.get('limit', 24, type=int)
         
-        # Get books matching tags
-        books = static_data.get_books_by_tags(tag_slugs, limit)
+        # Get static books matching tags
+        static_books = static_data.get_books_by_tags(tag_slugs, limit)
+        
+        # Get custom books from repository
+        custom_books = repository.get_all_custom_books()
+        
+        # Filter custom books by tags if tags are specified
+        filtered_custom = []
+        for book in custom_books:
+            if not tag_slugs:
+                filtered_custom.append(book)
+            else:
+                has_all_tags = True
+                for tag in tag_slugs:
+                    if tag not in book.get('tags', []):
+                        has_all_tags = False
+                        break
+                if has_all_tags:
+                    filtered_custom.append(book)
+        
+        # Combine static and custom books
+        all_books = list(static_books) + filtered_custom
+        
+        # Limit results
+        if len(all_books) > limit:
+            all_books = all_books[:limit]
         
         # Add full tag objects to each book
         result = []
-        for book in books:
+        for book in all_books:
             book_copy = dict(book)
             book_copy['tags'] = static_data.get_tag_objects_for_book(book)
             result.append(book_copy)
