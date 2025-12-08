@@ -1,200 +1,318 @@
 import { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek, isAfter, isSameDay } from 'date-fns';
 import { ChevronLeft, ChevronRight, X, Camera, Image, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 
-function Calendar() {
+const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [emotionData, setEmotionData] = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
   const [emotions, setEmotions] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [showDiaryModal, setShowDiaryModal] = useState(false);
+  const [diaryEntry, setDiaryEntry] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({ emotion_id: null, notes: '', photo_url: '' });
-  const [photoPreview, setPhotoPreview] = useState(null);
-  const [uploading, setUploading] = useState(false);
 
-  useEffect(function() {
-    fetchData();
+  const [formData, setFormData] = useState({
+    emotion_id: null,
+    notes: '',
+    photo_url: ''
+  });
+
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  useEffect(() => {
+    fetchEmotionData();
+    fetchEmotions();
   }, [currentDate]);
 
-  function fetchData() {
-    api.get('/emotions/statistics', { params: { days: 60 } }).then(function(res) {
-      setEmotionData(res.data.daily_emotions || {});
-    });
-    api.get('/emotions').then(function(res) {
-      setEmotions(res.data);
-    });
-  }
+  const fetchEmotionData = async () => {
+    try {
+      const response = await api.get('/emotions/statistics', { params: { days: 60 } });
+      setEmotionData(response.data.daily_emotions || {});
+    } catch (error) {
+      console.error('Failed to fetch emotion data:', error);
+    }
+  };
 
-  function handleDateClick(date) {
-    var todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    if (date > todayStart) return;
-    
-    setSelectedDate(date);
-    setIsLoading(true);
-    
-    var dateStr = format(date, 'yyyy-MM-dd');
-    api.get('/emotions/diary/' + dateStr).then(function(res) {
-      if (res.data) {
-        setFormData({ emotion_id: res.data.emotion_id, notes: res.data.notes || '', photo_url: res.data.photo_url || '' });
-        if (res.data.photo_url) {
-          setPhotoPreview(window.location.origin + res.data.photo_url);
+  const fetchEmotions = async () => {
+    try {
+      const response = await api.get('/emotions');
+      setEmotions(response.data);
+    } catch (error) {
+      console.error('Failed to fetch emotions:', error);
+    }
+  };
+
+  const fetchDiaryEntry = async (date) => {
+    try {
+      setIsLoading(true);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const response = await api.get(`/emotions/diary/${dateStr}`);
+      if (response.data) {
+        setDiaryEntry(response.data);
+        setFormData({
+          emotion_id: response.data.emotion_id,
+          notes: response.data.notes || '',
+          photo_url: response.data.photo_url || ''
+        });
+        if (response.data.photo_url) {
+          setPhotoPreview(`${window.location.origin}${response.data.photo_url}`);
         } else {
           setPhotoPreview(null);
         }
       } else {
+        setDiaryEntry(null);
         setFormData({ emotion_id: null, notes: '', photo_url: '' });
         setPhotoPreview(null);
       }
+    } catch (error) {
+      console.error('Failed to fetch diary entry:', error);
+      setDiaryEntry(null);
+      setFormData({ emotion_id: null, notes: '', photo_url: '' });
+      setPhotoPreview(null);
+    } finally {
       setIsLoading(false);
-      setShowModal(true);
-    });
-  }
+    }
+  };
 
-  function handlePhotoUpload(e) {
-    var file = e.target.files[0];
+  const handleDateClick = (date) => {
+    setSelectedDate(date);
+    fetchDiaryEntry(date);
+    setShowDiaryModal(true);
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
     if (!file) return;
-    
-    var reader = new FileReader();
-    reader.onloadend = function() { setPhotoPreview(reader.result); };
-    reader.readAsDataURL(file);
-    
-    setUploading(true);
-    var fd = new FormData();
-    fd.append('photo', file);
-    api.post('/upload/photo', fd, { headers: { 'Content-Type': 'multipart/form-data' } }).then(function(res) {
-      setFormData({ ...formData, photo_url: res.data.photo_url });
-      setUploading(false);
-    }).catch(function() {
-      alert('Upload failed');
-      setUploading(false);
-    });
-  }
 
-  function handleSave() {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    setUploadingPhoto(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append('photo', file);
+      const response = await api.post('/upload/photo', formDataUpload, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const photoUrl = response.data.photo_url;
+      setFormData(prev => ({ ...prev, photo_url: photoUrl }));
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+      alert('Failed to upload photo.');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoPreview(null);
+    setFormData(prev => ({ ...prev, photo_url: '' }));
+  };
+
+  const handleSaveDiary = async () => {
     if (!formData.emotion_id) {
-      alert('Please select a mood');
+      alert('Please select a mood.');
       return;
     }
-    api.post('/emotions/record', {
-      emotion_id: formData.emotion_id,
-      date: format(selectedDate, 'yyyy-MM-dd'),
-      notes: formData.notes,
-      photo_url: formData.photo_url
-    }).then(function() {
-      setShowModal(false);
-      fetchData();
-    });
-  }
 
-  var monthStart = startOfMonth(currentDate);
-  var monthEnd = endOfMonth(currentDate);
-  var days = eachDayOfInterval({ start: startOfWeek(monthStart), end: endOfWeek(monthEnd) });
-  var today = new Date();
-  var isCurrentMonth = currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
+    try {
+      await api.post('/emotions/record', {
+        emotion_id: formData.emotion_id,
+        date: format(selectedDate, 'yyyy-MM-dd'),
+        notes: formData.notes,
+        photo_url: formData.photo_url
+      });
+      setShowDiaryModal(false);
+      fetchEmotionData();
+    } catch (error) {
+      console.error('Failed to save diary:', error);
+      alert('Failed to save.');
+    }
+  };
 
-  function isFuture(date) {
-    var todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    return date > todayStart;
-  }
+  const monthStart = startOfMonth(currentDate);
+  const monthEnd = endOfMonth(currentDate);
+  const calendarStart = startOfWeek(monthStart);
+  const calendarEnd = endOfWeek(monthEnd);
+  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+  const today = new Date();
+  const isCurrentMonth = currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
+  };
+
+  const nextMonth = () => {
+    if (!isCurrentMonth) {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    }
+  };
+
+  const isFutureDate = (date) => {
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return dateStart > todayStart;
+  };
+
+  const getSelectedEmotion = () => {
+    return emotions.find(e => e.id === formData.emotion_id);
+  };
 
   return (
     <div className="calendar-page">
       <header className="page-header">
         <h1>Mood Diary</h1>
-        <p className="page-subtitle">Click a date to record</p>
+        <p className="page-subtitle">Click on a date to record your mood and photos</p>
       </header>
 
       <div className="calendar-container card">
         <div className="calendar-nav">
-          <button onClick={function() { setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1)); }} className="nav-btn"><ChevronLeft size={24} /></button>
+          <button onClick={prevMonth} className="nav-btn">
+            <ChevronLeft size={24} />
+          </button>
           <h2>{format(currentDate, 'MMMM yyyy')}</h2>
-          <button onClick={function() { if (!isCurrentMonth) setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)); }} className={'nav-btn ' + (isCurrentMonth ? 'disabled' : '')} disabled={isCurrentMonth}><ChevronRight size={24} /></button>
+          <button 
+            onClick={nextMonth} 
+            className={`nav-btn ${isCurrentMonth ? 'disabled' : ''}`}
+            disabled={isCurrentMonth}
+          >
+            <ChevronRight size={24} />
+          </button>
         </div>
 
         <div className="calendar-weekdays">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(function(d) { return <div key={d} className="weekday">{d}</div>; })}
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+            <div key={day} className="weekday">{day}</div>
+          ))}
         </div>
 
         <div className="calendar-grid full">
-          {days.map(function(day) {
-            var dateStr = format(day, 'yyyy-MM-dd');
-            var emotion = emotionData[dateStr];
-            var future = isFuture(day);
-            var classes = 'calendar-day-full diary-mode';
-            if (!isSameMonth(day, currentDate)) classes += ' other-month';
-            if (isToday(day)) classes += ' today';
-            if (emotion) classes += ' has-emotion';
-            if (future) classes += ' future-date';
+          {days.map(day => {
+            const dateStr = format(day, 'yyyy-MM-dd');
+            const emotion = emotionData[dateStr];
+            const isFuture = isFutureDate(day);
 
             return (
-              <div key={dateStr} className={classes} onClick={function() { if (!future) handleDateClick(day); }}>
-                <div className="day-header"><span className="day-number">{format(day, 'd')}</span></div>
+              <div
+                key={dateStr}
+                className={`calendar-day-full diary-mode ${!isSameMonth(day, currentDate) ? 'other-month' : ''} ${isToday(day) ? 'today' : ''} ${emotion ? 'has-emotion' : ''} ${isFuture ? 'future-date' : ''}`}
+                onClick={() => !isFuture && handleDateClick(day)}
+                style={isFuture ? { cursor: 'not-allowed' } : {}}
+              >
+                <div className="day-header">
+                  <span className="day-number">{format(day, 'd')}</span>
+                </div>
                 {emotion && (
                   <div className="day-emotion-display" style={{ backgroundColor: emotion.color + '20' }}>
-                    <span className="day-emotion-large">{emotion.emoji}</span>
+                    <span className="emotion-emoji-large">{emotion.emoji}</span>
                     {emotion.has_photo && <Camera size={12} className="photo-indicator" />}
                   </div>
                 )}
-                {!emotion && isSameMonth(day, currentDate) && !future && <div className="day-empty"><span>+</span></div>}
+                {!emotion && isSameMonth(day, currentDate) && !isFuture && (
+                  <div className="day-empty">
+                    <span className="add-diary-hint">+</span>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {showModal && selectedDate && (
-        <div className="modal-overlay" onClick={function() { setShowModal(false); }}>
-          <div className="modal diary-modal" onClick={function(e) { e.stopPropagation(); }}>
+      {showDiaryModal && selectedDate && (
+        <div className="modal-overlay" onClick={() => setShowDiaryModal(false)}>
+          <div className="modal diary-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Diary - {format(selectedDate, 'MMM d, yyyy')}</h2>
-              <button className="close-btn" onClick={function() { setShowModal(false); }}><X size={20} /></button>
+              <h2>Mood Diary - {format(selectedDate, 'MMMM d, yyyy')}</h2>
+              <button className="close-btn" onClick={() => setShowDiaryModal(false)}>
+                <X size={20} />
+              </button>
             </div>
 
-            {isLoading ? <div style={{ padding: 24 }}>Loading...</div> : (
+            {isLoading ? (
+              <div className="modal-loading">Loading...</div>
+            ) : (
               <div className="diary-content">
                 <div className="diary-section">
-                  <label className="section-label">Mood</label>
+                  <label className="section-label">How are you feeling?</label>
                   <div className="emotion-grid-diary">
-                    {emotions.map(function(em) {
-                      var selected = formData.emotion_id === em.id;
-                      return (
-                        <button key={em.id} className={'emotion-btn-diary ' + (selected ? 'selected' : '')} style={{ backgroundColor: selected ? em.color : em.color + '30', borderColor: em.color }} onClick={function() { setFormData({ ...formData, emotion_id: em.id }); }}>
-                          <span className="emotion-emoji">{em.emoji}</span>
-                          <span className="emotion-name">{em.name}</span>
-                        </button>
-                      );
-                    })}
+                    {emotions.map((emotion) => (
+                      <button
+                        key={emotion.id}
+                        className={`emotion-btn-diary ${formData.emotion_id === emotion.id ? 'selected' : ''}`}
+                        style={{ 
+                          backgroundColor: formData.emotion_id === emotion.id ? emotion.color : emotion.color + '30',
+                          borderColor: emotion.color
+                        }}
+                        onClick={() => setFormData(prev => ({ ...prev, emotion_id: emotion.id }))}
+                      >
+                        <span className="emotion-emoji">{emotion.emoji}</span>
+                        <span className="emotion-name">{emotion.name}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 <div className="diary-section">
-                  <label className="section-label">Photo</label>
+                  <label className="section-label">Photo of the Day</label>
                   <div className="photo-upload-area">
                     {photoPreview ? (
                       <div className="photo-preview-container">
                         <img src={photoPreview} alt="Diary" className="photo-preview" />
-                        <button className="remove-photo-btn" onClick={function() { setPhotoPreview(null); setFormData({ ...formData, photo_url: '' }); }}><Trash2 size={16} /></button>
+                        <button className="remove-photo-btn" onClick={handleRemovePhoto}>
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     ) : (
                       <label className="photo-upload-box">
-                        <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
-                        {uploading ? <span>Uploading...</span> : <><Image size={32} /><span>Add Photo</span></>}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                          style={{ display: 'none' }}
+                        />
+                        {uploadingPhoto ? (
+                          <span>Uploading...</span>
+                        ) : (
+                          <>
+                            <Image size={32} />
+                            <span>Add Photo</span>
+                          </>
+                        )}
                       </label>
                     )}
                   </div>
                 </div>
 
                 <div className="diary-section">
-                  <label className="section-label">Notes</label>
-                  <textarea className="diary-notes" placeholder="How was your day?" value={formData.notes} onChange={function(e) { setFormData({ ...formData, notes: e.target.value }); }} rows={4} />
+                  <label className="section-label">Daily Notes</label>
+                  <textarea
+                    className="diary-notes"
+                    placeholder="How was your day? Write freely about your feelings..."
+                    value={formData.notes}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    rows={4}
+                  />
                 </div>
 
                 <div className="modal-actions">
-                  <button className="btn-secondary" onClick={function() { setShowModal(false); }}>Cancel</button>
-                  <button className="btn-primary" onClick={handleSave} disabled={!formData.emotion_id}>Save</button>
+                  <button type="button" className="btn-secondary" onClick={() => setShowDiaryModal(false)}>
+                    Cancel
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn-primary" 
+                    onClick={handleSaveDiary}
+                    disabled={!formData.emotion_id}
+                  >
+                    Save
+                  </button>
                 </div>
               </div>
             )}
@@ -203,6 +321,6 @@ function Calendar() {
       )}
     </div>
   );
-}
+};
 
 export default Calendar;
