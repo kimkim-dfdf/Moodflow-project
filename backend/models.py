@@ -139,60 +139,6 @@ class EmotionHistory(db.Model):
 
 
 # ==============================================
-# Book Favorites Model
-# ==============================================
-
-class BookFavorite(db.Model):
-    """
-    BookFavorite table for storing user's favorite books.
-    Links users to their favorite book IDs from static recommendations.
-    """
-    __tablename__ = 'book_favorites'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
-    book_id = db.Column(db.Integer, nullable=False)
-    added_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def to_dict(self):
-        """Convert favorite to dictionary for API responses."""
-        result = {
-            'id': self.id,
-            'user_id': self.user_id,
-            'book_id': self.book_id,
-            'added_at': self.added_at.isoformat() if self.added_at else None
-        }
-        return result
-
-
-# ==============================================
-# Music Favorites Model
-# ==============================================
-
-class MusicFavorite(db.Model):
-    """
-    MusicFavorite table for storing user's favorite music.
-    Links users to their favorite music IDs from database.
-    """
-    __tablename__ = 'music_favorites'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
-    music_id = db.Column(db.Integer, nullable=False)
-    added_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def to_dict(self):
-        """Convert favorite to dictionary for API responses."""
-        result = {
-            'id': self.id,
-            'user_id': self.user_id,
-            'music_id': self.music_id,
-            'added_at': self.added_at.isoformat() if self.added_at else None
-        }
-        return result
-
-
-# ==============================================
 # Emotion Model
 # ==============================================
 

@@ -399,61 +399,6 @@ def register_routes(app):
         return jsonify(repository.get_all_music())
     
     
-    @app.route('/api/music/favorites', methods=['GET'])
-    @login_required
-    def get_music_favorites():
-        """Get all favorite music for the current user."""
-        user = current_user
-        favorite_ids = repository.get_user_music_favorites(user.id)
-        
-        all_music = repository.get_all_music()
-        result = []
-        for music_id in favorite_ids:
-            for music in all_music:
-                if music['id'] == music_id:
-                    music_copy = dict(music)
-                    music_copy['is_favorite'] = True
-                    result.append(music_copy)
-                    break
-        
-        return jsonify(result)
-    
-    
-    @app.route('/api/music/favorites/ids', methods=['GET'])
-    @login_required
-    def get_music_favorite_ids():
-        """Get list of favorite music IDs for the current user."""
-        user = current_user
-        favorite_ids = repository.get_user_music_favorites(user.id)
-        return jsonify(favorite_ids)
-    
-    
-    @app.route('/api/music/<int:music_id>/favorite', methods=['POST'])
-    @login_required
-    def add_music_to_favorites(music_id):
-        """Add a music to favorites."""
-        user = current_user
-        success = repository.add_music_favorite(user.id, music_id)
-        
-        if success:
-            return jsonify({'message': 'Added to favorites'})
-        else:
-            return jsonify({'message': 'Already in favorites'})
-    
-    
-    @app.route('/api/music/<int:music_id>/favorite', methods=['DELETE'])
-    @login_required
-    def remove_music_from_favorites(music_id):
-        """Remove a music from favorites."""
-        user = current_user
-        success = repository.remove_music_favorite(user.id, music_id)
-        
-        if success:
-            return jsonify({'message': 'Removed from favorites'})
-        else:
-            return jsonify({'error': 'Not in favorites'}), 404
-    
-    
     # ==========================================
     # Book Routes
     # ==========================================
@@ -540,65 +485,6 @@ def register_routes(app):
             result = result[:limit]
         
         return jsonify(result)
-    
-    
-    # ==========================================
-    # Book Favorites Routes
-    # ==========================================
-    
-    @app.route('/api/books/favorites', methods=['GET'])
-    @login_required
-    def get_favorites():
-        """Get all favorite books for the current user."""
-        user = current_user
-        favorite_ids = repository.get_user_book_favorites(user.id)
-        
-        all_books = repository.get_all_books()
-        result = []
-        for book_id in favorite_ids:
-            for book in all_books:
-                if book['id'] == book_id:
-                    book_copy = dict(book)
-                    book_copy['is_favorite'] = True
-                    result.append(book_copy)
-                    break
-        
-        return jsonify(result)
-    
-    
-    @app.route('/api/books/favorites/ids', methods=['GET'])
-    @login_required
-    def get_favorite_ids():
-        """Get list of favorite book IDs for the current user."""
-        user = current_user
-        favorite_ids = repository.get_user_book_favorites(user.id)
-        return jsonify(favorite_ids)
-    
-    
-    @app.route('/api/books/<int:book_id>/favorite', methods=['POST'])
-    @login_required
-    def add_to_favorites(book_id):
-        """Add a book to favorites."""
-        user = current_user
-        success = repository.add_book_favorite(user.id, book_id)
-        
-        if success:
-            return jsonify({'message': 'Added to favorites'})
-        else:
-            return jsonify({'message': 'Already in favorites'})
-    
-    
-    @app.route('/api/books/<int:book_id>/favorite', methods=['DELETE'])
-    @login_required
-    def remove_from_favorites(book_id):
-        """Remove a book from favorites."""
-        user = current_user
-        success = repository.remove_book_favorite(user.id, book_id)
-        
-        if success:
-            return jsonify({'message': 'Removed from favorites'})
-        else:
-            return jsonify({'error': 'Not in favorites'}), 404
     
     
     # ==========================================
