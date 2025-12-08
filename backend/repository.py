@@ -1,5 +1,5 @@
 # ==============================================
-# MoodFlow - Data Repository
+# MoodFlow - Data Repository (Simplified)
 # ==============================================
 # This file handles all data storage operations
 # Data is stored in PostgreSQL database
@@ -7,7 +7,7 @@
 # ==============================================
 
 from datetime import datetime
-from models import db, User, Task, EmotionHistory, CustomMusic, CustomBook, BookFavorite
+from models import db, User, Task, EmotionHistory, BookFavorite, MusicFavorite
 
 
 # ==============================================
@@ -70,21 +70,20 @@ def create_task(user_id, title, category, priority, task_date, recommended_for_e
     """
     Create a new task for a user.
     """
-    task = Task(
-        user_id=user_id,
-        title=title,
-        description=None,
-        category=category,
-        priority=priority,
-        is_completed=False,
-        due_date=None,
-        due_time=None,
-        task_date=task_date,
-        created_at=datetime.utcnow(),
-        completed_at=None,
-        recommended_for_emotion=recommended_for_emotion,
-        emotion_score=0.0
-    )
+    task = Task()
+    task.user_id = user_id
+    task.title = title
+    task.description = None
+    task.category = category
+    task.priority = priority
+    task.is_completed = False
+    task.due_date = None
+    task.due_time = None
+    task.task_date = task_date
+    task.created_at = datetime.utcnow()
+    task.completed_at = None
+    task.recommended_for_emotion = recommended_for_emotion
+    task.emotion_score = 0.0
     
     db.session.add(task)
     db.session.commit()
@@ -103,12 +102,10 @@ def get_tasks_by_user(user_id, task_date):
     if task_date:
         query = query.filter_by(task_date=task_date)
     
-    # Sort by created_at descending (newest first)
     query = query.order_by(Task.created_at.desc())
     
     tasks = query.all()
     
-    # Convert to list of dictionaries
     result = []
     for task in tasks:
         result.append(task.to_dict())
@@ -128,7 +125,6 @@ def get_incomplete_tasks_by_user(user_id, task_date):
     
     tasks = query.all()
     
-    # Convert to list of dictionaries
     result = []
     for task in tasks:
         result.append(task.to_dict())
@@ -221,7 +217,6 @@ def get_today_due_tasks(user_id, today):
         is_completed=False
     ).all()
     
-    # Convert to list of dictionaries
     result = []
     for task in tasks:
         result.append(task.to_dict())
@@ -238,11 +233,9 @@ def create_emotion_entry(user_id, emotion_id, date, notes, photo_url):
     Create or update an emotion entry for a specific date.
     If an entry already exists for this date, update it.
     """
-    # Check if entry already exists for this date
     existing = EmotionHistory.query.filter_by(user_id=user_id, date=date).first()
     
     if existing:
-        # Update existing entry
         existing.emotion_id = emotion_id
         existing.recorded_at = datetime.utcnow()
         
@@ -254,15 +247,13 @@ def create_emotion_entry(user_id, emotion_id, date, notes, photo_url):
         db.session.commit()
         return existing.to_dict()
     
-    # Create new entry
-    entry = EmotionHistory(
-        user_id=user_id,
-        emotion_id=emotion_id,
-        date=date,
-        notes=notes,
-        photo_url=photo_url,
-        recorded_at=datetime.utcnow()
-    )
+    entry = EmotionHistory()
+    entry.user_id = user_id
+    entry.emotion_id = emotion_id
+    entry.date = date
+    entry.notes = notes
+    entry.photo_url = photo_url
+    entry.recorded_at = datetime.utcnow()
     
     db.session.add(entry)
     db.session.commit()
@@ -288,7 +279,6 @@ def get_emotion_history_since(user_id, start_date):
         EmotionHistory.date >= start_date
     ).all()
     
-    # Convert to list of dictionaries
     result = []
     for entry in entries:
         result.append(entry.to_dict())
@@ -297,60 +287,53 @@ def get_emotion_history_since(user_id, start_date):
 
 
 # ==============================================
-# Music Operations (Admin)
+# Book Favorites Operations
 # ==============================================
 
-def get_all_custom_music():
-    """Get all custom music entries."""
-    music_list = CustomMusic.query.all()
+def get_user_book_favorites(user_id):
+    """
+    Get all favorite book IDs for a user.
+    Returns a list of book IDs.
+    """
+    favorites = BookFavorite.query.filter_by(user_id=user_id).all()
     
-    # Convert to list of dictionaries
     result = []
-    for music in music_list:
-        result.append(music.to_dict())
+    for favorite in favorites:
+        result.append(favorite.book_id)
     
     return result
 
 
-def create_music(emotion, title, artist, genre, youtube_url):
-    """Create a new music recommendation."""
-    music = CustomMusic(
-        emotion=emotion,
-        title=title,
-        artist=artist,
-        genre=genre,
-        youtube_url=youtube_url,
-        is_custom=True
-    )
+def add_book_favorite(user_id, book_id):
+    """
+    Add a book to user's favorites.
+    Returns True if added, False if already exists.
+    """
+    existing = BookFavorite.query.filter_by(user_id=user_id, book_id=book_id).first()
     
-    db.session.add(music)
+    if existing:
+        return False
+    
+    favorite = BookFavorite()
+    favorite.user_id = user_id
+    favorite.book_id = book_id
+    favorite.added_at = datetime.utcnow()
+    
+    db.session.add(favorite)
     db.session.commit()
     
-    return music.to_dict()
+    return True
 
 
-def update_music(music_id, emotion, title, artist, genre, youtube_url):
-    """Update an existing custom music entry."""
-    music = CustomMusic.query.get(music_id)
+def remove_book_favorite(user_id, book_id):
+    """
+    Remove a book from user's favorites.
+    Returns True if removed, False if not found.
+    """
+    favorite = BookFavorite.query.filter_by(user_id=user_id, book_id=book_id).first()
     
-    if music:
-        music.emotion = emotion
-        music.title = title
-        music.artist = artist
-        music.genre = genre
-        music.youtube_url = youtube_url
-        db.session.commit()
-        return music.to_dict()
-    
-    return None
-
-
-def delete_music(music_id):
-    """Delete a custom music entry."""
-    music = CustomMusic.query.get(music_id)
-    
-    if music:
-        db.session.delete(music)
+    if favorite:
+        db.session.delete(favorite)
         db.session.commit()
         return True
     
@@ -358,68 +341,53 @@ def delete_music(music_id):
 
 
 # ==============================================
-# Book Operations (Admin)
+# Music Favorites Operations
 # ==============================================
 
-def get_all_custom_books():
-    """Get all custom book entries."""
-    books = CustomBook.query.all()
+def get_user_music_favorites(user_id):
+    """
+    Get all favorite music IDs for a user.
+    Returns a list of music IDs.
+    """
+    favorites = MusicFavorite.query.filter_by(user_id=user_id).all()
     
-    # Convert to list of dictionaries
     result = []
-    for book in books:
-        result.append(book.to_dict())
+    for favorite in favorites:
+        result.append(favorite.music_id)
     
     return result
 
 
-def create_book(emotion, title, author, genre, description, tags):
-    """Create a new book recommendation."""
-    # Convert tags list to comma-separated string
-    tags_str = ','.join(tags) if isinstance(tags, list) else tags
+def add_music_favorite(user_id, music_id):
+    """
+    Add a music to user's favorites.
+    Returns True if added, False if already exists.
+    """
+    existing = MusicFavorite.query.filter_by(user_id=user_id, music_id=music_id).first()
     
-    book = CustomBook(
-        emotion=emotion,
-        title=title,
-        author=author,
-        genre=genre,
-        description=description,
-        tags=tags_str,
-        is_custom=True
-    )
+    if existing:
+        return False
     
-    db.session.add(book)
+    favorite = MusicFavorite()
+    favorite.user_id = user_id
+    favorite.music_id = music_id
+    favorite.added_at = datetime.utcnow()
+    
+    db.session.add(favorite)
     db.session.commit()
     
-    return book.to_dict()
+    return True
 
 
-def update_book(book_id, emotion, title, author, genre, description, tags):
-    """Update an existing custom book entry."""
-    book = CustomBook.query.get(book_id)
+def remove_music_favorite(user_id, music_id):
+    """
+    Remove a music from user's favorites.
+    Returns True if removed, False if not found.
+    """
+    favorite = MusicFavorite.query.filter_by(user_id=user_id, music_id=music_id).first()
     
-    if book:
-        # Convert tags list to comma-separated string
-        tags_str = ','.join(tags) if isinstance(tags, list) else tags
-        
-        book.emotion = emotion
-        book.title = title
-        book.author = author
-        book.genre = genre
-        book.description = description
-        book.tags = tags_str
-        db.session.commit()
-        return book.to_dict()
-    
-    return None
-
-
-def delete_book(book_id):
-    """Delete a custom book entry."""
-    book = CustomBook.query.get(book_id)
-    
-    if book:
-        db.session.delete(book)
+    if favorite:
+        db.session.delete(favorite)
         db.session.commit()
         return True
     
@@ -472,7 +440,6 @@ def get_overall_task_stats():
     total = Task.query.count()
     completed = Task.query.filter_by(is_completed=True).count()
     
-    # Get tasks for category counting
     tasks = Task.query.all()
     category_counts = {}
     
@@ -492,60 +459,22 @@ def get_overall_task_stats():
 
 
 # ==============================================
-# Book Favorites Operations
+# Legacy function names for compatibility
 # ==============================================
 
 def get_user_favorites(user_id):
-    """
-    Get all favorite book IDs for a user.
-    Returns a list of book IDs.
-    """
-    favorites = BookFavorite.query.filter_by(user_id=user_id).all()
-    
-    result = []
-    for favorite in favorites:
-        result.append(favorite.book_id)
-    
-    return result
+    """Legacy function name for book favorites."""
+    return get_user_book_favorites(user_id)
 
 
 def add_favorite(user_id, book_id):
-    """
-    Add a book to user's favorites.
-    Returns True if added, False if already exists.
-    """
-    # Check if already in favorites
-    existing = BookFavorite.query.filter_by(user_id=user_id, book_id=book_id).first()
-    
-    if existing:
-        return False
-    
-    # Add new favorite
-    favorite = BookFavorite(
-        user_id=user_id,
-        book_id=book_id,
-        added_at=datetime.utcnow()
-    )
-    
-    db.session.add(favorite)
-    db.session.commit()
-    
-    return True
+    """Legacy function name for adding book favorite."""
+    return add_book_favorite(user_id, book_id)
 
 
 def remove_favorite(user_id, book_id):
-    """
-    Remove a book from user's favorites.
-    Returns True if removed, False if not found.
-    """
-    favorite = BookFavorite.query.filter_by(user_id=user_id, book_id=book_id).first()
-    
-    if favorite:
-        db.session.delete(favorite)
-        db.session.commit()
-        return True
-    
-    return False
+    """Legacy function name for removing book favorite."""
+    return remove_book_favorite(user_id, book_id)
 
 
 # ==============================================

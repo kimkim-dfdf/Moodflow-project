@@ -1,5 +1,5 @@
 # ==============================================
-# MoodFlow - Database Models
+# MoodFlow - Database Models (Simplified)
 # ==============================================
 # This file defines the database tables
 # Using SQLAlchemy ORM with PostgreSQL
@@ -139,79 +139,13 @@ class EmotionHistory(db.Model):
 
 
 # ==============================================
-# Custom Music Model (Admin)
-# ==============================================
-
-class CustomMusic(db.Model):
-    """
-    CustomMusic table for admin-added music recommendations.
-    """
-    __tablename__ = 'custom_music'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    emotion = db.Column(db.String(50), nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    artist = db.Column(db.String(200), nullable=False)
-    genre = db.Column(db.String(100), nullable=True)
-    youtube_url = db.Column(db.String(500), nullable=True)
-    is_custom = db.Column(db.Boolean, default=True)
-    
-    def to_dict(self):
-        """Convert music to dictionary for API responses."""
-        result = {
-            'id': self.id,
-            'emotion': self.emotion,
-            'title': self.title,
-            'artist': self.artist,
-            'genre': self.genre,
-            'youtube_url': self.youtube_url,
-            'is_custom': self.is_custom
-        }
-        return result
-
-
-# ==============================================
-# Custom Book Model (Admin)
-# ==============================================
-
-class CustomBook(db.Model):
-    """
-    CustomBook table for admin-added book recommendations.
-    """
-    __tablename__ = 'custom_books'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    emotion = db.Column(db.String(50), nullable=True)
-    title = db.Column(db.String(200), nullable=False)
-    author = db.Column(db.String(200), nullable=False)
-    genre = db.Column(db.String(100), nullable=True)
-    description = db.Column(db.Text, nullable=True)
-    tags = db.Column(db.Text, nullable=True)
-    is_custom = db.Column(db.Boolean, default=True)
-    
-    def to_dict(self):
-        """Convert book to dictionary for API responses."""
-        result = {
-            'id': self.id,
-            'emotion': self.emotion,
-            'title': self.title,
-            'author': self.author,
-            'genre': self.genre,
-            'description': self.description,
-            'tags': self.tags.split(',') if self.tags else [],
-            'is_custom': self.is_custom
-        }
-        return result
-
-
-# ==============================================
 # Book Favorites Model
 # ==============================================
 
 class BookFavorite(db.Model):
     """
     BookFavorite table for storing user's favorite books.
-    Links users to their favorite book IDs.
+    Links users to their favorite book IDs from static recommendations.
     """
     __tablename__ = 'book_favorites'
     
@@ -226,6 +160,33 @@ class BookFavorite(db.Model):
             'id': self.id,
             'user_id': self.user_id,
             'book_id': self.book_id,
+            'added_at': self.added_at.isoformat() if self.added_at else None
+        }
+        return result
+
+
+# ==============================================
+# Music Favorites Model
+# ==============================================
+
+class MusicFavorite(db.Model):
+    """
+    MusicFavorite table for storing user's favorite music.
+    Links users to their favorite music IDs from static recommendations.
+    """
+    __tablename__ = 'music_favorites'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    music_id = db.Column(db.Integer, nullable=False)
+    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert favorite to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'music_id': self.music_id,
             'added_at': self.added_at.isoformat() if self.added_at else None
         }
         return result
