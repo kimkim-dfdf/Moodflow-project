@@ -31,6 +31,11 @@ CREATE DATABASE moodflow;
 \q
 ```
 
+> **참고:** 테이블과 초기 데이터는 백엔드 실행 시 자동으로 생성됩니다!
+> - 7개 테이블 자동 생성 (users, tasks, emotion_history, emotions, music, books, book_tags)
+> - 6개 감정, 24개 음악, 15개 책, 10개 태그 자동 시드
+> - 4개 데모 계정 자동 생성
+
 ---
 
 ## 3. 프로젝트 다운로드
@@ -175,10 +180,11 @@ moodflow/
 ├── backend/
 │   ├── app.py              # Flask 앱 설정
 │   ├── run.py              # 서버 시작점
-│   ├── models.py           # 데이터베이스 모델
+│   ├── models.py           # 데이터베이스 모델 (7개 테이블)
 │   ├── repository.py       # 데이터 저장소
 │   ├── routes.py           # API 엔드포인트
 │   ├── recommendation_engine.py  # 추천 알고리즘
+│   ├── seed_data.py        # 초기 데이터 시드 (자동 실행)
 │   ├── .env                # 환경 변수 (직접 생성)
 │   └── uploads/            # 업로드 파일
 │

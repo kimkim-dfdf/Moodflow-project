@@ -11,6 +11,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_login import LoginManager
 from models import db, User
+from seed_data import seed_all_static_data
 
 
 def create_app():
@@ -84,6 +85,9 @@ def create_app():
         
         # Seed demo users if they don't exist
         seed_demo_users()
+        
+        # Seed static data (emotions, music, books, tags)
+        seed_all_static_data()
     
     # Register all API routes
     from routes import register_routes

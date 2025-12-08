@@ -26,12 +26,13 @@ MoodFlow is a modern web application that helps users track their emotional stat
 
 ```
 backend/
-├── app.py                    # Flask app factory with DB config, data seeding
+├── app.py                    # Flask app factory with DB config
 ├── run.py                    # Entry point
 ├── models.py                 # SQLAlchemy database models
 ├── repository.py             # Database operations (CRUD) and helper queries
 ├── recommendation_engine.py  # Task scoring algorithm
 ├── routes.py                 # API endpoints
+├── seed_data.py              # Static data seeding (emotions, music, books, tags)
 └── uploads/                  # Photo uploads
 ```
 
