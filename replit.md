@@ -76,13 +76,14 @@ backend/
 
 ## Demo Accounts (Simplified Login)
 
-Only 3 fixed accounts can log in (no registration):
+Only 4 fixed accounts can log in (no registration):
 
-| Email | Password |
-|-------|----------|
-| seven@gmail.com | ekdus123 |
-| elly@gmail.com | ekdus123 |
-| nicole@gmail.com | ekdus123 |
+| Email | Password | Role |
+|-------|----------|------|
+| seven@gmail.com | ekdus123 | User |
+| elly@gmail.com | ekdus123 | User |
+| nicole@gmail.com | ekdus123 | User |
+| admin@gmail.com | ekdus123 | Admin |
 
 ## API Endpoints
 
