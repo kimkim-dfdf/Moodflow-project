@@ -10,6 +10,21 @@ from datetime import datetime
 from models import db, User, Task, EmotionHistory, CustomMusic, CustomBook, BookFavorite
 
 
+def parse_date_string(date_string):
+    """
+    Convert a date string (YYYY-MM-DD) to a date object.
+    Returns None if the input is None or invalid.
+    """
+    if date_string is None:
+        return None
+    if isinstance(date_string, datetime):
+        return date_string.date()
+    try:
+        return datetime.strptime(date_string, '%Y-%m-%d').date()
+    except:
+        return None
+
+
 # ==============================================
 # User Operations
 # ==============================================
@@ -69,6 +84,7 @@ def update_user(user_id, new_username):
 def create_task(user_id, title, category, priority, task_date, recommended_for_emotion):
     """
     Create a new task for a user.
+    task_date should be a string in YYYY-MM-DD format.
     """
     task = Task(
         user_id=user_id,
@@ -79,7 +95,7 @@ def create_task(user_id, title, category, priority, task_date, recommended_for_e
         is_completed=False,
         due_date=None,
         due_time=None,
-        task_date=task_date,
+        task_date=parse_date_string(task_date),
         created_at=datetime.utcnow(),
         completed_at=None,
         recommended_for_emotion=recommended_for_emotion,
@@ -95,13 +111,15 @@ def create_task(user_id, title, category, priority, task_date, recommended_for_e
 def get_tasks_by_user(user_id, task_date):
     """
     Get all tasks for a user.
-    Optionally filter by task_date.
+    Optionally filter by task_date (string in YYYY-MM-DD format).
     Results are sorted by created_at (newest first).
     """
     query = Task.query.filter_by(user_id=user_id)
     
     if task_date:
-        query = query.filter_by(task_date=task_date)
+        date_obj = parse_date_string(task_date)
+        if date_obj:
+            query = query.filter_by(task_date=date_obj)
     
     # Sort by created_at descending (newest first)
     query = query.order_by(Task.created_at.desc())
@@ -119,12 +137,14 @@ def get_tasks_by_user(user_id, task_date):
 def get_incomplete_tasks_by_user(user_id, task_date):
     """
     Get all incomplete tasks for a user.
-    Optionally filter by task_date.
+    Optionally filter by task_date (string in YYYY-MM-DD format).
     """
     query = Task.query.filter_by(user_id=user_id, is_completed=False)
     
     if task_date:
-        query = query.filter_by(task_date=task_date)
+        date_obj = parse_date_string(task_date)
+        if date_obj:
+            query = query.filter_by(task_date=date_obj)
     
     tasks = query.all()
     
@@ -148,11 +168,13 @@ def get_existing_task(user_id, title, task_date):
     """
     Check if a task with the same title already exists for this date.
     Used to prevent duplicate tasks.
+    task_date should be a string in YYYY-MM-DD format.
     """
+    date_obj = parse_date_string(task_date)
     task = Task.query.filter_by(
         user_id=user_id,
         title=title,
-        task_date=task_date,
+        task_date=date_obj,
         is_completed=False
     ).first()
     
@@ -214,10 +236,12 @@ def count_tasks(user_id):
 def get_today_due_tasks(user_id, today):
     """
     Get tasks that are due today and not completed.
+    today should be a string in YYYY-MM-DD format.
     """
+    date_obj = parse_date_string(today)
     tasks = Task.query.filter_by(
         user_id=user_id,
-        due_date=today,
+        due_date=date_obj,
         is_completed=False
     ).all()
     
@@ -237,9 +261,12 @@ def create_emotion_entry(user_id, emotion_id, date, notes, photo_url):
     """
     Create or update an emotion entry for a specific date.
     If an entry already exists for this date, update it.
+    date should be a string in YYYY-MM-DD format.
     """
+    date_obj = parse_date_string(date)
+    
     # Check if entry already exists for this date
-    existing = EmotionHistory.query.filter_by(user_id=user_id, date=date).first()
+    existing = EmotionHistory.query.filter_by(user_id=user_id, date=date_obj).first()
     
     if existing:
         # Update existing entry
@@ -258,7 +285,7 @@ def create_emotion_entry(user_id, emotion_id, date, notes, photo_url):
     entry = EmotionHistory(
         user_id=user_id,
         emotion_id=emotion_id,
-        date=date,
+        date=date_obj,
         notes=notes,
         photo_url=photo_url,
         recorded_at=datetime.utcnow()
@@ -271,8 +298,12 @@ def create_emotion_entry(user_id, emotion_id, date, notes, photo_url):
 
 
 def get_emotion_entry_by_date(user_id, date):
-    """Find an emotion entry for a specific date."""
-    entry = EmotionHistory.query.filter_by(user_id=user_id, date=date).first()
+    """
+    Find an emotion entry for a specific date.
+    date should be a string in YYYY-MM-DD format.
+    """
+    date_obj = parse_date_string(date)
+    entry = EmotionHistory.query.filter_by(user_id=user_id, date=date_obj).first()
     if entry:
         return entry.to_dict()
     return None
@@ -282,10 +313,12 @@ def get_emotion_history_since(user_id, start_date):
     """
     Get emotion entries since a specific date.
     Used for calculating statistics.
+    start_date should be a string in YYYY-MM-DD format.
     """
+    date_obj = parse_date_string(start_date)
     entries = EmotionHistory.query.filter(
         EmotionHistory.user_id == user_id,
-        EmotionHistory.date >= start_date
+        EmotionHistory.date >= date_obj
     ).all()
     
     # Convert to list of dictionaries

@@ -76,9 +76,9 @@ class Task(db.Model):
     category = db.Column(db.String(50), nullable=False)
     priority = db.Column(db.String(20), nullable=False)
     is_completed = db.Column(db.Boolean, default=False)
-    due_date = db.Column(db.String(20), nullable=True)
+    due_date = db.Column(db.Date, nullable=True)
     due_time = db.Column(db.String(10), nullable=True)
-    task_date = db.Column(db.String(20), nullable=True)
+    task_date = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime, nullable=True)
     recommended_for_emotion = db.Column(db.String(50), nullable=True)
@@ -86,6 +86,14 @@ class Task(db.Model):
     
     def to_dict(self):
         """Convert task to dictionary for API responses."""
+        due_date_str = None
+        if self.due_date:
+            due_date_str = self.due_date.isoformat()
+        
+        task_date_str = None
+        if self.task_date:
+            task_date_str = self.task_date.isoformat()
+        
         result = {
             'id': self.id,
             'user_id': self.user_id,
@@ -94,9 +102,9 @@ class Task(db.Model):
             'category': self.category,
             'priority': self.priority,
             'is_completed': self.is_completed,
-            'due_date': self.due_date,
+            'due_date': due_date_str,
             'due_time': self.due_time,
-            'task_date': self.task_date,
+            'task_date': task_date_str,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
             'recommended_for_emotion': self.recommended_for_emotion,
@@ -119,18 +127,22 @@ class EmotionHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, nullable=False)
     emotion_id = db.Column(db.Integer, nullable=False)
-    date = db.Column(db.String(20), nullable=False)
+    date = db.Column(db.Date, nullable=False)
     notes = db.Column(db.Text, nullable=True)
     photo_url = db.Column(db.String(500), nullable=True)
     recorded_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def to_dict(self):
         """Convert emotion entry to dictionary for API responses."""
+        date_str = None
+        if self.date:
+            date_str = self.date.isoformat()
+        
         result = {
             'id': self.id,
             'user_id': self.user_id,
             'emotion_id': self.emotion_id,
-            'date': self.date,
+            'date': date_str,
             'notes': self.notes,
             'photo_url': self.photo_url,
             'recorded_at': self.recorded_at.isoformat() if self.recorded_at else None

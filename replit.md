@@ -136,6 +136,12 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
+- December 8, 2025: Data migration from JSON to PostgreSQL
+  - Migrated all tasks and emotion history from data.json to PostgreSQL
+  - Updated models.py to use proper Date types for date columns
+  - Updated repository.py with date parsing functions
+  - Removed data.json file (no longer needed)
+
 - December 8, 2025: PostgreSQL database migration
   - Changed from JSON file storage to PostgreSQL database
   - Created models.py with SQLAlchemy models (User, Task, EmotionHistory, etc.)
