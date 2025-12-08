@@ -239,5 +239,22 @@
       "photo_url": null,
       "recorded_at": "2025-12-08T08:08:51.744772"
     }
+  ],
+  "custom_music": [],
+  "custom_books": [
+    {
+      "id": 100,
+      "emotion": "Sad",
+      "title": "little girl",
+      "author": "dayeon",
+      "genre": "story",
+      "description": "the little girl story",
+      "tags": [
+        "hopeful",
+        "comforting",
+        "peaceful"
+      ],
+      "is_custom": true
+    }
   ]
 }
