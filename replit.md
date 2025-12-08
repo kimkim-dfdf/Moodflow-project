@@ -136,17 +136,20 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
+- December 8, 2025: Database simplification
+  - Removed CustomBook and CustomMusic models (no admin-managed custom content)
+  - Books and music now come exclusively from static_data.py
+  - Added MusicFavorite model for user music favorites
+  - Users can add/remove items from favorites (BookFavorite, MusicFavorite)
+  - Simplified routes.py - removed admin custom book/music endpoints
+  - Added music favorites API endpoints
+
 - December 8, 2025: PostgreSQL database migration
   - Changed from JSON file storage to PostgreSQL database
-  - Created models.py with SQLAlchemy models (User, Task, EmotionHistory, etc.)
+  - Created models.py with SQLAlchemy models (User, Task, EmotionHistory, BookFavorite, MusicFavorite)
   - Updated app.py with database configuration
   - Updated repository.py to use SQLAlchemy queries
   - Demo users are seeded on application startup
-
-- December 8, 2025: Backend code cleanup
-  - Removed unused `is_favorite` function from repository.py
-  - Verified all functions in static_data.py and recommendation_engine.py are in use
-  - Updated line counts in documentation
 
 - December 3, 2025: Simplified authentication
   - Removed password hashing (no security for demo)
