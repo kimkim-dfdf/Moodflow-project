@@ -47,7 +47,7 @@ function Admin() {
   }
 
   function handleSaveMusic(data) {
-    if (editingMusic && editingMusic.is_custom) {
+    if (editingMusic) {
       api.put('/admin/music/' + editingMusic.id, data).then(function() {
         fetchData();
         setShowMusicModal(false);
@@ -68,7 +68,7 @@ function Admin() {
   }
 
   function handleSaveBook(data) {
-    if (editingBook && editingBook.is_custom) {
+    if (editingBook) {
       api.put('/admin/books/' + editingBook.id, data).then(function() {
         fetchData();
         setShowBookModal(false);
@@ -180,7 +180,6 @@ function Admin() {
                   <th>Artist</th>
                   <th>Genre</th>
                   <th>Emotion</th>
-                  <th>Type</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -193,21 +192,14 @@ function Admin() {
                       <td>{m.genre}</td>
                       <td><span className="emotion-badge">{m.emotion}</span></td>
                       <td>
-                        <span className={m.is_custom ? 'type-badge custom' : 'type-badge static'}>
-                          {m.is_custom ? 'Custom' : 'Static'}
-                        </span>
-                      </td>
-                      <td>
-                        {m.is_custom && (
-                          <div className="action-btns">
-                            <button className="edit-btn" onClick={function() { setEditingMusic(m); setShowMusicModal(true); }}>
-                              <Edit2 size={16} />
-                            </button>
-                            <button className="delete-btn" onClick={function() { handleDeleteMusic(m.id); }}>
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        )}
+                        <div className="action-btns">
+                          <button className="edit-btn" onClick={function() { setEditingMusic(m); setShowMusicModal(true); }}>
+                            <Edit2 size={16} />
+                          </button>
+                          <button className="delete-btn" onClick={function() { handleDeleteMusic(m.id); }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -235,7 +227,6 @@ function Admin() {
                   <th>Genre</th>
                   <th>Emotion</th>
                   <th>Tags</th>
-                  <th>Type</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -258,21 +249,14 @@ function Admin() {
                         </div>
                       </td>
                       <td>
-                        <span className={b.is_custom ? 'type-badge custom' : 'type-badge static'}>
-                          {b.is_custom ? 'Custom' : 'Static'}
-                        </span>
-                      </td>
-                      <td>
-                        {b.is_custom && (
-                          <div className="action-btns">
-                            <button className="edit-btn" onClick={function() { setEditingBook(b); setShowBookModal(true); }}>
-                              <Edit2 size={16} />
-                            </button>
-                            <button className="delete-btn" onClick={function() { handleDeleteBook(b.id); }}>
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        )}
+                        <div className="action-btns">
+                          <button className="edit-btn" onClick={function() { setEditingBook(b); setShowBookModal(true); }}>
+                            <Edit2 size={16} />
+                          </button>
+                          <button className="delete-btn" onClick={function() { handleDeleteBook(b.id); }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

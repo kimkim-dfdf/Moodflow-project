@@ -523,9 +523,7 @@ def create_music(emotion, title, artist, genre, youtube_url):
     db.session.add(new_music)
     db.session.commit()
     
-    result = new_music.to_dict()
-    result['is_custom'] = True
-    return result
+    return new_music.to_dict()
 
 
 def update_music(music_id, emotion, title, artist, genre, youtube_url):
@@ -545,9 +543,7 @@ def update_music(music_id, emotion, title, artist, genre, youtube_url):
     music.youtube_url = youtube_url
     db.session.commit()
     
-    result = music.to_dict()
-    result['is_custom'] = True
-    return result
+    return music.to_dict()
 
 
 def delete_music(music_id):
@@ -589,7 +585,6 @@ def create_book(emotion, title, author, genre, description, tags):
     db.session.commit()
     
     result = new_book.to_dict()
-    result['is_custom'] = True
     result['tags'] = get_tag_objects_for_book(result)
     return result
 
@@ -616,7 +611,6 @@ def update_book(book_id, emotion, title, author, genre, description, tags):
     db.session.commit()
     
     result = book.to_dict()
-    result['is_custom'] = True
     result['tags'] = get_tag_objects_for_book(result)
     return result
 
