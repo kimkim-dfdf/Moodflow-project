@@ -604,3 +604,203 @@ def register_routes(app, db):
             'today_tasks': [t.to_dict() for t in today_tasks],
             'weekly_mood_stats': emotion_stats
         })
+
+    def admin_required(f):
+        from functools import wraps
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated or not current_user.is_admin:
+                return jsonify({'error': 'Admin access required'}), 403
+            return f(*args, **kwargs)
+        return decorated_function
+
+    @app.route('/api/admin/statistics', methods=['GET'])
+    @login_required
+    @admin_required
+    def get_admin_statistics():
+        total_users = User.query.count()
+        total_tasks = Task.query.count()
+        completed_tasks = Task.query.filter_by(is_completed=True).count()
+        total_emotions = EmotionHistory.query.count()
+        total_music = MusicRecommendation.query.count()
+        total_books = BookRecommendation.query.count()
+        
+        recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
+        
+        emotion_stats = db.session.query(
+            Emotion.name,
+            db.func.count(EmotionHistory.id).label('count')
+        ).join(EmotionHistory).group_by(Emotion.name).all()
+        
+        return jsonify({
+            'total_users': total_users,
+            'total_tasks': total_tasks,
+            'completed_tasks': completed_tasks,
+            'total_emotions': total_emotions,
+            'total_music': total_music,
+            'total_books': total_books,
+            'recent_users': [u.to_dict() for u in recent_users],
+            'emotion_distribution': [{'name': name, 'count': count} for name, count in emotion_stats]
+        })
+
+    @app.route('/api/admin/music', methods=['GET'])
+    @login_required
+    @admin_required
+    def get_all_music():
+        music = MusicRecommendation.query.order_by(MusicRecommendation.id.desc()).all()
+        return jsonify([m.to_dict() for m in music])
+
+    @app.route('/api/admin/music', methods=['POST'])
+    @login_required
+    @admin_required
+    def create_music():
+        data = request.get_json()
+        
+        if not data or not data.get('title') or not data.get('emotion_id'):
+            return jsonify({'error': 'Title and emotion are required'}), 400
+        
+        music = MusicRecommendation(
+            emotion_id=data['emotion_id'],
+            title=data['title'],
+            artist=data.get('artist'),
+            genre=data.get('genre'),
+            youtube_url=data.get('youtube_url'),
+            thumbnail_url=data.get('thumbnail_url'),
+            popularity_score=data.get('popularity_score', 0.0)
+        )
+        
+        db.session.add(music)
+        db.session.commit()
+        
+        return jsonify(music.to_dict()), 201
+
+    @app.route('/api/admin/music/<int:music_id>', methods=['PUT'])
+    @login_required
+    @admin_required
+    def update_music(music_id):
+        music = MusicRecommendation.query.get(music_id)
+        if not music:
+            return jsonify({'error': 'Music not found'}), 404
+        
+        data = request.get_json()
+        
+        if 'title' in data:
+            music.title = data['title']
+        if 'artist' in data:
+            music.artist = data['artist']
+        if 'genre' in data:
+            music.genre = data['genre']
+        if 'emotion_id' in data:
+            music.emotion_id = data['emotion_id']
+        if 'youtube_url' in data:
+            music.youtube_url = data['youtube_url']
+        if 'thumbnail_url' in data:
+            music.thumbnail_url = data['thumbnail_url']
+        if 'popularity_score' in data:
+            music.popularity_score = data['popularity_score']
+        
+        db.session.commit()
+        return jsonify(music.to_dict())
+
+    @app.route('/api/admin/music/<int:music_id>', methods=['DELETE'])
+    @login_required
+    @admin_required
+    def delete_music(music_id):
+        music = MusicRecommendation.query.get(music_id)
+        if not music:
+            return jsonify({'error': 'Music not found'}), 404
+        
+        db.session.delete(music)
+        db.session.commit()
+        return jsonify({'message': 'Music deleted successfully'})
+
+    @app.route('/api/admin/books', methods=['GET'])
+    @login_required
+    @admin_required
+    def get_all_books():
+        books = BookRecommendation.query.order_by(BookRecommendation.id.desc()).all()
+        return jsonify([b.to_dict() for b in books])
+
+    @app.route('/api/admin/books', methods=['POST'])
+    @login_required
+    @admin_required
+    def create_book():
+        data = request.get_json()
+        
+        if not data or not data.get('title') or not data.get('emotion_id'):
+            return jsonify({'error': 'Title and emotion are required'}), 400
+        
+        book = BookRecommendation(
+            emotion_id=data['emotion_id'],
+            title=data['title'],
+            author=data.get('author'),
+            genre=data.get('genre'),
+            description=data.get('description'),
+            cover_url=data.get('cover_url'),
+            popularity_score=data.get('popularity_score', 0.0)
+        )
+        
+        db.session.add(book)
+        db.session.commit()
+        
+        if data.get('tag_ids'):
+            for tag_id in data['tag_ids']:
+                link = BookTagLink(book_id=book.id, tag_id=tag_id)
+                db.session.add(link)
+            db.session.commit()
+        
+        return jsonify(book.to_dict()), 201
+
+    @app.route('/api/admin/books/<int:book_id>', methods=['PUT'])
+    @login_required
+    @admin_required
+    def update_book(book_id):
+        book = BookRecommendation.query.get(book_id)
+        if not book:
+            return jsonify({'error': 'Book not found'}), 404
+        
+        data = request.get_json()
+        
+        if 'title' in data:
+            book.title = data['title']
+        if 'author' in data:
+            book.author = data['author']
+        if 'genre' in data:
+            book.genre = data['genre']
+        if 'emotion_id' in data:
+            book.emotion_id = data['emotion_id']
+        if 'description' in data:
+            book.description = data['description']
+        if 'cover_url' in data:
+            book.cover_url = data['cover_url']
+        if 'popularity_score' in data:
+            book.popularity_score = data['popularity_score']
+        
+        if 'tag_ids' in data:
+            BookTagLink.query.filter_by(book_id=book.id).delete()
+            for tag_id in data['tag_ids']:
+                link = BookTagLink(book_id=book.id, tag_id=tag_id)
+                db.session.add(link)
+        
+        db.session.commit()
+        return jsonify(book.to_dict())
+
+    @app.route('/api/admin/books/<int:book_id>', methods=['DELETE'])
+    @login_required
+    @admin_required
+    def delete_book(book_id):
+        book = BookRecommendation.query.get(book_id)
+        if not book:
+            return jsonify({'error': 'Book not found'}), 404
+        
+        BookTagLink.query.filter_by(book_id=book.id).delete()
+        db.session.delete(book)
+        db.session.commit()
+        return jsonify({'message': 'Book deleted successfully'})
+
+    @app.route('/api/admin/tags', methods=['GET'])
+    @login_required
+    @admin_required
+    def get_all_tags():
+        tags = BookTag.query.order_by(BookTag.name).all()
+        return jsonify([t.to_dict() for t in tags])
