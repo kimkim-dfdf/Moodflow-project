@@ -176,15 +176,16 @@ This project uses **student-friendly** code patterns:
 
 ## Running Locally
 
-### Backend
-```bash
-cd backend
-pip install flask flask-cors flask-login python-dotenv werkzeug
-python run.py
-```
+자세한 로컬 설치 방법은 `LOCAL_SETUP.md` 파일 참고
 
-### Frontend
+### Quick Start
 ```bash
+# 백엔드
+cd backend
+pip install flask flask-cors flask-login flask-sqlalchemy psycopg2-binary python-dotenv werkzeug
+python run.py
+
+# 프론트엔드 (새 터미널)
 cd frontend
 npm install
 npm run dev
@@ -193,3 +194,7 @@ npm run dev
 ### Ports
 - Backend: http://localhost:8000
 - Frontend: http://localhost:5000
+
+### 제출 전 삭제할 파일
+- `.replit`, `replit.md`, `replit.nix`
+- `.upm/`, `.cache/`
