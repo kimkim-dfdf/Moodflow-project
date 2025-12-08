@@ -308,30 +308,3 @@ class Book(db.Model):
             'tags': self.tags.split(',') if self.tags else []
         }
         return result
-
-
-# ==============================================
-# Quote Model
-# ==============================================
-
-class Quote(db.Model):
-    """
-    Quote table for storing motivational quotes.
-    Each quote is linked to an emotion.
-    """
-    __tablename__ = 'quotes'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    emotion = db.Column(db.String(50), nullable=False)
-    text = db.Column(db.Text, nullable=False)
-    author = db.Column(db.String(200), nullable=False)
-    
-    def to_dict(self):
-        """Convert quote to dictionary for API responses."""
-        result = {
-            'id': self.id,
-            'emotion': self.emotion,
-            'text': self.text,
-            'author': self.author
-        }
-        return result

@@ -10,7 +10,7 @@ import sys
 from flask import Flask
 from flask_cors import CORS
 from flask_login import LoginManager
-from models import db, User, Quote
+from models import db, User
 
 
 def create_app():
@@ -84,9 +84,6 @@ def create_app():
         
         # Seed demo users if they don't exist
         seed_demo_users()
-        
-        # Seed quotes if they don't exist
-        seed_quotes()
     
     # Register all API routes
     from routes import register_routes
@@ -159,72 +156,3 @@ def seed_demo_users():
     if users_created:
         db.session.commit()
         print("Demo users seeded successfully.")
-
-
-def seed_quotes():
-    """
-    Create quotes if they don't exist.
-    Each emotion has multiple motivational quotes.
-    Idempotent - safe to run multiple times.
-    """
-    
-    # Check if quotes already exist
-    existing_count = Quote.query.count()
-    if existing_count > 0:
-        return
-    
-    # List of quotes for each emotion
-    quotes_data = [
-        # Happy quotes
-        {'emotion': 'Happy', 'text': 'Happiness is not something ready made. It comes from your own actions.', 'author': 'Dalai Lama'},
-        {'emotion': 'Happy', 'text': 'The purpose of our lives is to be happy.', 'author': 'Dalai Lama'},
-        {'emotion': 'Happy', 'text': 'Spread love everywhere you go. Let no one ever come to you without leaving happier.', 'author': 'Mother Teresa'},
-        {'emotion': 'Happy', 'text': 'Be so happy that when others look at you, they become happy too.', 'author': 'Yogi Bhajan'},
-        {'emotion': 'Happy', 'text': 'Happiness is a direction, not a place.', 'author': 'Sydney J. Harris'},
-        
-        # Sad quotes
-        {'emotion': 'Sad', 'text': 'Every storm runs out of rain. Just like every dark night turns into day.', 'author': 'Gary Allan'},
-        {'emotion': 'Sad', 'text': 'The wound is the place where the Light enters you.', 'author': 'Rumi'},
-        {'emotion': 'Sad', 'text': 'Tough times never last, but tough people do.', 'author': 'Robert H. Schuller'},
-        {'emotion': 'Sad', 'text': 'Even the darkest night will end and the sun will rise.', 'author': 'Victor Hugo'},
-        {'emotion': 'Sad', 'text': 'Stars can not shine without darkness.', 'author': 'D.H. Sidebottom'},
-        
-        # Tired quotes
-        {'emotion': 'Tired', 'text': 'Rest when you are weary. Refresh and renew yourself.', 'author': 'Ralph Marston'},
-        {'emotion': 'Tired', 'text': 'Almost everything will work again if you unplug it for a few minutes, including you.', 'author': 'Anne Lamott'},
-        {'emotion': 'Tired', 'text': 'Take rest; a field that has rested gives a bountiful crop.', 'author': 'Ovid'},
-        {'emotion': 'Tired', 'text': 'Your calm mind is the ultimate weapon against your challenges.', 'author': 'Bryant McGill'},
-        {'emotion': 'Tired', 'text': 'Sometimes the most productive thing you can do is relax.', 'author': 'Mark Black'},
-        
-        # Angry quotes
-        {'emotion': 'Angry', 'text': 'For every minute you remain angry, you give up sixty seconds of peace of mind.', 'author': 'Ralph Waldo Emerson'},
-        {'emotion': 'Angry', 'text': 'Holding on to anger is like grasping a hot coal. You are the one who gets burned.', 'author': 'Buddha'},
-        {'emotion': 'Angry', 'text': 'When angry, count to ten before you speak. If very angry, count to one hundred.', 'author': 'Thomas Jefferson'},
-        {'emotion': 'Angry', 'text': 'Speak when you are angry and you will make the best speech you will ever regret.', 'author': 'Ambrose Bierce'},
-        {'emotion': 'Angry', 'text': 'The best fighter is never angry.', 'author': 'Lao Tzu'},
-        
-        # Stressed quotes
-        {'emotion': 'Stressed', 'text': 'The greatest weapon against stress is our ability to choose one thought over another.', 'author': 'William James'},
-        {'emotion': 'Stressed', 'text': 'You don\'t have to control your thoughts. You just have to stop letting them control you.', 'author': 'Dan Millman'},
-        {'emotion': 'Stressed', 'text': 'Breathe. Let go. And remind yourself that this very moment is the only one you know you have for sure.', 'author': 'Oprah Winfrey'},
-        {'emotion': 'Stressed', 'text': 'Within you, there is a stillness and a sanctuary to which you can retreat at any time.', 'author': 'Hermann Hesse'},
-        {'emotion': 'Stressed', 'text': 'It is not stress that kills us, it is our reaction to it.', 'author': 'Hans Selye'},
-        
-        # Neutral quotes
-        {'emotion': 'Neutral', 'text': 'The only way to do great work is to love what you do.', 'author': 'Steve Jobs'},
-        {'emotion': 'Neutral', 'text': 'Life is what happens when you are busy making other plans.', 'author': 'John Lennon'},
-        {'emotion': 'Neutral', 'text': 'In the middle of difficulty lies opportunity.', 'author': 'Albert Einstein'},
-        {'emotion': 'Neutral', 'text': 'The journey of a thousand miles begins with one step.', 'author': 'Lao Tzu'},
-        {'emotion': 'Neutral', 'text': 'Do what you can, with what you have, where you are.', 'author': 'Theodore Roosevelt'}
-    ]
-    
-    # Insert all quotes
-    for quote_data in quotes_data:
-        quote = Quote()
-        quote.emotion = quote_data['emotion']
-        quote.text = quote_data['text']
-        quote.author = quote_data['author']
-        db.session.add(quote)
-    
-    db.session.commit()
-    print("Quotes seeded successfully. Total: " + str(len(quotes_data)))
