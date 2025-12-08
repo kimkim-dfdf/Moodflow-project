@@ -455,10 +455,7 @@ def register_routes(app):
         
         limit = request.args.get('limit', 4, type=int)
         
-        # Get static music recommendations
-        static_music = static_data.get_music_by_emotion(emotion, limit)
-        
-        # Get custom music from repository
+        # Get custom music from repository first
         custom_music = repository.get_all_custom_music()
         
         # Filter custom music by emotion
@@ -467,8 +464,11 @@ def register_routes(app):
             if music.get('emotion') == emotion:
                 filtered_custom.append(music)
         
-        # Combine static and custom music
-        all_music = list(static_music) + filtered_custom
+        # Get static music recommendations
+        static_music = static_data.get_music_by_emotion(emotion, limit)
+        
+        # Combine: custom music first, then static music
+        all_music = filtered_custom + list(static_music)
         
         # Limit results
         if len(all_music) > limit:
@@ -528,10 +528,7 @@ def register_routes(app):
         
         limit = request.args.get('limit', 24, type=int)
         
-        # Get static books matching tags
-        static_books = static_data.get_books_by_tags(tag_slugs, limit)
-        
-        # Get custom books from repository
+        # Get custom books from repository first
         custom_books = repository.get_all_custom_books()
         
         # Filter custom books by tags if tags are specified
@@ -548,8 +545,11 @@ def register_routes(app):
                 if has_all_tags:
                     filtered_custom.append(book)
         
-        # Combine static and custom books
-        all_books = list(static_books) + filtered_custom
+        # Get static books matching tags
+        static_books = static_data.get_books_by_tags(tag_slugs, limit)
+        
+        # Combine: custom books first, then static books
+        all_books = filtered_custom + list(static_books)
         
         # Limit results
         if len(all_books) > limit:

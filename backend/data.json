@@ -253,31 +253,36 @@
       "date": "2025-12-08",
       "notes": null,
       "photo_url": null,
-      "recorded_at": "2025-12-08T08:08:51.744772"
+      "recorded_at": "2025-12-08T09:09:43.129212"
     }
   ],
-  "custom_music": [],
-  "custom_books": [
+  "custom_music": [
     {
       "id": 100,
       "emotion": "Sad",
-      "title": "little girl",
-      "author": "dayeon",
-      "genre": "story",
-      "description": "the little girl story",
-      "tags": [
-        "hopeful",
-        "comforting",
-        "peaceful"
-      ],
+      "title": "kimdayeon",
+      "artist": "kim",
+      "genre": "saddd",
+      "youtube_url": "https://www.youtube.com/watch?v=pWf1QYSbiEU",
       "is_custom": true
     }
   ],
+  "custom_books": [],
   "book_favorites": [
     {
       "user_id": 1,
       "book_id": 1,
       "added_at": "2025-12-08T08:59:56.830752"
+    },
+    {
+      "user_id": 1,
+      "book_id": 2,
+      "added_at": "2025-12-08T09:06:15.572293"
+    },
+    {
+      "user_id": 1,
+      "book_id": 3,
+      "added_at": "2025-12-08T09:06:22.283686"
     }
   ]
 }
