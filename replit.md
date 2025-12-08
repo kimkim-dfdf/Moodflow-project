@@ -31,7 +31,17 @@ backend/
 ├── models.py                 # SQLAlchemy database models
 ├── repository.py             # Database operations (CRUD) and helper queries
 ├── recommendation_engine.py  # Task scoring algorithm
-├── routes.py                 # API endpoints
+├── routes/                   # API endpoints (Blueprint pattern)
+│   ├── __init__.py           # Blueprint registration
+│   ├── auth.py               # Authentication routes
+│   ├── emotions.py           # Emotion routes
+│   ├── tasks.py              # Task routes
+│   ├── music.py              # Music routes
+│   ├── books.py              # Book routes
+│   ├── admin.py              # Admin routes
+│   ├── dashboard.py          # Dashboard routes
+│   ├── profile.py            # Profile routes
+│   └── uploads.py            # File upload routes
 └── uploads/                  # Photo uploads
 ```
 
@@ -96,7 +106,6 @@ Only 4 fixed accounts can log in (no registration):
 ### Emotions
 - `GET /api/emotions` - List all emotions
 - `POST /api/emotions/record` - Record emotion for a day
-- `GET /api/emotions/history` - Get emotion history
 - `GET /api/emotions/statistics` - Get emotion statistics
 - `GET /api/emotions/diary/<date>` - Get diary entry for date
 
@@ -135,6 +144,11 @@ This project uses **student-friendly** code patterns:
 - Comprehensive comments
 
 ## Recent Changes
+
+- December 8, 2025: Backend refactoring
+  - Split routes.py (715 lines) into 9 Blueprint files in routes/ directory
+  - Removed unused legacy functions from repository.py (640 lines now)
+  - Clean Blueprint structure: auth, emotions, tasks, music, books, admin, dashboard, profile, uploads
 
 - December 8, 2025: Full static data migration to PostgreSQL
   - Created new database models: Emotion, Music, Book, BookTag, BookTag_Book (many-to-many)

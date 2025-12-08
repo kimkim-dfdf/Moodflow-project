@@ -459,47 +459,6 @@ def get_overall_task_stats():
 
 
 # ==============================================
-# Legacy function names for compatibility
-# ==============================================
-
-def get_user_favorites(user_id):
-    """Legacy function name for book favorites."""
-    return get_user_book_favorites(user_id)
-
-
-def add_favorite(user_id, book_id):
-    """Legacy function name for adding book favorite."""
-    return add_book_favorite(user_id, book_id)
-
-
-def remove_favorite(user_id, book_id):
-    """Legacy function name for removing book favorite."""
-    return remove_book_favorite(user_id, book_id)
-
-
-# ==============================================
-# Deprecated Functions (for compatibility)
-# ==============================================
-
-def load_data():
-    """
-    This function is no longer needed.
-    Data is now stored in PostgreSQL database.
-    Kept for backward compatibility.
-    """
-    pass
-
-
-def save_data():
-    """
-    This function is no longer needed.
-    Data is automatically saved by SQLAlchemy.
-    Kept for backward compatibility.
-    """
-    pass
-
-
-# ==============================================
 # Emotion Operations
 # ==============================================
 
