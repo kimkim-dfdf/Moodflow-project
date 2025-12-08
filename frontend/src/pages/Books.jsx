@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
-import { BookOpen, X, Search, Heart, Star } from 'lucide-react';
+import { BookOpen, X, Search, Heart } from 'lucide-react';
 
 function BookCard(props) {
   var book = props.book;
