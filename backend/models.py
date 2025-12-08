@@ -1,0 +1,231 @@
+# ==============================================
+# MoodFlow - Database Models
+# ==============================================
+# This file defines the database tables
+# Using SQLAlchemy ORM with PostgreSQL
+# ==============================================
+
+import os
+from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from sqlalchemy.orm import DeclarativeBase
+
+
+# ==============================================
+# Database Setup
+# ==============================================
+
+class Base(DeclarativeBase):
+    """Base class for all database models."""
+    pass
+
+
+db = SQLAlchemy(model_class=Base)
+
+
+# ==============================================
+# User Model
+# ==============================================
+
+class User(UserMixin, db.Model):
+    """
+    User table for storing user accounts.
+    Inherits from UserMixin for Flask-Login integration.
+    """
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    username = db.Column(db.String(80), nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_admin = db.Column(db.Boolean, default=False)
+    
+    def get_id(self):
+        """Return user ID as string for Flask-Login."""
+        return str(self.id)
+    
+    def to_dict(self):
+        """Convert user to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'email': self.email,
+            'username': self.username,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'is_admin': self.is_admin
+        }
+        return result
+
+
+# ==============================================
+# Task Model
+# ==============================================
+
+class Task(db.Model):
+    """
+    Task table for storing user tasks.
+    Each task belongs to a user.
+    """
+    __tablename__ = 'tasks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    category = db.Column(db.String(50), nullable=False)
+    priority = db.Column(db.String(20), nullable=False)
+    is_completed = db.Column(db.Boolean, default=False)
+    due_date = db.Column(db.String(20), nullable=True)
+    due_time = db.Column(db.String(10), nullable=True)
+    task_date = db.Column(db.String(20), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    recommended_for_emotion = db.Column(db.String(50), nullable=True)
+    emotion_score = db.Column(db.Float, default=0.0)
+    
+    def to_dict(self):
+        """Convert task to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'title': self.title,
+            'description': self.description,
+            'category': self.category,
+            'priority': self.priority,
+            'is_completed': self.is_completed,
+            'due_date': self.due_date,
+            'due_time': self.due_time,
+            'task_date': self.task_date,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'recommended_for_emotion': self.recommended_for_emotion,
+            'emotion_score': self.emotion_score
+        }
+        return result
+
+
+# ==============================================
+# Emotion History Model
+# ==============================================
+
+class EmotionHistory(db.Model):
+    """
+    EmotionHistory table for storing daily emotion records.
+    Each record belongs to a user and has a specific date.
+    """
+    __tablename__ = 'emotion_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    emotion_id = db.Column(db.Integer, nullable=False)
+    date = db.Column(db.String(20), nullable=False)
+    notes = db.Column(db.Text, nullable=True)
+    photo_url = db.Column(db.String(500), nullable=True)
+    recorded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert emotion entry to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'emotion_id': self.emotion_id,
+            'date': self.date,
+            'notes': self.notes,
+            'photo_url': self.photo_url,
+            'recorded_at': self.recorded_at.isoformat() if self.recorded_at else None
+        }
+        return result
+
+
+# ==============================================
+# Custom Music Model (Admin)
+# ==============================================
+
+class CustomMusic(db.Model):
+    """
+    CustomMusic table for admin-added music recommendations.
+    """
+    __tablename__ = 'custom_music'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    emotion = db.Column(db.String(50), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    artist = db.Column(db.String(200), nullable=False)
+    genre = db.Column(db.String(100), nullable=True)
+    youtube_url = db.Column(db.String(500), nullable=True)
+    is_custom = db.Column(db.Boolean, default=True)
+    
+    def to_dict(self):
+        """Convert music to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'emotion': self.emotion,
+            'title': self.title,
+            'artist': self.artist,
+            'genre': self.genre,
+            'youtube_url': self.youtube_url,
+            'is_custom': self.is_custom
+        }
+        return result
+
+
+# ==============================================
+# Custom Book Model (Admin)
+# ==============================================
+
+class CustomBook(db.Model):
+    """
+    CustomBook table for admin-added book recommendations.
+    """
+    __tablename__ = 'custom_books'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    emotion = db.Column(db.String(50), nullable=True)
+    title = db.Column(db.String(200), nullable=False)
+    author = db.Column(db.String(200), nullable=False)
+    genre = db.Column(db.String(100), nullable=True)
+    description = db.Column(db.Text, nullable=True)
+    tags = db.Column(db.Text, nullable=True)
+    is_custom = db.Column(db.Boolean, default=True)
+    
+    def to_dict(self):
+        """Convert book to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'emotion': self.emotion,
+            'title': self.title,
+            'author': self.author,
+            'genre': self.genre,
+            'description': self.description,
+            'tags': self.tags.split(',') if self.tags else [],
+            'is_custom': self.is_custom
+        }
+        return result
+
+
+# ==============================================
+# Book Favorites Model
+# ==============================================
+
+class BookFavorite(db.Model):
+    """
+    BookFavorite table for storing user's favorite books.
+    Links users to their favorite book IDs.
+    """
+    __tablename__ = 'book_favorites'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    book_id = db.Column(db.Integer, nullable=False)
+    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert favorite to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'book_id': self.book_id,
+            'added_at': self.added_at.isoformat() if self.added_at else None
+        }
+        return result
