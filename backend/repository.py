@@ -616,6 +616,138 @@ def get_all_tags_as_dict():
     return result
 
 
+# ==============================================
+# Admin Music CRUD Operations
+# ==============================================
+
+def create_music(emotion, title, artist, genre, youtube_url):
+    """
+    Create a new music entry.
+    Returns the created music as dictionary.
+    """
+    new_music = Music(
+        emotion=emotion,
+        title=title,
+        artist=artist,
+        genre=genre,
+        youtube_url=youtube_url
+    )
+    db.session.add(new_music)
+    db.session.commit()
+    
+    result = new_music.to_dict()
+    result['is_custom'] = True
+    return result
+
+
+def update_music(music_id, emotion, title, artist, genre, youtube_url):
+    """
+    Update an existing music entry.
+    Returns the updated music as dictionary, or None if not found.
+    """
+    music = Music.query.filter_by(id=music_id).first()
+    
+    if music is None:
+        return None
+    
+    music.emotion = emotion
+    music.title = title
+    music.artist = artist
+    music.genre = genre
+    music.youtube_url = youtube_url
+    db.session.commit()
+    
+    result = music.to_dict()
+    result['is_custom'] = True
+    return result
+
+
+def delete_music(music_id):
+    """
+    Delete a music entry by ID.
+    Returns True if deleted, False if not found.
+    """
+    music = Music.query.filter_by(id=music_id).first()
+    
+    if music is None:
+        return False
+    
+    db.session.delete(music)
+    db.session.commit()
+    return True
+
+
+# ==============================================
+# Admin Book CRUD Operations
+# ==============================================
+
+def create_book(emotion, title, author, genre, description, tags):
+    """
+    Create a new book entry.
+    tags should be a list of tag slugs.
+    Returns the created book as dictionary.
+    """
+    tags_str = ','.join(tags) if tags else ''
+    
+    new_book = Book(
+        emotion=emotion,
+        title=title,
+        author=author,
+        genre=genre,
+        description=description,
+        tags=tags_str
+    )
+    db.session.add(new_book)
+    db.session.commit()
+    
+    result = new_book.to_dict()
+    result['is_custom'] = True
+    result['tags'] = get_tag_objects_for_book(result)
+    return result
+
+
+def update_book(book_id, emotion, title, author, genre, description, tags):
+    """
+    Update an existing book entry.
+    tags should be a list of tag slugs.
+    Returns the updated book as dictionary, or None if not found.
+    """
+    book = Book.query.filter_by(id=book_id).first()
+    
+    if book is None:
+        return None
+    
+    tags_str = ','.join(tags) if tags else ''
+    
+    book.emotion = emotion
+    book.title = title
+    book.author = author
+    book.genre = genre
+    book.description = description
+    book.tags = tags_str
+    db.session.commit()
+    
+    result = book.to_dict()
+    result['is_custom'] = True
+    result['tags'] = get_tag_objects_for_book(result)
+    return result
+
+
+def delete_book(book_id):
+    """
+    Delete a book entry by ID.
+    Returns True if deleted, False if not found.
+    """
+    book = Book.query.filter_by(id=book_id).first()
+    
+    if book is None:
+        return False
+    
+    db.session.delete(book)
+    db.session.commit()
+    return True
+
+
 def get_tag_objects_for_book(book_dict, tags_cache=None):
     """
     Get full tag objects for a book's tags.

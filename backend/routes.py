@@ -658,11 +658,133 @@ def register_routes(app):
         return jsonify(repository.get_all_music())
     
     
+    @app.route('/api/admin/music', methods=['POST'])
+    @admin_required
+    def create_music_admin():
+        """Create a new music entry."""
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        title = data.get('title', '')
+        if not title:
+            return jsonify({'error': 'Title is required'}), 400
+        
+        emotion = data.get('emotion', 'Happy')
+        artist = data.get('artist', '')
+        genre = data.get('genre', '')
+        youtube_url = data.get('youtube_url', '')
+        
+        result = repository.create_music(emotion, title, artist, genre, youtube_url)
+        return jsonify(result), 201
+    
+    
+    @app.route('/api/admin/music/<int:music_id>', methods=['PUT'])
+    @admin_required
+    def update_music_admin(music_id):
+        """Update an existing music entry."""
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        title = data.get('title', '')
+        if not title:
+            return jsonify({'error': 'Title is required'}), 400
+        
+        emotion = data.get('emotion', 'Happy')
+        artist = data.get('artist', '')
+        genre = data.get('genre', '')
+        youtube_url = data.get('youtube_url', '')
+        
+        result = repository.update_music(music_id, emotion, title, artist, genre, youtube_url)
+        
+        if result is None:
+            return jsonify({'error': 'Music not found'}), 404
+        
+        return jsonify(result)
+    
+    
+    @app.route('/api/admin/music/<int:music_id>', methods=['DELETE'])
+    @admin_required
+    def delete_music_admin(music_id):
+        """Delete a music entry."""
+        success = repository.delete_music(music_id)
+        
+        if not success:
+            return jsonify({'error': 'Music not found'}), 404
+        
+        return jsonify({'message': 'Music deleted successfully'})
+    
+    
     @app.route('/api/admin/books', methods=['GET'])
     @admin_required
     def get_all_books_admin():
         """Get all books for admin."""
         return jsonify(repository.get_all_books())
+    
+    
+    @app.route('/api/admin/books', methods=['POST'])
+    @admin_required
+    def create_book_admin():
+        """Create a new book entry."""
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        title = data.get('title', '')
+        if not title:
+            return jsonify({'error': 'Title is required'}), 400
+        
+        emotion = data.get('emotion', 'Happy')
+        author = data.get('author', '')
+        genre = data.get('genre', '')
+        description = data.get('description', '')
+        tags = data.get('tags', [])
+        
+        result = repository.create_book(emotion, title, author, genre, description, tags)
+        return jsonify(result), 201
+    
+    
+    @app.route('/api/admin/books/<int:book_id>', methods=['PUT'])
+    @admin_required
+    def update_book_admin(book_id):
+        """Update an existing book entry."""
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        title = data.get('title', '')
+        if not title:
+            return jsonify({'error': 'Title is required'}), 400
+        
+        emotion = data.get('emotion', 'Happy')
+        author = data.get('author', '')
+        genre = data.get('genre', '')
+        description = data.get('description', '')
+        tags = data.get('tags', [])
+        
+        result = repository.update_book(book_id, emotion, title, author, genre, description, tags)
+        
+        if result is None:
+            return jsonify({'error': 'Book not found'}), 404
+        
+        return jsonify(result)
+    
+    
+    @app.route('/api/admin/books/<int:book_id>', methods=['DELETE'])
+    @admin_required
+    def delete_book_admin(book_id):
+        """Delete a book entry."""
+        success = repository.delete_book(book_id)
+        
+        if not success:
+            return jsonify({'error': 'Book not found'}), 404
+        
+        return jsonify({'message': 'Book deleted successfully'})
     
     
     @app.route('/api/admin/tags', methods=['GET'])
