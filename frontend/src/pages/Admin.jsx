@@ -134,27 +134,6 @@ function Admin() {
                 <span className="stat-label">Total Users</span>
               </div>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon tasks"><CheckCircle2 size={24} /></div>
-              <div className="stat-info">
-                <span className="stat-value">{stats.tasks.total}</span>
-                <span className="stat-label">Total Tasks</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon completed"><CheckCircle2 size={24} /></div>
-              <div className="stat-info">
-                <span className="stat-value">{stats.tasks.completed}</span>
-                <span className="stat-label">Completed Tasks</span>
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon pending"><Clock size={24} /></div>
-              <div className="stat-info">
-                <span className="stat-value">{stats.tasks.pending}</span>
-                <span className="stat-label">Pending Tasks</span>
-              </div>
-            </div>
           </div>
 
           <div className="stats-details">
@@ -176,46 +155,6 @@ function Admin() {
                           {u.emotion_entries} mood entries
                         </span>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="detail-card">
-              <h3>Emotion Distribution</h3>
-              <div className="emotion-stats-list">
-                {stats.emotions.map(function(e) {
-                  return (
-                    <div key={e.emotion.id} className="emotion-stat-row">
-                      <span className="emotion-emoji">{e.emotion.emoji}</span>
-                      <span className="emotion-name">{e.emotion.name}</span>
-                      <div className="emotion-bar-container">
-                        <div 
-                          className="emotion-bar" 
-                          style={{ 
-                            width: Math.min(e.count * 20, 100) + '%',
-                            backgroundColor: e.emotion.color 
-                          }}
-                        ></div>
-                      </div>
-                      <span className="emotion-count">{e.count}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="detail-card">
-              <h3>Tasks by Category</h3>
-              <div className="category-stats-list">
-                {Object.entries(stats.tasks.by_category || {}).map(function(entry) {
-                  var category = entry[0];
-                  var count = entry[1];
-                  return (
-                    <div key={category} className="category-stat-row">
-                      <span className="category-name">{category}</span>
-                      <span className="category-count">{count}</span>
                     </div>
                   );
                 })}
