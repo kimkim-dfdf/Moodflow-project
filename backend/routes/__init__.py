@@ -11,6 +11,7 @@ from .admin import admin_bp
 from .dashboard import dashboard_bp
 from .uploads import uploads_bp
 from .profile import profile_bp
+from .quotes import quotes_bp
 
 
 def register_routes(app):
@@ -24,3 +25,4 @@ def register_routes(app):
     app.register_blueprint(dashboard_bp, url_prefix='/api/dashboard')
     app.register_blueprint(uploads_bp, url_prefix='/api')
     app.register_blueprint(profile_bp, url_prefix='/api/user')
+    app.register_blueprint(quotes_bp, url_prefix='/api/quotes')

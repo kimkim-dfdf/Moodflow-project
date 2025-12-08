@@ -7,7 +7,8 @@
 # ==============================================
 
 from datetime import datetime
-from models import db, User, Task, EmotionHistory, BookFavorite, MusicFavorite, Emotion, Music, BookTag, Book
+from models import db, User, Task, EmotionHistory, BookFavorite, MusicFavorite, Emotion, Music, BookTag, Book, Quote
+import random
 
 
 # ==============================================
@@ -634,6 +635,48 @@ def get_tag_objects_for_book(book_dict, tags_cache=None):
     for tag_slug in tag_slugs:
         if tag_slug in tags_cache:
             result.append(tags_cache[tag_slug])
+    
+    return result
+
+
+# ==============================================
+# Quote Operations
+# ==============================================
+
+def get_quotes_by_emotion(emotion_name):
+    """
+    Get all quotes for a specific emotion.
+    """
+    quotes = Quote.query.filter_by(emotion=emotion_name).all()
+    
+    result = []
+    for quote in quotes:
+        result.append(quote.to_dict())
+    
+    return result
+
+
+def get_random_quote_by_emotion(emotion_name):
+    """
+    Get a random quote for a specific emotion.
+    Returns one quote dictionary or None if no quotes found.
+    """
+    quotes = Quote.query.filter_by(emotion=emotion_name).all()
+    
+    if len(quotes) == 0:
+        return None
+    
+    random_index = random.randint(0, len(quotes) - 1)
+    return quotes[random_index].to_dict()
+
+
+def get_all_quotes():
+    """Get all quotes from database."""
+    quotes = Quote.query.all()
+    
+    result = []
+    for quote in quotes:
+        result.append(quote.to_dict())
     
     return result
 
