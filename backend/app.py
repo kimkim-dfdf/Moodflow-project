@@ -84,10 +84,6 @@ def create_app():
         
         # Seed demo users if they don't exist
         seed_demo_users()
-        
-        # Seed static data (emotions, music, books, tags)
-        import repository
-        repository.seed_all_static_data()
     
     # Register all API routes
     from routes import register_routes
