@@ -593,11 +593,12 @@ def get_tag_by_slug(slug):
 def get_all_books():
     """Get all books from database."""
     books = Book.query.all()
+    tags_cache = get_all_tags_as_dict()
     
     result = []
     for book in books:
         book_dict = book.to_dict()
-        book_dict['tags'] = get_tag_objects_for_book(book_dict)
+        book_dict['tags'] = get_tag_objects_for_book(book_dict, tags_cache)
         result.append(book_dict)
     
     return result
@@ -608,12 +609,13 @@ def get_books_by_tags(tag_slugs, limit):
     Get books that match ALL of the specified tags (AND logic).
     """
     books = Book.query.all()
+    tags_cache = get_all_tags_as_dict()
     
     if not tag_slugs:
         result = []
         for book in books:
             book_dict = book.to_dict()
-            book_dict['tags'] = get_tag_objects_for_book(book_dict)
+            book_dict['tags'] = get_tag_objects_for_book(book_dict, tags_cache)
             result.append(book_dict)
         
         if limit and limit < len(result):
@@ -632,7 +634,7 @@ def get_books_by_tags(tag_slugs, limit):
         
         if match_count == len(tag_slugs):
             book_dict = book.to_dict()
-            book_dict['tags'] = get_tag_objects_for_book(book_dict)
+            book_dict['tags'] = get_tag_objects_for_book(book_dict, tags_cache)
             result.append(book_dict)
     
     if limit and limit < len(result):
@@ -641,11 +643,29 @@ def get_books_by_tags(tag_slugs, limit):
     return result
 
 
-def get_tag_objects_for_book(book_dict):
+def get_all_tags_as_dict():
+    """
+    Get all book tags as a dictionary for fast lookup.
+    Key: slug, Value: tag dictionary
+    """
+    all_tags = BookTag.query.all()
+    
+    result = {}
+    for tag in all_tags:
+        result[tag.slug] = tag.to_dict()
+    
+    return result
+
+
+def get_tag_objects_for_book(book_dict, tags_cache=None):
     """
     Get full tag objects for a book's tags.
     Converts tag slugs to full tag dictionaries.
+    Uses cache to avoid N+1 queries.
     """
+    if tags_cache is None:
+        tags_cache = get_all_tags_as_dict()
+    
     result = []
     
     tag_slugs = book_dict.get('tags', [])
@@ -653,9 +673,8 @@ def get_tag_objects_for_book(book_dict):
         tag_slugs = tag_slugs.split(',')
     
     for tag_slug in tag_slugs:
-        tag = BookTag.query.filter_by(slug=tag_slug).first()
-        if tag:
-            result.append(tag.to_dict())
+        if tag_slug in tags_cache:
+            result.append(tags_cache[tag_slug])
     
     return result
 
