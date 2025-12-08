@@ -203,7 +203,7 @@ def get_today_due_tasks(user_id, today):
     """
     tasks = Task.query.filter_by(
         user_id=user_id,
-        due_date=today,
+        task_date=today,
         is_completed=False
     ).all()
     
@@ -363,14 +363,6 @@ def get_emotion_by_id(emotion_id):
     return None
 
 
-def get_emotion_by_name(emotion_name):
-    """Find an emotion by its name."""
-    emotion = Emotion.query.filter_by(name=emotion_name).first()
-    if emotion:
-        return emotion.to_dict()
-    return None
-
-
 # ==============================================
 # Music Operations
 # ==============================================
@@ -417,14 +409,6 @@ def get_all_book_tags():
         result.append(tag.to_dict())
     
     return result
-
-
-def get_tag_by_slug(slug):
-    """Find a tag by its slug."""
-    tag = BookTag.query.filter_by(slug=slug).first()
-    if tag:
-        return tag.to_dict()
-    return None
 
 
 # ==============================================
