@@ -5,6 +5,7 @@
 # Using SQLAlchemy ORM with PostgreSQL
 # ==============================================
 
+import os
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
@@ -53,33 +54,6 @@ class User(UserMixin, db.Model):
             'username': self.username,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'is_admin': self.is_admin
-        }
-        return result
-
-
-# ==============================================
-# Emotion Model
-# ==============================================
-
-class Emotion(db.Model):
-    """
-    Emotion table for storing available emotions.
-    These are the emotions users can select (Happy, Sad, etc.)
-    """
-    __tablename__ = 'emotions'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    emoji = db.Column(db.String(10), nullable=False)
-    color = db.Column(db.String(20), nullable=False)
-    
-    def to_dict(self):
-        """Convert emotion to dictionary for API responses."""
-        result = {
-            'id': self.id,
-            'name': self.name,
-            'emoji': self.emoji,
-            'color': self.color
         }
         return result
 
@@ -165,15 +139,14 @@ class EmotionHistory(db.Model):
 
 
 # ==============================================
-# Music Model
+# Custom Music Model (Admin)
 # ==============================================
 
-class Music(db.Model):
+class CustomMusic(db.Model):
     """
-    Music table for storing music recommendations.
-    Stores both default music and admin-added custom music.
+    CustomMusic table for admin-added music recommendations.
     """
-    __tablename__ = 'music'
+    __tablename__ = 'custom_music'
     
     id = db.Column(db.Integer, primary_key=True)
     emotion = db.Column(db.String(50), nullable=False)
@@ -181,7 +154,7 @@ class Music(db.Model):
     artist = db.Column(db.String(200), nullable=False)
     genre = db.Column(db.String(100), nullable=True)
     youtube_url = db.Column(db.String(500), nullable=True)
-    is_custom = db.Column(db.Boolean, default=False)
+    is_custom = db.Column(db.Boolean, default=True)
     
     def to_dict(self):
         """Convert music to dictionary for API responses."""
@@ -198,42 +171,14 @@ class Music(db.Model):
 
 
 # ==============================================
-# BookTag Model
+# Custom Book Model (Admin)
 # ==============================================
 
-class BookTag(db.Model):
+class CustomBook(db.Model):
     """
-    BookTag table for storing book tags.
-    Tags like 'Hopeful', 'Comforting', 'Peaceful', etc.
+    CustomBook table for admin-added book recommendations.
     """
-    __tablename__ = 'book_tags'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    slug = db.Column(db.String(50), nullable=False, unique=True)
-    color = db.Column(db.String(20), nullable=False)
-    
-    def to_dict(self):
-        """Convert book tag to dictionary for API responses."""
-        result = {
-            'id': self.id,
-            'name': self.name,
-            'slug': self.slug,
-            'color': self.color
-        }
-        return result
-
-
-# ==============================================
-# Book Model
-# ==============================================
-
-class Book(db.Model):
-    """
-    Book table for storing book recommendations.
-    Stores both default books and admin-added custom books.
-    """
-    __tablename__ = 'books'
+    __tablename__ = 'custom_books'
     
     id = db.Column(db.Integer, primary_key=True)
     emotion = db.Column(db.String(50), nullable=True)
@@ -242,7 +187,7 @@ class Book(db.Model):
     genre = db.Column(db.String(100), nullable=True)
     description = db.Column(db.Text, nullable=True)
     tags = db.Column(db.Text, nullable=True)
-    is_custom = db.Column(db.Boolean, default=False)
+    is_custom = db.Column(db.Boolean, default=True)
     
     def to_dict(self):
         """Convert book to dictionary for API responses."""
