@@ -27,10 +27,10 @@ MoodFlow is a modern web application that helps users track their emotional stat
 backend/
 ├── app.py                    # Flask app factory (40 lines)
 ├── run.py                    # Entry point (17 lines)
-├── repository.py             # JSON data storage (340 lines)
-├── static_data.py            # Static data (400 lines)
-├── recommendation_engine.py  # Task scoring algorithm (340 lines)
-├── routes.py                 # API endpoints (530 lines)
+├── repository.py             # JSON data storage (760 lines)
+├── static_data.py            # Static data (511 lines)
+├── recommendation_engine.py  # Task scoring algorithm (291 lines)
+├── routes.py                 # API endpoints (968 lines)
 ├── data.json                 # User data (auto-generated)
 └── uploads/                  # Photo uploads
 ```
@@ -135,6 +135,11 @@ This project uses **student-friendly** code patterns:
 - Comprehensive comments
 
 ## Recent Changes
+
+- December 8, 2025: Backend code cleanup
+  - Removed unused `is_favorite` function from repository.py
+  - Verified all functions in static_data.py and recommendation_engine.py are in use
+  - Updated line counts in documentation
 
 - December 3, 2025: Simplified authentication
   - Removed password hashing (no security for demo)
