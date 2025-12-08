@@ -19,17 +19,17 @@ MoodFlow is a modern web application that helps users track their emotional stat
 - **Database**: PostgreSQL (Neon-backed)
 - **ORM**: SQLAlchemy with Flask-SQLAlchemy
 - **Environment**: DATABASE_URL environment variable
-- Static data (emotions, music, books) stored in `static_data.py`
+- All reference data (emotions, music, books, tags) stored in PostgreSQL database
+- Data is automatically seeded on application startup via `seed_all_static_data()`
 
 ## Backend File Structure
 
 ```
 backend/
-├── app.py                    # Flask app factory with DB config
+├── app.py                    # Flask app factory with DB config, data seeding
 ├── run.py                    # Entry point
 ├── models.py                 # SQLAlchemy database models
-├── repository.py             # Database operations (CRUD)
-├── static_data.py            # Static data (emotions, music, books)
+├── repository.py             # Database operations (CRUD) and helper queries
 ├── recommendation_engine.py  # Task scoring algorithm
 ├── routes.py                 # API endpoints
 └── uploads/                  # Photo uploads
@@ -136,9 +136,16 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
+- December 8, 2025: Full static data migration to PostgreSQL
+  - Created new database models: Emotion, Music, Book, BookTag, BookTag_Book (many-to-many)
+  - Moved all static data (emotions, music, books, tags) from static_data.py to database
+  - Implemented seed_all_static_data() for automatic data seeding on startup
+  - Removed static_data.py and data.json files
+  - Updated repository.py with helper functions (get_all_emotions, get_music_by_emotion, get_books_by_tags, etc.)
+  - All recommendation logic now queries database instead of in-memory lists
+
 - December 8, 2025: Database simplification
   - Removed CustomBook and CustomMusic models (no admin-managed custom content)
-  - Books and music now come exclusively from static_data.py
   - Added MusicFavorite model for user music favorites
   - Users can add/remove items from favorites (BookFavorite, MusicFavorite)
   - Simplified routes.py - removed admin custom book/music endpoints

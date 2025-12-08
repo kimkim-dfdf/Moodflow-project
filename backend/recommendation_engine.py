@@ -246,7 +246,11 @@ def get_emotion_statistics_from_repo(user_id, days):
         else:
             emotion_counts[emotion_name] = 1
         
-        date_str = entry['date']
+        entry_date = entry['date']
+        if hasattr(entry_date, 'strftime'):
+            date_str = entry_date.strftime('%Y-%m-%d')
+        else:
+            date_str = str(entry_date)
         has_photo = False
         if entry.get('photo_url'):
             has_photo = True
