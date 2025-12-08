@@ -75,6 +75,13 @@ backend/
 ### 5. Profile
 - User settings management
 
+### 6. Today's Quote (NEW)
+- Emotion-based motivational quotes
+- Random quote for each emotion
+- Refresh button to get new quote
+- 30 quotes total (5 per emotion)
+- Displayed on Dashboard sidebar
+
 ## Recommendation Algorithm
 
 **Total Score = Category Score (57%) + Priority Score (43%)**
@@ -124,6 +131,10 @@ Only 4 fixed accounts can log in (no registration):
 - `GET /api/books/tags` - Get all book tags
 - `GET /api/books` - Get books filtered by tags (AND logic)
 
+### Quotes
+- `GET /api/quotes/random` - Get random quote by emotion
+- `GET /api/quotes` - Get all quotes or filter by emotion
+
 ### Profile
 - `GET /api/user/profile` - Get profile
 - `PUT /api/user/profile` - Update profile
@@ -144,6 +155,13 @@ This project uses **student-friendly** code patterns:
 - Comprehensive comments
 
 ## Recent Changes
+
+- December 8, 2025: Added emotion-based quotes feature
+  - Created Quote model and database table
+  - Added 30 motivational quotes (5 per emotion)
+  - Created quotes API route (/api/quotes)
+  - Added "Today's Quote" card to Dashboard sidebar
+  - Quote refresh button with animation
 
 - December 8, 2025: Backend refactoring
   - Split routes.py (715 lines) into 9 Blueprint files in routes/ directory
