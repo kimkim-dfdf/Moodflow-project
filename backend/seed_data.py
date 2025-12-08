@@ -6,7 +6,7 @@
 # Called automatically when the app starts.
 # ==============================================
 
-from models import db, Emotion, Music, BookTag, Book, Task
+from models import db, Emotion, Music, BookTag, Book, Task, EmotionHistory
 
 
 def seed_all_static_data():
@@ -21,6 +21,7 @@ def seed_all_static_data():
     seed_music()
     seed_books()
     seed_tasks()
+    seed_emotion_history()
     
     print("Static data seeding complete.")
 
@@ -263,3 +264,41 @@ def seed_tasks():
     
     db.session.commit()
     print("Seeded 12 sample tasks.")
+
+
+def seed_emotion_history():
+    """
+    Seed sample emotion history for demo user.
+    Creates emotion records for the past 14 days.
+    """
+    
+    # Check if emotion history already exists
+    existing_count = EmotionHistory.query.count()
+    if existing_count > 0:
+        print("Emotion history already exists, skipping...")
+        return
+    
+    # Sample emotion history for user_id 1 (seven@gmail.com)
+    # emotion_id: 1=Happy, 2=Sad, 3=Tired, 4=Angry, 5=Stressed, 6=Neutral
+    history_data = [
+        {'user_id': 1, 'emotion_id': 1, 'date': '2025-12-01', 'notes': 'Great start to the month!'},
+        {'user_id': 1, 'emotion_id': 6, 'date': '2025-12-02', 'notes': ''},
+        {'user_id': 1, 'emotion_id': 3, 'date': '2025-12-03', 'notes': 'Stayed up late last night'},
+        {'user_id': 1, 'emotion_id': 1, 'date': '2025-12-04', 'notes': 'Had a good workout'},
+        {'user_id': 1, 'emotion_id': 5, 'date': '2025-12-05', 'notes': 'Deadline approaching'},
+        {'user_id': 1, 'emotion_id': 2, 'date': '2025-12-06', 'notes': 'Missing home'},
+        {'user_id': 1, 'emotion_id': 1, 'date': '2025-12-07', 'notes': 'Weekend vibes!'},
+        {'user_id': 1, 'emotion_id': 6, 'date': '2025-12-08', 'notes': ''},
+    ]
+    
+    # Add each emotion history to database
+    for entry in history_data:
+        history = EmotionHistory()
+        history.user_id = entry['user_id']
+        history.emotion_id = entry['emotion_id']
+        history.date = entry['date']
+        history.notes = entry['notes']
+        db.session.add(history)
+    
+    db.session.commit()
+    print("Seeded 8 emotion history records.")
