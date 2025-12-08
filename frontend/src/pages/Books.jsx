@@ -138,17 +138,35 @@ function BookDetailModal(props) {
   );
 }
 
+function getFavoritesFromStorage() {
+  try {
+    var stored = localStorage.getItem('book_favorites');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+  }
+  return [];
+}
+
+function saveFavoritesToStorage(favoriteIds) {
+  try {
+    localStorage.setItem('book_favorites', JSON.stringify(favoriteIds));
+  } catch (e) {
+  }
+}
+
 function Books() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [books, setBooks] = useState([]);
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState(getFavoritesFromStorage());
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const [favoriteBooks, setFavoriteBooks] = useState([]);
+  const [allBooks, setAllBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
   const fetchIdRef = useRef(0);
   const searchTimeoutRef = useRef(null);
@@ -157,28 +175,11 @@ function Books() {
     api.get('/books/tags').then(function(res) {
       setTags(res.data);
     });
+    api.get('/books').then(function(res) {
+      setAllBooks(res.data);
+    });
     fetchBooks([]);
-    fetchFavoriteIds();
   }, []);
-
-  function fetchFavoriteIds() {
-    api.get('/books/favorites/ids').then(function(res) {
-      setFavoriteIds(res.data);
-    }).catch(function() {
-      setFavoriteIds([]);
-    });
-  }
-
-  function fetchFavorites() {
-    setLoading(true);
-    api.get('/books/favorites').then(function(res) {
-      setFavoriteBooks(res.data);
-      setLoading(false);
-    }).catch(function() {
-      setFavoriteBooks([]);
-      setLoading(false);
-    });
-  }
 
   function fetchBooks(tagList) {
     var fetchId = ++fetchIdRef.current;
@@ -269,21 +270,16 @@ function Books() {
 
   function toggleFavorite(bookId) {
     var isFav = favoriteIds.indexOf(bookId) >= 0;
+    var newIds;
     
     if (isFav) {
-      api.delete('/books/' + bookId + '/favorite').then(function() {
-        var newIds = favoriteIds.filter(function(id) { return id !== bookId; });
-        setFavoriteIds(newIds);
-        if (activeTab === 'favorites') {
-          fetchFavorites();
-        }
-      });
+      newIds = favoriteIds.filter(function(id) { return id !== bookId; });
     } else {
-      api.post('/books/' + bookId + '/favorite').then(function() {
-        var newIds = favoriteIds.concat([bookId]);
-        setFavoriteIds(newIds);
-      });
+      newIds = favoriteIds.concat([bookId]);
     }
+    
+    setFavoriteIds(newIds);
+    saveFavoritesToStorage(newIds);
   }
 
   function isFavorite(bookId) {
@@ -295,9 +291,7 @@ function Books() {
     setSearchQuery('');
     setSearchResults([]);
     
-    if (tab === 'favorites') {
-      fetchFavorites();
-    } else {
+    if (tab === 'all') {
       fetchBooks(selectedTags);
     }
   }
@@ -310,12 +304,23 @@ function Books() {
     setSelectedBook(null);
   }
 
+  function getFavoriteBooks() {
+    var result = [];
+    for (var i = 0; i < allBooks.length; i++) {
+      var book = allBooks[i];
+      if (favoriteIds.indexOf(book.id) >= 0) {
+        result.push(book);
+      }
+    }
+    return result;
+  }
+
   function getDisplayBooks() {
     if (searchQuery.trim()) {
       return searchResults;
     }
     if (activeTab === 'favorites') {
-      return favoriteBooks;
+      return getFavoriteBooks();
     }
     return books;
   }
