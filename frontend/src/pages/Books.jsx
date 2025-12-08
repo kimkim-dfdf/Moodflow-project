@@ -1,13 +1,72 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
-import { BookOpen, X } from 'lucide-react';
+import { BookOpen, X, BookMarked, BookCheck, Clock } from 'lucide-react';
 
 function BookCard(props) {
   var book = props.book;
   var showTags = props.showTags || false;
+  var readingStatus = props.readingStatus;
+  var onStatusChange = props.onStatusChange;
+  var onProgressChange = props.onProgressChange;
+  
+  function getStatusLabel(status) {
+    if (status === 'want_to_read') {
+      return 'Want to Read';
+    }
+    if (status === 'reading') {
+      return 'Reading';
+    }
+    if (status === 'completed') {
+      return 'Completed';
+    }
+    return 'Not Set';
+  }
+  
+  function getStatusIcon(status) {
+    if (status === 'want_to_read') {
+      return <Clock size={14} />;
+    }
+    if (status === 'reading') {
+      return <BookMarked size={14} />;
+    }
+    if (status === 'completed') {
+      return <BookCheck size={14} />;
+    }
+    return <BookOpen size={14} />;
+  }
+  
+  function getStatusClass(status) {
+    if (status === 'want_to_read') {
+      return 'status-want';
+    }
+    if (status === 'reading') {
+      return 'status-reading';
+    }
+    if (status === 'completed') {
+      return 'status-completed';
+    }
+    return 'status-none';
+  }
+  
+  function handleStatusSelect(e) {
+    var newStatus = e.target.value;
+    if (newStatus === 'none') {
+      onStatusChange(book.id, null);
+    } else {
+      onStatusChange(book.id, newStatus);
+    }
+  }
+  
+  function handleProgressChange(e) {
+    var newProgress = parseInt(e.target.value, 10);
+    onProgressChange(book.id, newProgress);
+  }
+  
+  var currentStatus = readingStatus ? readingStatus.status : null;
+  var currentProgress = readingStatus ? readingStatus.progress : 0;
   
   return (
-    <div className="book-card">
+    <div className={'book-card ' + getStatusClass(currentStatus)}>
       <div className="book-icon"><BookOpen size={24} /></div>
       <div className="book-info">
         <h4 className="book-title">{book.title}</h4>
@@ -21,6 +80,54 @@ function BookCard(props) {
             })}
           </div>
         )}
+        
+        <div className="reading-status-section">
+          <div className="reading-status-selector">
+            <span className="reading-status-label">
+              {getStatusIcon(currentStatus)}
+              Reading Status:
+            </span>
+            <select 
+              className={'reading-status-dropdown ' + getStatusClass(currentStatus)}
+              value={currentStatus || 'none'}
+              onChange={handleStatusSelect}
+            >
+              <option value="none">-- Select --</option>
+              <option value="want_to_read">Want to Read</option>
+              <option value="reading">Reading</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          
+          {currentStatus === 'reading' && (
+            <div className="reading-progress-section">
+              <div className="progress-header">
+                <span>Progress: {currentProgress}%</span>
+              </div>
+              <div className="progress-bar-container">
+                <div 
+                  className="progress-bar-fill" 
+                  style={{ width: currentProgress + '%' }}
+                ></div>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={currentProgress}
+                onChange={handleProgressChange}
+                className="progress-slider"
+              />
+            </div>
+          )}
+          
+          {currentStatus === 'completed' && (
+            <div className="completed-badge">
+              <BookCheck size={16} />
+              <span>Completed!</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -31,6 +138,7 @@ function Books() {
   const [books, setBooks] = useState([]);
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [readingStatuses, setReadingStatuses] = useState({});
   const fetchIdRef = useRef(0);
 
   useEffect(function() {
@@ -38,7 +146,21 @@ function Books() {
       setTags(res.data);
     });
     fetchBooks([]);
+    fetchReadingStatuses();
   }, []);
+
+  function fetchReadingStatuses() {
+    api.get('/books/reading-status').then(function(res) {
+      var statusMap = {};
+      for (var i = 0; i < res.data.length; i++) {
+        var entry = res.data[i];
+        statusMap[entry.book_id] = entry;
+      }
+      setReadingStatuses(statusMap);
+    }).catch(function(err) {
+      console.log('Could not fetch reading statuses:', err);
+    });
+  }
 
   function fetchBooks(tagList) {
     var fetchId = ++fetchIdRef.current;
@@ -62,6 +184,57 @@ function Books() {
       if (fetchId === fetchIdRef.current) {
         setLoading(false);
       }
+    });
+  }
+
+  function handleStatusChange(bookId, status) {
+    if (status === null) {
+      api.delete('/books/' + bookId + '/reading-status').then(function() {
+        var newStatuses = Object.assign({}, readingStatuses);
+        delete newStatuses[bookId];
+        setReadingStatuses(newStatuses);
+      }).catch(function(err) {
+        console.log('Could not delete reading status:', err);
+      });
+    } else {
+      var progress = 0;
+      if (status === 'completed') {
+        progress = 100;
+      } else if (status === 'reading') {
+        var existing = readingStatuses[bookId];
+        if (existing && existing.progress > 0 && existing.progress < 100) {
+          progress = existing.progress;
+        }
+      }
+      
+      api.post('/books/' + bookId + '/reading-status', {
+        status: status,
+        progress: progress
+      }).then(function(res) {
+        var newStatuses = Object.assign({}, readingStatuses);
+        newStatuses[bookId] = res.data;
+        setReadingStatuses(newStatuses);
+      }).catch(function(err) {
+        console.log('Could not save reading status:', err);
+      });
+    }
+  }
+
+  function handleProgressChange(bookId, progress) {
+    var existing = readingStatuses[bookId];
+    if (!existing) {
+      return;
+    }
+    
+    api.post('/books/' + bookId + '/reading-status', {
+      status: existing.status,
+      progress: progress
+    }).then(function(res) {
+      var newStatuses = Object.assign({}, readingStatuses);
+      newStatuses[bookId] = res.data;
+      setReadingStatuses(newStatuses);
+    }).catch(function(err) {
+      console.log('Could not update progress:', err);
     });
   }
 
@@ -150,7 +323,16 @@ function Books() {
               </div>
               <div className="books-full-grid">
                 {books.map(function(book) {
-                  return <BookCard key={book.id} book={book} showTags={true} />;
+                  return (
+                    <BookCard 
+                      key={book.id} 
+                      book={book} 
+                      showTags={true}
+                      readingStatus={readingStatuses[book.id]}
+                      onStatusChange={handleStatusChange}
+                      onProgressChange={handleProgressChange}
+                    />
+                  );
                 })}
               </div>
             </>

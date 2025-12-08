@@ -99,6 +99,7 @@ tasks = []
 emotion_history = []
 custom_music = []
 custom_books = []
+reading_status = []
 
 next_task_id = 1
 next_emotion_id = 1
@@ -115,7 +116,7 @@ def load_data():
     Load all data from the JSON file into memory.
     This is called when the app starts.
     """
-    global tasks, emotion_history, custom_music, custom_books
+    global tasks, emotion_history, custom_music, custom_books, reading_status
     global next_task_id, next_emotion_id, next_music_id, next_book_id
     
     # Check if data file exists
@@ -132,6 +133,7 @@ def load_data():
     emotion_history = data.get('emotion_history', [])
     custom_music = data.get('custom_music', [])
     custom_books = data.get('custom_books', [])
+    reading_status = data.get('reading_status', [])
     
     # Calculate next IDs based on existing data
     next_task_id = find_max_id(tasks) + 1
@@ -149,7 +151,8 @@ def save_data():
         'tasks': tasks,
         'emotion_history': emotion_history,
         'custom_music': custom_music,
-        'custom_books': custom_books
+        'custom_books': custom_books,
+        'reading_status': reading_status
     }
     
     file = open(DATA_FILE, 'w')
@@ -666,6 +669,85 @@ def get_overall_task_stats():
         'pending': total - completed,
         'by_category': category_counts
     }
+
+
+# ==============================================
+# Reading Status Operations
+# ==============================================
+
+def get_reading_status_by_user(user_id):
+    """
+    Get all reading statuses for a user.
+    Returns a list of reading status entries.
+    """
+    result = []
+    
+    for entry in reading_status:
+        if entry['user_id'] == user_id:
+            result.append(entry)
+    
+    return result
+
+
+def get_reading_status_for_book(user_id, book_id):
+    """
+    Get reading status for a specific book and user.
+    Returns the entry if found, None otherwise.
+    """
+    for entry in reading_status:
+        if entry['user_id'] == user_id and entry['book_id'] == book_id:
+            return entry
+    
+    return None
+
+
+def set_reading_status(user_id, book_id, status, progress):
+    """
+    Set or update reading status for a book.
+    Status can be: 'want_to_read', 'reading', 'completed'
+    Progress is a number from 0 to 100.
+    """
+    # Check if entry already exists
+    existing = get_reading_status_for_book(user_id, book_id)
+    
+    if existing:
+        # Update existing entry
+        existing['status'] = status
+        existing['progress'] = progress
+        existing['updated_at'] = datetime.utcnow().isoformat()
+        save_data()
+        return existing
+    
+    # Create new entry
+    entry = {
+        'user_id': user_id,
+        'book_id': book_id,
+        'status': status,
+        'progress': progress,
+        'created_at': datetime.utcnow().isoformat(),
+        'updated_at': datetime.utcnow().isoformat()
+    }
+    
+    reading_status.append(entry)
+    save_data()
+    
+    return entry
+
+
+def delete_reading_status(user_id, book_id):
+    """
+    Delete reading status for a book.
+    Returns True if deleted, False if not found.
+    """
+    global reading_status
+    
+    for i in range(len(reading_status)):
+        if reading_status[i]['user_id'] == user_id and reading_status[i]['book_id'] == book_id:
+            reading_status.pop(i)
+            save_data()
+            return True
+    
+    return False
 
 
 # ==============================================

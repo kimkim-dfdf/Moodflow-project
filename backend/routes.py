@@ -566,6 +566,92 @@ def register_routes(app):
     
     
     # ==========================================
+    # Reading Status Routes
+    # ==========================================
+    
+    @app.route('/api/books/reading-status', methods=['GET'])
+    @login_required
+    def get_reading_status():
+        """
+        Get all reading statuses for the current user.
+        Returns a list of reading status entries.
+        """
+        user = current_user
+        statuses = repository.get_reading_status_by_user(user.id)
+        return jsonify(statuses)
+    
+    
+    @app.route('/api/books/<int:book_id>/reading-status', methods=['GET'])
+    @login_required
+    def get_book_reading_status(book_id):
+        """
+        Get reading status for a specific book.
+        Returns the status entry or null if not set.
+        """
+        user = current_user
+        status = repository.get_reading_status_for_book(user.id, book_id)
+        return jsonify(status)
+    
+    
+    @app.route('/api/books/<int:book_id>/reading-status', methods=['POST', 'PUT'])
+    @login_required
+    def set_book_reading_status(book_id):
+        """
+        Set or update reading status for a book.
+        Required fields: status
+        Optional fields: progress (0-100)
+        Valid statuses: want_to_read, reading, completed
+        """
+        user = current_user
+        data = request.get_json()
+        
+        # Validate input
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        if not data.get('status'):
+            return jsonify({'error': 'Status is required'}), 400
+        
+        # Validate status value
+        valid_statuses = ['want_to_read', 'reading', 'completed']
+        if data['status'] not in valid_statuses:
+            return jsonify({'error': 'Invalid status. Must be: want_to_read, reading, or completed'}), 400
+        
+        # Get progress (default based on status)
+        progress = data.get('progress', 0)
+        
+        # Auto-set progress based on status
+        if data['status'] == 'completed':
+            progress = 100
+        elif data['status'] == 'want_to_read':
+            progress = 0
+        
+        # Set reading status
+        entry = repository.set_reading_status(
+            user.id,
+            book_id,
+            data['status'],
+            progress
+        )
+        
+        return jsonify(entry)
+    
+    
+    @app.route('/api/books/<int:book_id>/reading-status', methods=['DELETE'])
+    @login_required
+    def delete_book_reading_status(book_id):
+        """Delete reading status for a book."""
+        user = current_user
+        
+        success = repository.delete_reading_status(user.id, book_id)
+        
+        if not success:
+            return jsonify({'error': 'Reading status not found'}), 404
+        
+        return jsonify({'message': 'Reading status deleted'})
+    
+    
+    # ==========================================
     # Profile Routes
     # ==========================================
     
