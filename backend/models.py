@@ -16,6 +16,7 @@ class User(UserMixin, db.Model):
     preferred_work_time = db.Column(db.String(20), default='morning')
     preferred_categories = db.Column(db.Text, default='Work,Study,Health,Personal')
     notification_enabled = db.Column(db.Boolean, default=True)
+    is_admin = db.Column(db.Boolean, default=False)
     
     tasks = db.relationship('Task', backref='user', lazy=True, cascade='all, delete-orphan')
     emotions = db.relationship('EmotionHistory', backref='user', lazy=True, cascade='all, delete-orphan')
@@ -35,7 +36,8 @@ class User(UserMixin, db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'preferred_work_time': self.preferred_work_time,
             'preferred_categories': self.preferred_categories.split(',') if self.preferred_categories else [],
-            'notification_enabled': self.notification_enabled
+            'notification_enabled': self.notification_enabled,
+            'is_admin': self.is_admin
         }
 
 
