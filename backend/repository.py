@@ -7,7 +7,7 @@
 # ==============================================
 
 from datetime import datetime
-from models import db, User, Task, EmotionHistory, CustomMusic, CustomBook, BookFavorite
+from models import db, User, Task, EmotionHistory, Music, Book, BookTag, Emotion, BookFavorite
 
 
 # ==============================================
@@ -63,6 +63,35 @@ def update_user(user_id, new_username):
 
 
 # ==============================================
+# Emotion Operations
+# ==============================================
+
+def get_all_emotions():
+    """
+    Get all emotions from the database.
+    Returns a list of emotion dictionaries.
+    """
+    emotions = Emotion.query.all()
+    
+    result = []
+    for emotion in emotions:
+        result.append(emotion.to_dict())
+    
+    return result
+
+
+def get_emotion_by_id(emotion_id):
+    """
+    Find an emotion by its ID.
+    Returns emotion dictionary or None.
+    """
+    emotion = db.session.get(Emotion, int(emotion_id))
+    if emotion:
+        return emotion.to_dict()
+    return None
+
+
+# ==============================================
 # Task Operations
 # ==============================================
 
@@ -70,21 +99,20 @@ def create_task(user_id, title, category, priority, task_date, recommended_for_e
     """
     Create a new task for a user.
     """
-    task = Task(
-        user_id=user_id,
-        title=title,
-        description=None,
-        category=category,
-        priority=priority,
-        is_completed=False,
-        due_date=None,
-        due_time=None,
-        task_date=task_date,
-        created_at=datetime.utcnow(),
-        completed_at=None,
-        recommended_for_emotion=recommended_for_emotion,
-        emotion_score=0.0
-    )
+    task = Task()
+    task.user_id = user_id
+    task.title = title
+    task.description = None
+    task.category = category
+    task.priority = priority
+    task.is_completed = False
+    task.due_date = None
+    task.due_time = None
+    task.task_date = task_date
+    task.created_at = datetime.utcnow()
+    task.completed_at = None
+    task.recommended_for_emotion = recommended_for_emotion
+    task.emotion_score = 0.0
     
     db.session.add(task)
     db.session.commit()
@@ -255,14 +283,13 @@ def create_emotion_entry(user_id, emotion_id, date, notes, photo_url):
         return existing.to_dict()
     
     # Create new entry
-    entry = EmotionHistory(
-        user_id=user_id,
-        emotion_id=emotion_id,
-        date=date,
-        notes=notes,
-        photo_url=photo_url,
-        recorded_at=datetime.utcnow()
-    )
+    entry = EmotionHistory()
+    entry.user_id = user_id
+    entry.emotion_id = emotion_id
+    entry.date = date
+    entry.notes = notes
+    entry.photo_url = photo_url
+    entry.recorded_at = datetime.utcnow()
     
     db.session.add(entry)
     db.session.commit()
@@ -297,14 +324,43 @@ def get_emotion_history_since(user_id, start_date):
 
 
 # ==============================================
-# Music Operations (Admin)
+# Music Operations
 # ==============================================
 
-def get_all_custom_music():
-    """Get all custom music entries."""
-    music_list = CustomMusic.query.all()
+def get_all_music():
+    """Get all music entries from the database."""
+    music_list = Music.query.all()
     
-    # Convert to list of dictionaries
+    result = []
+    for music in music_list:
+        result.append(music.to_dict())
+    
+    return result
+
+
+def get_music_by_emotion(emotion_name, limit):
+    """
+    Get music recommendations for a specific emotion.
+    Returns up to 'limit' songs.
+    """
+    query = Music.query.filter_by(emotion=emotion_name)
+    
+    if limit:
+        query = query.limit(limit)
+    
+    music_list = query.all()
+    
+    result = []
+    for music in music_list:
+        result.append(music.to_dict())
+    
+    return result
+
+
+def get_custom_music():
+    """Get only custom music entries (added by admin)."""
+    music_list = Music.query.filter_by(is_custom=True).all()
+    
     result = []
     for music in music_list:
         result.append(music.to_dict())
@@ -314,14 +370,13 @@ def get_all_custom_music():
 
 def create_music(emotion, title, artist, genre, youtube_url):
     """Create a new music recommendation."""
-    music = CustomMusic(
-        emotion=emotion,
-        title=title,
-        artist=artist,
-        genre=genre,
-        youtube_url=youtube_url,
-        is_custom=True
-    )
+    music = Music()
+    music.emotion = emotion
+    music.title = title
+    music.artist = artist
+    music.genre = genre
+    music.youtube_url = youtube_url
+    music.is_custom = True
     
     db.session.add(music)
     db.session.commit()
@@ -330,8 +385,8 @@ def create_music(emotion, title, artist, genre, youtube_url):
 
 
 def update_music(music_id, emotion, title, artist, genre, youtube_url):
-    """Update an existing custom music entry."""
-    music = CustomMusic.query.get(music_id)
+    """Update an existing music entry."""
+    music = db.session.get(Music, music_id)
     
     if music:
         music.emotion = emotion
@@ -346,8 +401,8 @@ def update_music(music_id, emotion, title, artist, genre, youtube_url):
 
 
 def delete_music(music_id):
-    """Delete a custom music entry."""
-    music = CustomMusic.query.get(music_id)
+    """Delete a music entry."""
+    music = db.session.get(Music, music_id)
     
     if music:
         db.session.delete(music)
@@ -358,14 +413,101 @@ def delete_music(music_id):
 
 
 # ==============================================
-# Book Operations (Admin)
+# Book Tag Operations
 # ==============================================
 
-def get_all_custom_books():
-    """Get all custom book entries."""
-    books = CustomBook.query.all()
+def get_all_book_tags():
+    """
+    Get all book tags from the database.
+    Returns a list of tag dictionaries.
+    """
+    tags = BookTag.query.all()
     
-    # Convert to list of dictionaries
+    result = []
+    for tag in tags:
+        result.append(tag.to_dict())
+    
+    return result
+
+
+def get_book_tag_by_slug(slug):
+    """Find a book tag by its slug."""
+    tag = BookTag.query.filter_by(slug=slug).first()
+    if tag:
+        return tag.to_dict()
+    return None
+
+
+# ==============================================
+# Book Operations
+# ==============================================
+
+def get_all_books():
+    """Get all books from the database."""
+    books = Book.query.all()
+    
+    result = []
+    for book in books:
+        result.append(book.to_dict())
+    
+    return result
+
+
+def get_books_by_tags(tag_slugs, limit):
+    """
+    Get books that match ALL of the specified tags (AND logic).
+    If no tags specified, return all books.
+    """
+    # Get all books
+    books = Book.query.all()
+    
+    # If no tags specified, return all books
+    if not tag_slugs:
+        result = []
+        for book in books:
+            result.append(book.to_dict())
+        
+        if limit and limit < len(result):
+            return result[:limit]
+        
+        return result
+    
+    # Filter books that have ALL specified tags
+    result = []
+    
+    for book in books:
+        book_dict = book.to_dict()
+        book_tags = book_dict.get('tags', [])
+        
+        # Check if book has all required tags
+        has_all_tags = True
+        for tag in tag_slugs:
+            if tag not in book_tags:
+                has_all_tags = False
+                break
+        
+        if has_all_tags:
+            result.append(book_dict)
+    
+    # Apply limit if specified
+    if limit and limit < len(result):
+        return result[:limit]
+    
+    return result
+
+
+def get_book_by_id(book_id):
+    """Find a book by its ID."""
+    book = db.session.get(Book, book_id)
+    if book:
+        return book.to_dict()
+    return None
+
+
+def get_custom_books():
+    """Get only custom books (added by admin)."""
+    books = Book.query.filter_by(is_custom=True).all()
+    
     result = []
     for book in books:
         result.append(book.to_dict())
@@ -376,17 +518,19 @@ def get_all_custom_books():
 def create_book(emotion, title, author, genre, description, tags):
     """Create a new book recommendation."""
     # Convert tags list to comma-separated string
-    tags_str = ','.join(tags) if isinstance(tags, list) else tags
+    if isinstance(tags, list):
+        tags_str = ','.join(tags)
+    else:
+        tags_str = tags
     
-    book = CustomBook(
-        emotion=emotion,
-        title=title,
-        author=author,
-        genre=genre,
-        description=description,
-        tags=tags_str,
-        is_custom=True
-    )
+    book = Book()
+    book.emotion = emotion
+    book.title = title
+    book.author = author
+    book.genre = genre
+    book.description = description
+    book.tags = tags_str
+    book.is_custom = True
     
     db.session.add(book)
     db.session.commit()
@@ -395,12 +539,15 @@ def create_book(emotion, title, author, genre, description, tags):
 
 
 def update_book(book_id, emotion, title, author, genre, description, tags):
-    """Update an existing custom book entry."""
-    book = CustomBook.query.get(book_id)
+    """Update an existing book entry."""
+    book = db.session.get(Book, book_id)
     
     if book:
         # Convert tags list to comma-separated string
-        tags_str = ','.join(tags) if isinstance(tags, list) else tags
+        if isinstance(tags, list):
+            tags_str = ','.join(tags)
+        else:
+            tags_str = tags
         
         book.emotion = emotion
         book.title = title
@@ -415,8 +562,8 @@ def update_book(book_id, emotion, title, author, genre, description, tags):
 
 
 def delete_book(book_id):
-    """Delete a custom book entry."""
-    book = CustomBook.query.get(book_id)
+    """Delete a book entry."""
+    book = db.session.get(Book, book_id)
     
     if book:
         db.session.delete(book)
@@ -424,6 +571,25 @@ def delete_book(book_id):
         return True
     
     return False
+
+
+def get_tag_objects_for_book(book_dict):
+    """
+    Get full tag objects for a book's tags.
+    Converts tag slugs to full tag dictionaries.
+    """
+    result = []
+    
+    book_tags = book_dict.get('tags', [])
+    all_tags = get_all_book_tags()
+    
+    for tag_slug in book_tags:
+        for tag in all_tags:
+            if tag['slug'] == tag_slug:
+                result.append(tag)
+                break
+    
+    return result
 
 
 # ==============================================
@@ -521,11 +687,10 @@ def add_favorite(user_id, book_id):
         return False
     
     # Add new favorite
-    favorite = BookFavorite(
-        user_id=user_id,
-        book_id=book_id,
-        added_at=datetime.utcnow()
-    )
+    favorite = BookFavorite()
+    favorite.user_id = user_id
+    favorite.book_id = book_id
+    favorite.added_at = datetime.utcnow()
     
     db.session.add(favorite)
     db.session.commit()
