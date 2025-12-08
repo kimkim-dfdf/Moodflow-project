@@ -256,5 +256,12 @@
       ],
       "is_custom": true
     }
+  ],
+  "book_favorites": [
+    {
+      "user_id": 1,
+      "book_id": 1,
+      "added_at": "2025-12-08T08:59:56.830752"
+    }
   ]
 }
