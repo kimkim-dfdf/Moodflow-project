@@ -99,6 +99,7 @@ tasks = []
 emotion_history = []
 custom_music = []
 custom_books = []
+book_favorites = []
 
 next_task_id = 1
 next_emotion_id = 1
@@ -115,7 +116,7 @@ def load_data():
     Load all data from the JSON file into memory.
     This is called when the app starts.
     """
-    global tasks, emotion_history, custom_music, custom_books
+    global tasks, emotion_history, custom_music, custom_books, book_favorites
     global next_task_id, next_emotion_id, next_music_id, next_book_id
     
     # Check if data file exists
@@ -132,6 +133,7 @@ def load_data():
     emotion_history = data.get('emotion_history', [])
     custom_music = data.get('custom_music', [])
     custom_books = data.get('custom_books', [])
+    book_favorites = data.get('book_favorites', [])
     
     # Calculate next IDs based on existing data
     next_task_id = find_max_id(tasks) + 1
@@ -149,7 +151,8 @@ def save_data():
         'tasks': tasks,
         'emotion_history': emotion_history,
         'custom_music': custom_music,
-        'custom_books': custom_books
+        'custom_books': custom_books,
+        'book_favorites': book_favorites
     }
     
     file = open(DATA_FILE, 'w')
@@ -696,3 +699,72 @@ def bubble_sort_by_date(items, date_field, descending):
                 items[j] = temp
     
     return items
+
+
+# ==============================================
+# Book Favorites Operations
+# ==============================================
+
+def get_user_favorites(user_id):
+    """
+    Get all favorite book IDs for a user.
+    Returns a list of book IDs.
+    """
+    result = []
+    
+    for favorite in book_favorites:
+        if favorite['user_id'] == user_id:
+            result.append(favorite['book_id'])
+    
+    return result
+
+
+def add_favorite(user_id, book_id):
+    """
+    Add a book to user's favorites.
+    Returns True if added, False if already exists.
+    """
+    # Check if already in favorites
+    for favorite in book_favorites:
+        if favorite['user_id'] == user_id and favorite['book_id'] == book_id:
+            return False
+    
+    # Add new favorite
+    favorite = {
+        'user_id': user_id,
+        'book_id': book_id,
+        'added_at': datetime.utcnow().isoformat()
+    }
+    
+    book_favorites.append(favorite)
+    save_data()
+    
+    return True
+
+
+def remove_favorite(user_id, book_id):
+    """
+    Remove a book from user's favorites.
+    Returns True if removed, False if not found.
+    """
+    global book_favorites
+    
+    for i in range(len(book_favorites)):
+        if book_favorites[i]['user_id'] == user_id and book_favorites[i]['book_id'] == book_id:
+            book_favorites.pop(i)
+            save_data()
+            return True
+    
+    return False
+
+
+def is_favorite(user_id, book_id):
+    """
+    Check if a book is in user's favorites.
+    Returns True if favorite, False otherwise.
+    """
+    for favorite in book_favorites:
+        if favorite['user_id'] == user_id and favorite['book_id'] == book_id:
+            return True
+    
+    return False

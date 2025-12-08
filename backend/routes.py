@@ -565,6 +565,163 @@ def register_routes(app):
         return jsonify(result)
     
     
+    @app.route('/api/books/search', methods=['GET'])
+    def search_books():
+        """
+        Search books by title or author.
+        Query params: q (search query), limit (default 24)
+        """
+        query = request.args.get('q', '')
+        limit = request.args.get('limit', 24, type=int)
+        
+        if not query:
+            return jsonify([])
+        
+        # Convert query to lowercase for case-insensitive search
+        query_lower = query.lower()
+        
+        # Search in static books
+        result = []
+        for book in static_data.BOOK_RECOMMENDATIONS:
+            title_lower = book['title'].lower()
+            author_lower = book['author'].lower()
+            
+            # Check if query matches title or author
+            title_match = query_lower in title_lower
+            author_match = query_lower in author_lower
+            
+            if title_match or author_match:
+                book_copy = dict(book)
+                book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+                result.append(book_copy)
+        
+        # Search in custom books
+        custom_books = repository.get_all_custom_books()
+        for book in custom_books:
+            title_lower = book['title'].lower()
+            author_lower = book.get('author', '').lower()
+            
+            title_match = query_lower in title_lower
+            author_match = query_lower in author_lower
+            
+            if title_match or author_match:
+                book_copy = dict(book)
+                book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+                result.append(book_copy)
+        
+        # Limit results
+        if len(result) > limit:
+            result = result[:limit]
+        
+        return jsonify(result)
+    
+    
+    @app.route('/api/books/<int:book_id>', methods=['GET'])
+    def get_book_detail(book_id):
+        """
+        Get detailed information for a single book.
+        """
+        # Search in static books
+        for book in static_data.BOOK_RECOMMENDATIONS:
+            if book['id'] == book_id:
+                book_copy = dict(book)
+                book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+                book_copy['is_custom'] = False
+                return jsonify(book_copy)
+        
+        # Search in custom books
+        custom_books = repository.get_all_custom_books()
+        for book in custom_books:
+            if book['id'] == book_id:
+                book_copy = dict(book)
+                book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+                return jsonify(book_copy)
+        
+        return jsonify({'error': 'Book not found'}), 404
+    
+    
+    # ==========================================
+    # Book Favorites Routes
+    # ==========================================
+    
+    @app.route('/api/books/favorites', methods=['GET'])
+    @login_required
+    def get_favorites():
+        """
+        Get all favorite books for the current user.
+        """
+        user = current_user
+        favorite_ids = repository.get_user_favorites(user.id)
+        
+        # Get full book details for each favorite
+        result = []
+        for book_id in favorite_ids:
+            # Search in static books
+            found = False
+            for book in static_data.BOOK_RECOMMENDATIONS:
+                if book['id'] == book_id:
+                    book_copy = dict(book)
+                    book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+                    book_copy['is_favorite'] = True
+                    result.append(book_copy)
+                    found = True
+                    break
+            
+            # Search in custom books if not found
+            if not found:
+                custom_books = repository.get_all_custom_books()
+                for book in custom_books:
+                    if book['id'] == book_id:
+                        book_copy = dict(book)
+                        book_copy['tags'] = static_data.get_tag_objects_for_book(book)
+                        book_copy['is_favorite'] = True
+                        result.append(book_copy)
+                        break
+        
+        return jsonify(result)
+    
+    
+    @app.route('/api/books/favorites/ids', methods=['GET'])
+    @login_required
+    def get_favorite_ids():
+        """
+        Get list of favorite book IDs for the current user.
+        """
+        user = current_user
+        favorite_ids = repository.get_user_favorites(user.id)
+        return jsonify(favorite_ids)
+    
+    
+    @app.route('/api/books/<int:book_id>/favorite', methods=['POST'])
+    @login_required
+    def add_to_favorites(book_id):
+        """
+        Add a book to favorites.
+        """
+        user = current_user
+        success = repository.add_favorite(user.id, book_id)
+        
+        if success:
+            return jsonify({'message': 'Added to favorites'})
+        else:
+            return jsonify({'message': 'Already in favorites'})
+    
+    
+    @app.route('/api/books/<int:book_id>/favorite', methods=['DELETE'])
+    @login_required
+    def remove_from_favorites(book_id):
+        """
+        Remove a book from favorites.
+        """
+        user = current_user
+        success = repository.remove_favorite(user.id, book_id)
+        
+        if success:
+            return jsonify({'message': 'Removed from favorites'})
+        else:
+            return jsonify({'error': 'Not in favorites'}), 404
+    
+    
     # ==========================================
     # Profile Routes
     # ==========================================
