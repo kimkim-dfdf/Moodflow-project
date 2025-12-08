@@ -758,13 +758,3 @@ def remove_favorite(user_id, book_id):
     return False
 
 
-def is_favorite(user_id, book_id):
-    """
-    Check if a book is in user's favorites.
-    Returns True if favorite, False otherwise.
-    """
-    for favorite in book_favorites:
-        if favorite['user_id'] == user_id and favorite['book_id'] == book_id:
-            return True
-    
-    return False
