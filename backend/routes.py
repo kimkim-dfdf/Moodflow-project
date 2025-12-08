@@ -71,17 +71,6 @@ def register_routes(app):
     # Password for all: ekdus123
     # ==========================================
     
-    @app.route('/api/auth/register', methods=['POST'])
-    def register():
-        """
-        Registration is disabled for demo.
-        Only pre-defined demo accounts can log in.
-        """
-        return jsonify({
-            'error': 'Registration is disabled. Please use a demo account.'
-        }), 400
-    
-    
     @app.route('/api/auth/login', methods=['POST'])
     def login():
         """
@@ -614,30 +603,6 @@ def register_routes(app):
             result = result[:limit]
         
         return jsonify(result)
-    
-    
-    @app.route('/api/books/<int:book_id>', methods=['GET'])
-    def get_book_detail(book_id):
-        """
-        Get detailed information for a single book.
-        """
-        # Search in static books
-        for book in static_data.BOOK_RECOMMENDATIONS:
-            if book['id'] == book_id:
-                book_copy = dict(book)
-                book_copy['tags'] = static_data.get_tag_objects_for_book(book)
-                book_copy['is_custom'] = False
-                return jsonify(book_copy)
-        
-        # Search in custom books
-        custom_books = repository.get_all_custom_books()
-        for book in custom_books:
-            if book['id'] == book_id:
-                book_copy = dict(book)
-                book_copy['tags'] = static_data.get_tag_objects_for_book(book)
-                return jsonify(book_copy)
-        
-        return jsonify({'error': 'Book not found'}), 404
     
     
     # ==========================================
