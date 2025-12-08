@@ -14,11 +14,7 @@ def allowed_file(filename):
 
 
 def register_routes(app, db):
-    from models import User, Task, Emotion, EmotionHistory, MusicRecommendation, BookRecommendation, BookTag, BookTagLink
-    
-    # ============================================
-    # AUTH API - 로그인/회원가입 (4개)
-    # ============================================
+    from models import User, Task, Emotion, EmotionHistory, CalendarEvent, MusicRecommendation, BookRecommendation, BookTag, BookTagLink
     
     @app.route('/api/auth/register', methods=['POST'])
     def register():
@@ -70,10 +66,6 @@ def register_routes(app, db):
     @login_required
     def get_current_user():
         return jsonify({'user': current_user.to_dict()})
-    
-    # ============================================
-    # EMOTIONS API - 감정 선택/기록 (5개)
-    # ============================================
     
     @app.route('/api/emotions', methods=['GET'])
     def get_emotions():
@@ -134,10 +126,6 @@ def register_routes(app, db):
             return jsonify(entry.to_dict())
         return jsonify(None)
     
-    # ============================================
-    # UPLOAD API - 사진 업로드 (2개)
-    # ============================================
-    
     @app.route('/api/upload/photo', methods=['POST'])
     @login_required
     def upload_photo():
@@ -167,6 +155,19 @@ def register_routes(app, db):
     def serve_upload(filename):
         return send_from_directory(UPLOAD_FOLDER, filename)
     
+    @app.route('/api/emotions/today', methods=['GET'])
+    @login_required
+    def get_today_emotion():
+        today = datetime.now().date()
+        entry = EmotionHistory.query.filter_by(
+            user_id=current_user.id,
+            date=today
+        ).first()
+        
+        if entry:
+            return jsonify(entry.to_dict())
+        return jsonify(None)
+    
     @app.route('/api/emotions/history', methods=['GET'])
     @login_required
     def get_emotion_history():
@@ -183,13 +184,11 @@ def register_routes(app, db):
         stats = EmotionRecommendationEngine.get_emotion_statistics(db, current_user.id, days)
         return jsonify(stats)
     
-    # ============================================
-    # TASKS API - Task 관리/추천 (5개)
-    # ============================================
-    
     @app.route('/api/tasks', methods=['GET'])
     @login_required
     def get_tasks():
+        status = request.args.get('status')
+        category = request.args.get('category')
         date_str = request.args.get('date')
         
         query = Task.query.filter_by(user_id=current_user.id)
@@ -197,6 +196,14 @@ def register_routes(app, db):
         if date_str:
             task_date = datetime.strptime(date_str, '%Y-%m-%d').date()
             query = query.filter_by(task_date=task_date)
+        
+        if status == 'completed':
+            query = query.filter_by(is_completed=True)
+        elif status == 'incomplete':
+            query = query.filter_by(is_completed=False)
+        
+        if category:
+            query = query.filter_by(category=category)
         
         tasks = query.order_by(Task.created_at.desc()).all()
         return jsonify([t.to_dict() for t in tasks])
@@ -226,9 +233,11 @@ def register_routes(app, db):
         task = Task(
             user_id=current_user.id,
             title=data['title'],
+            description=data.get('description'),
             category=data.get('category', 'Personal'),
             priority=data.get('priority', 'Medium'),
             task_date=task_date,
+            due_date=datetime.strptime(data['due_date'], '%Y-%m-%d').date() if data.get('due_date') else None,
             recommended_for_emotion=data.get('recommended_for_emotion')
         )
         
@@ -236,6 +245,14 @@ def register_routes(app, db):
         db.session.commit()
         
         return jsonify(task.to_dict()), 201
+    
+    @app.route('/api/tasks/<int:task_id>', methods=['GET'])
+    @login_required
+    def get_task(task_id):
+        task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
+        if not task:
+            return jsonify({'error': 'Task not found'}), 404
+        return jsonify(task.to_dict())
     
     @app.route('/api/tasks/<int:task_id>', methods=['PUT'])
     @login_required
@@ -246,15 +263,36 @@ def register_routes(app, db):
         
         data = request.get_json()
         
+        if 'title' in data:
+            task.title = data['title']
+        if 'description' in data:
+            task.description = data['description']
+        if 'category' in data:
+            task.category = data['category']
+        if 'priority' in data:
+            task.priority = data['priority']
         if 'is_completed' in data:
             task.is_completed = data['is_completed']
             if data['is_completed']:
                 task.completed_at = datetime.utcnow()
             else:
                 task.completed_at = None
+        if 'due_date' in data:
+            task.due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date() if data['due_date'] else None
         
         db.session.commit()
         return jsonify(task.to_dict())
+    
+    @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+    @login_required
+    def delete_task(task_id):
+        task = Task.query.filter_by(id=task_id, user_id=current_user.id).first()
+        if not task:
+            return jsonify({'error': 'Task not found'}), 404
+        
+        db.session.delete(task)
+        db.session.commit()
+        return jsonify({'message': 'Task deleted successfully'})
     
     @app.route('/api/tasks/recommended', methods=['GET'])
     @login_required
@@ -281,10 +319,6 @@ def register_routes(app, db):
         suggestions = EmotionRecommendationEngine.get_suggested_tasks(emotion_name, limit)
         return jsonify(suggestions)
     
-    # ============================================
-    # MUSIC API - 음악 추천 (1개)
-    # ============================================
-    
     @app.route('/api/music/recommendations', methods=['GET'])
     def get_music_recommendations():
         emotion_name = request.args.get('emotion', 'Neutral')
@@ -296,9 +330,20 @@ def register_routes(app, db):
         )
         return jsonify(recommendations)
     
-    # ============================================
-    # BOOKS API - 책 추천 (2개)
-    # ============================================
+    @app.route('/api/books/recommendations', methods=['GET'])
+    def get_book_recommendations():
+        emotion_name = request.args.get('emotion', 'Neutral')
+        limit = request.args.get('limit', 4, type=int)
+        
+        emotion = Emotion.query.filter_by(name=emotion_name).first()
+        if not emotion:
+            return jsonify([])
+        
+        books = BookRecommendation.query.filter_by(
+            emotion_id=emotion.id
+        ).order_by(BookRecommendation.popularity_score.desc()).limit(limit).all()
+        
+        return jsonify([b.to_dict() for b in books])
     
     @app.route('/api/books/tags', methods=['GET'])
     def get_book_tags():
@@ -320,6 +365,7 @@ def register_routes(app, db):
     
     @app.route('/api/books', methods=['GET'])
     def get_books_by_tags():
+        # Handle both 'tags' and 'tags[]' formats (axios sends tags[]=value)
         tag_slugs = request.args.getlist('tags') or request.args.getlist('tags[]')
         limit = request.args.get('limit', 24, type=int)
         
@@ -336,6 +382,7 @@ def register_routes(app, db):
         if not tag_ids:
             return jsonify([])
         
+        # Jaccard-style matching: count how many selected tags each book has
         book_match_counts = db.session.query(
             BookTagLink.book_id,
             db.func.count(BookTagLink.tag_id).label('match_count')
@@ -350,12 +397,14 @@ def register_routes(app, db):
             .filter(BookRecommendation.id.in_(book_ids))\
             .all()
         
+        # Calculate match score and sort by it
         total_selected = len(tag_slugs)
         result = []
         for book in books:
             book_dict = book.to_dict()
             match_count = book_scores.get(book.id, 0)
             book_tags_count = len(book_dict.get('tags', []))
+            # Jaccard similarity: intersection / union
             union = total_selected + book_tags_count - match_count
             jaccard_score = match_count / union if union > 0 else 0
             book_dict['match_count'] = match_count
@@ -363,13 +412,133 @@ def register_routes(app, db):
             book_dict['match_score'] = round(jaccard_score * 100)
             result.append(book_dict)
         
+        # Sort by match_count (desc), then by popularity_score (desc)
         result.sort(key=lambda x: (-x['match_count'], -x.get('popularity_score', 0)))
         
         return jsonify(result[:limit])
     
-    # ============================================
-    # PROFILE API - 사용자 설정 (2개)
-    # ============================================
+    @app.route('/api/books/related-tags', methods=['GET'])
+    def get_related_tags():
+        # Get tags that co-occur with selected tags (Tag Co-occurrence Algorithm)
+        tag_slugs = request.args.getlist('tags') or request.args.getlist('tags[]')
+        
+        if not tag_slugs:
+            return jsonify([])
+        
+        selected_tags = BookTag.query.filter(BookTag.slug.in_(tag_slugs)).all()
+        selected_tag_ids = [t.id for t in selected_tags]
+        
+        if not selected_tag_ids:
+            return jsonify([])
+        
+        # Find books that have the selected tags
+        books_with_tags = db.session.query(BookTagLink.book_id)\
+            .filter(BookTagLink.tag_id.in_(selected_tag_ids))\
+            .distinct().all()
+        book_ids = [b[0] for b in books_with_tags]
+        
+        if not book_ids:
+            return jsonify([])
+        
+        # Find other tags that appear in these books (co-occurrence)
+        co_occurring = db.session.query(
+            BookTag,
+            db.func.count(BookTagLink.book_id).label('co_count')
+        ).join(BookTagLink, BookTag.id == BookTagLink.tag_id)\
+         .filter(BookTagLink.book_id.in_(book_ids))\
+         .filter(~BookTag.id.in_(selected_tag_ids))\
+         .group_by(BookTag.id)\
+         .order_by(db.func.count(BookTagLink.book_id).desc())\
+         .limit(5).all()
+        
+        result = []
+        for tag, count in co_occurring:
+            tag_dict = tag.to_dict()
+            tag_dict['co_occurrence_count'] = count
+            result.append(tag_dict)
+        
+        return jsonify(result)
+    
+    @app.route('/api/calendar/events', methods=['GET'])
+    @login_required
+    def get_calendar_events():
+        month = request.args.get('month', type=int)
+        year = request.args.get('year', type=int)
+        
+        query = CalendarEvent.query.filter_by(user_id=current_user.id)
+        
+        if month and year:
+            start_date = datetime(year, month, 1)
+            if month == 12:
+                end_date = datetime(year + 1, 1, 1)
+            else:
+                end_date = datetime(year, month + 1, 1)
+            query = query.filter(
+                CalendarEvent.start_date >= start_date,
+                CalendarEvent.start_date < end_date
+            )
+        
+        events = query.order_by(CalendarEvent.start_date).all()
+        return jsonify([e.to_dict() for e in events])
+    
+    @app.route('/api/calendar/events', methods=['POST'])
+    @login_required
+    def create_calendar_event():
+        data = request.get_json()
+        
+        if not data or not data.get('title') or not data.get('start_date'):
+            return jsonify({'error': 'Title and start date are required'}), 400
+        
+        event = CalendarEvent(
+            user_id=current_user.id,
+            title=data['title'],
+            description=data.get('description'),
+            start_date=datetime.fromisoformat(data['start_date'].replace('Z', '+00:00')),
+            end_date=datetime.fromisoformat(data['end_date'].replace('Z', '+00:00')) if data.get('end_date') else None,
+            all_day=data.get('all_day', False),
+            color=data.get('color', '#6366f1')
+        )
+        
+        db.session.add(event)
+        db.session.commit()
+        
+        return jsonify(event.to_dict()), 201
+    
+    @app.route('/api/calendar/events/<int:event_id>', methods=['PUT'])
+    @login_required
+    def update_calendar_event(event_id):
+        event = CalendarEvent.query.filter_by(id=event_id, user_id=current_user.id).first()
+        if not event:
+            return jsonify({'error': 'Event not found'}), 404
+        
+        data = request.get_json()
+        
+        if 'title' in data:
+            event.title = data['title']
+        if 'description' in data:
+            event.description = data['description']
+        if 'start_date' in data:
+            event.start_date = datetime.fromisoformat(data['start_date'].replace('Z', '+00:00'))
+        if 'end_date' in data:
+            event.end_date = datetime.fromisoformat(data['end_date'].replace('Z', '+00:00')) if data['end_date'] else None
+        if 'all_day' in data:
+            event.all_day = data['all_day']
+        if 'color' in data:
+            event.color = data['color']
+        
+        db.session.commit()
+        return jsonify(event.to_dict())
+    
+    @app.route('/api/calendar/events/<int:event_id>', methods=['DELETE'])
+    @login_required
+    def delete_calendar_event(event_id):
+        event = CalendarEvent.query.filter_by(id=event_id, user_id=current_user.id).first()
+        if not event:
+            return jsonify({'error': 'Event not found'}), 404
+        
+        db.session.delete(event)
+        db.session.commit()
+        return jsonify({'message': 'Event deleted successfully'})
     
     @app.route('/api/user/profile', methods=['GET'])
     @login_required
@@ -387,12 +556,20 @@ def register_routes(app, db):
                 return jsonify({'error': 'Username already taken'}), 400
             current_user.username = data['username']
         
+        if 'preferred_work_time' in data:
+            current_user.preferred_work_time = data['preferred_work_time']
+        
+        if 'preferred_categories' in data:
+            if isinstance(data['preferred_categories'], list):
+                current_user.preferred_categories = ','.join(data['preferred_categories'])
+            else:
+                current_user.preferred_categories = data['preferred_categories']
+        
+        if 'notification_enabled' in data:
+            current_user.notification_enabled = data['notification_enabled']
+        
         db.session.commit()
         return jsonify(current_user.to_dict())
-    
-    # ============================================
-    # DASHBOARD API - 대시보드 요약 (1개)
-    # ============================================
     
     @app.route('/api/dashboard/summary', methods=['GET'])
     @login_required

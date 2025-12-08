@@ -5,12 +5,48 @@ def seed_database(db):
         return
     
     emotions = [
-        {'name': 'Happy', 'emoji': '😊', 'color': '#FFD93D'},
-        {'name': 'Sad', 'emoji': '😢', 'color': '#6B7FD7'},
-        {'name': 'Tired', 'emoji': '😴', 'color': '#8B4513'},
-        {'name': 'Angry', 'emoji': '😠', 'color': '#FF6B6B'},
-        {'name': 'Stressed', 'emoji': '😰', 'color': '#FF9F43'},
-        {'name': 'Neutral', 'emoji': '😐', 'color': '#95A5A6'}
+        {
+            'name': 'Happy',
+            'emoji': '😊',
+            'color': '#FFD93D',
+            'energy_level': 9,
+            'focus_level': 7
+        },
+        {
+            'name': 'Sad',
+            'emoji': '😢',
+            'color': '#6B7FD7',
+            'energy_level': 3,
+            'focus_level': 4
+        },
+        {
+            'name': 'Tired',
+            'emoji': '😴',
+            'color': '#8B4513',
+            'energy_level': 2,
+            'focus_level': 3
+        },
+        {
+            'name': 'Angry',
+            'emoji': '😠',
+            'color': '#FF6B6B',
+            'energy_level': 8,
+            'focus_level': 4
+        },
+        {
+            'name': 'Stressed',
+            'emoji': '😰',
+            'color': '#FF9F43',
+            'energy_level': 6,
+            'focus_level': 5
+        },
+        {
+            'name': 'Neutral',
+            'emoji': '😐',
+            'color': '#95A5A6',
+            'energy_level': 5,
+            'focus_level': 6
+        }
     ]
     
     emotion_objects = {}

@@ -126,7 +126,14 @@ class EmotionRecommendationEngine:
             else:
                 urgency_score = 0
         
-        total = category_score + priority_score + urgency_score
+        personal_preference_score = 0
+        if user is not None and user.preferred_categories:
+            preferred = user.preferred_categories.split(',')
+            if task.category in preferred:
+                idx = preferred.index(task.category)
+                personal_preference_score = 10 * (1 + idx * -0.1)
+        
+        total = category_score + priority_score + urgency_score + personal_preference_score
         
         if total > 100:
             total = 100

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
-import { Mail, Save, TrendingUp } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { User, Mail, Clock, Bell, Save, TrendingUp } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { format, subDays } from 'date-fns';
 
 const EMOTION_COLORS = {
   'Happy': '#FFD93D',
@@ -13,14 +14,21 @@ const EMOTION_COLORS = {
   'Neutral': '#95A5A6'
 };
 
+const CATEGORIES = ['Work', 'Study', 'Health', 'Personal'];
+const WORK_TIMES = ['morning', 'afternoon', 'evening', 'night'];
+
 const Profile = () => {
   const { user, setUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [emotionHistory, setEmotionHistory] = useState([]);
   const [emotionStats, setEmotionStats] = useState(null);
 
   const [formData, setFormData] = useState({
-    username: user?.username || ''
+    username: user?.username || '',
+    preferred_work_time: user?.preferred_work_time || 'morning',
+    preferred_categories: user?.preferred_categories || [],
+    notification_enabled: user?.notification_enabled ?? true
   });
 
   useEffect(() => {
@@ -30,15 +38,22 @@ const Profile = () => {
   useEffect(() => {
     if (user) {
       setFormData({
-        username: user.username || ''
+        username: user.username || '',
+        preferred_work_time: user.preferred_work_time || 'morning',
+        preferred_categories: user.preferred_categories || [],
+        notification_enabled: user.notification_enabled ?? true
       });
     }
   }, [user]);
 
   const fetchEmotionData = async () => {
     try {
-      const response = await api.get('/emotions/statistics', { params: { days: 30 } });
-      setEmotionStats(response.data);
+      const [historyRes, statsRes] = await Promise.all([
+        api.get('/emotions/history', { params: { days: 30 } }),
+        api.get('/emotions/statistics', { params: { days: 30 } })
+      ]);
+      setEmotionHistory(historyRes.data);
+      setEmotionStats(statsRes.data);
     } catch (error) {
       console.error('Failed to fetch emotion data:', error);
     }
@@ -60,6 +75,14 @@ const Profile = () => {
     }
   };
 
+  const handleCategoryToggle = (category) => {
+    const currentCategories = formData.preferred_categories;
+    const newCategories = currentCategories.includes(category)
+      ? currentCategories.filter(c => c !== category)
+      : [...currentCategories, category];
+    setFormData({ ...formData, preferred_categories: newCategories });
+  };
+
   const pieData = emotionStats?.counts 
     ? Object.entries(emotionStats.counts).map(([name, value]) => ({
         name,
@@ -67,6 +90,17 @@ const Profile = () => {
         color: EMOTION_COLORS[name] || '#95A5A6'
       }))
     : [];
+
+  const lineData = Array.from({ length: 14 }, (_, i) => {
+    const date = subDays(new Date(), 13 - i);
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const entry = emotionHistory.find(h => h.date === dateStr);
+    return {
+      date: format(date, 'MMM d'),
+      emotion: entry?.emotion?.name || null,
+      score: entry?.emotion?.energy_level || 5
+    };
+  });
 
   return (
     <div className="profile-page">
@@ -76,7 +110,7 @@ const Profile = () => {
 
       <div className="profile-grid">
         <section className="card profile-info">
-          <h2>Account Settings</h2>
+          <h2><User size={20} /> Account Settings</h2>
           
           <form onSubmit={handleSubmit}>
             {message && (
@@ -86,7 +120,9 @@ const Profile = () => {
             )}
 
             <div className="form-group">
-              <label htmlFor="username">Username</label>
+              <label htmlFor="username">
+                <User size={16} /> Username
+              </label>
               <input
                 type="text"
                 id="username"
@@ -105,6 +141,50 @@ const Profile = () => {
                 className="disabled"
               />
               <small>Email cannot be changed</small>
+            </div>
+
+            <div className="form-group">
+              <label><Clock size={16} /> Preferred Work Time</label>
+              <select
+                value={formData.preferred_work_time}
+                onChange={(e) => setFormData({ ...formData, preferred_work_time: e.target.value })}
+              >
+                {WORK_TIMES.map(time => (
+                  <option key={time} value={time}>
+                    {time.charAt(0).toUpperCase() + time.slice(1)}
+                  </option>
+                ))}
+              </select>
+              <small>Tasks will be prioritized based on your preferred work time</small>
+            </div>
+
+            <div className="form-group">
+              <label>Preferred Categories</label>
+              <div className="category-toggles">
+                {CATEGORIES.map(category => (
+                  <button
+                    key={category}
+                    type="button"
+                    className={`category-toggle ${formData.preferred_categories.includes(category) ? 'active' : ''}`}
+                    onClick={() => handleCategoryToggle(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+              <small>Selected categories will be prioritized in recommendations</small>
+            </div>
+
+            <div className="form-group checkbox-group">
+              <input
+                type="checkbox"
+                id="notifications"
+                checked={formData.notification_enabled}
+                onChange={(e) => setFormData({ ...formData, notification_enabled: e.target.checked })}
+              />
+              <label htmlFor="notifications">
+                <Bell size={16} /> Enable notifications
+              </label>
             </div>
 
             <button type="submit" className="btn-primary" disabled={loading}>
@@ -153,6 +233,24 @@ const Profile = () => {
                 </ResponsiveContainer>
               </div>
 
+              <div className="chart-container">
+                <h3>Energy Level Trend (Last 14 Days)</h3>
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={lineData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" fontSize={12} />
+                    <YAxis domain={[0, 10]} fontSize={12} />
+                    <Tooltip />
+                    <Line 
+                      type="monotone" 
+                      dataKey="score" 
+                      stroke="#6366f1" 
+                      strokeWidth={2}
+                      dot={{ fill: '#6366f1' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </>
           ) : (
             <div className="empty-state">
@@ -161,6 +259,34 @@ const Profile = () => {
           )}
         </section>
 
+        <section className="card recent-emotions">
+          <h2>Recent Emotions</h2>
+          {emotionHistory.length > 0 ? (
+            <div className="emotion-list">
+              {emotionHistory.slice(0, 10).map((entry) => (
+                <div key={entry.id} className="emotion-entry">
+                  <span 
+                    className="emotion-badge"
+                    style={{ backgroundColor: entry.emotion?.color }}
+                  >
+                    {entry.emotion?.emoji}
+                  </span>
+                  <div className="emotion-details">
+                    <span className="emotion-name">{entry.emotion?.name}</span>
+                    <span className="emotion-date">
+                      {format(new Date(entry.date), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                  {entry.notes && (
+                    <p className="emotion-notes">{entry.notes}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-state">No emotions recorded yet.</p>
+          )}
+        </section>
       </div>
     </div>
   );

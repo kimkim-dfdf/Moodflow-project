@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import BookCard from '../components/BookCard';
 import api from '../api/axios';
-import { BookOpen, X } from 'lucide-react';
+import { BookOpen, X, Sparkles } from 'lucide-react';
 
 const Books = () => {
   const { user } = useAuth();
   const [selectedTags, setSelectedTags] = useState([]);
   const [books, setBooks] = useState([]);
   const [tags, setTags] = useState([]);
+  const [relatedTags, setRelatedTags] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,6 +18,11 @@ const Books = () => {
 
   useEffect(() => {
     fetchBooks();
+    if (selectedTags.length > 0) {
+      fetchRelatedTags();
+    } else {
+      setRelatedTags([]);
+    }
   }, [selectedTags]);
 
   const fetchTags = async () => {
@@ -41,6 +47,17 @@ const Books = () => {
       console.error('Failed to fetch books:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRelatedTags = async () => {
+    try {
+      const res = await api.get('/books/related-tags', { 
+        params: { tags: selectedTags } 
+      });
+      setRelatedTags(res.data);
+    } catch (err) {
+      console.error('Failed to fetch related tags:', err);
     }
   };
 
@@ -86,6 +103,10 @@ const Books = () => {
               key={tag.id}
               className={`tag-chip ${selectedTags.includes(tag.slug) ? 'active' : ''}`}
               onClick={() => toggleTag(tag.slug)}
+              style={{
+                '--tag-color': tag.color,
+                '--tag-bg': selectedTags.includes(tag.slug) ? tag.color : 'transparent'
+              }}
             >
               {tag.name}
               <span className="tag-count">{tag.book_count}</span>
@@ -111,6 +132,26 @@ const Books = () => {
           </div>
         )}
 
+        {relatedTags.length > 0 && (
+          <div className="related-tags-section">
+            <div className="related-tags-header">
+              <Sparkles size={16} />
+              <span>Related tags you might like:</span>
+            </div>
+            <div className="related-tags-list">
+              {relatedTags.map((tag) => (
+                <button
+                  key={tag.id}
+                  className="related-tag-chip"
+                  onClick={() => toggleTag(tag.slug)}
+                  style={{ '--tag-color': tag.color }}
+                >
+                  {tag.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {loading ? (

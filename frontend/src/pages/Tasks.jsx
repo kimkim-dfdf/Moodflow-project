@@ -3,33 +3,61 @@ import { useDate } from '../context/DateContext';
 import api from '../api/axios';
 import TaskCard from '../components/TaskCard';
 import MiniCalendar from '../components/MiniCalendar';
-import { Sparkles, X, Calendar, RotateCcw } from 'lucide-react';
+import { Plus, Filter, Sparkles, X, Calendar, RotateCcw } from 'lucide-react';
 import { format, isToday } from 'date-fns';
+
+const CATEGORIES = ['Work', 'Study', 'Health', 'Personal'];
+const PRIORITIES = ['Low', 'Medium', 'High'];
 
 const Tasks = () => {
   const { selectedDate, setSelectedDate } = useDate();
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [filter, setFilter] = useState({ status: 'all', category: 'all' });
+  const [emotions, setEmotions] = useState([]);
   const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [suggestedTasks, setSuggestedTasks] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
 
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: 'Personal',
+    priority: 'Medium',
+    due_date: ''
+  });
+
   useEffect(() => {
     fetchTasks();
+    fetchEmotions();
     fetchDateEmotion();
-  }, [selectedDate]);
+  }, [filter, selectedDate]);
 
   const fetchTasks = async () => {
     try {
       const params = { date: format(selectedDate, 'yyyy-MM-dd') };
+      if (filter.status !== 'all') params.status = filter.status;
+      if (filter.category !== 'all') params.category = filter.category;
+
       const response = await api.get('/tasks', { params });
       setTasks(response.data);
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEmotions = async () => {
+    try {
+      const response = await api.get('/emotions');
+      setEmotions(response.data);
+    } catch (error) {
+      console.error('Failed to fetch emotions:', error);
     }
   };
 
@@ -60,6 +88,50 @@ const Tasks = () => {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const taskData = {
+        ...formData,
+        task_date: format(selectedDate, 'yyyy-MM-dd')
+      };
+      
+      if (editingTask) {
+        await api.put(`/tasks/${editingTask.id}`, taskData);
+      } else {
+        await api.post('/tasks', taskData);
+      }
+      setShowModal(false);
+      resetForm();
+      fetchTasks();
+    } catch (error) {
+      console.error('Failed to save task:', error);
+    }
+  };
+
+  const handleEdit = (task) => {
+    setEditingTask(task);
+    setFormData({
+      title: task.title,
+      description: task.description || '',
+      category: task.category,
+      priority: task.priority,
+      due_date: task.due_date || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (taskId) => {
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      try {
+        await api.delete(`/tasks/${taskId}`);
+        fetchTasks();
+      } catch (error) {
+        console.error('Failed to delete task:', error);
+      }
+    }
+  };
+
   const handleToggle = async (task) => {
     try {
       await api.put(`/tasks/${task.id}`, { is_completed: !task.is_completed });
@@ -82,6 +154,22 @@ const Tasks = () => {
     } catch (error) {
       console.error('Failed to add suggestion:', error);
     }
+  };
+
+  const resetForm = () => {
+    setEditingTask(null);
+    setFormData({
+      title: '',
+      description: '',
+      category: 'Personal',
+      priority: 'Medium',
+      due_date: ''
+    });
+  };
+
+  const openNewTaskModal = () => {
+    resetForm();
+    setShowModal(true);
   };
 
   const handleDateSelect = (date) => {
@@ -125,12 +213,16 @@ const Tasks = () => {
         </div>
         <div className="header-actions">
           <button 
-            className="btn-primary"
+            className="btn-secondary"
             onClick={() => selectedEmotion && fetchSuggestions(selectedEmotion.name)}
             disabled={!selectedEmotion}
           >
             <Sparkles size={18} />
             Generate Emotion Tasks
+          </button>
+          <button className="btn-primary" onClick={openNewTaskModal}>
+            <Plus size={18} />
+            Add Task
           </button>
         </div>
       </header>
@@ -144,6 +236,28 @@ const Tasks = () => {
         </div>
       )}
 
+      <div className="filters-bar">
+        <div className="filter-group">
+          <Filter size={16} />
+          <select 
+            value={filter.status} 
+            onChange={(e) => setFilter({ ...filter, status: e.target.value })}
+          >
+            <option value="all">All Status</option>
+            <option value="incomplete">Incomplete</option>
+            <option value="completed">Completed</option>
+          </select>
+          <select 
+            value={filter.category} 
+            onChange={(e) => setFilter({ ...filter, category: e.target.value })}
+          >
+            <option value="all">All Categories</option>
+            {CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       {showSuggestions && suggestedTasks.length > 0 && (
         <div className="suggestions-panel card">
@@ -199,6 +313,90 @@ const Tasks = () => {
           )}
         </section>
       </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingTask ? 'Edit Task' : 'New Task'}</h2>
+              <button className="close-btn" onClick={() => setShowModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="title">Title</label>
+                <input
+                  type="text"
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Task title"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="description">Description</label>
+                <textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Task description (optional)"
+                  rows={3}
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="category">Category</label>
+                  <select
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  >
+                    {CATEGORIES.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="priority">Priority</label>
+                  <select
+                    id="priority"
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                  >
+                    {PRIORITIES.map(pri => (
+                      <option key={pri} value={pri}>{pri}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="due_date">Due Date</label>
+                <input
+                  type="date"
+                  id="due_date"
+                  value={formData.due_date}
+                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  {editingTask ? 'Update Task' : 'Create Task'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

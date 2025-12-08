@@ -24,7 +24,11 @@ const BookCard = ({ book, showTags = false, showScore = false }) => {
         {showTags && book.tags && book.tags.length > 0 && (
           <div className="book-tags">
             {book.tags.map((tag) => (
-              <span key={tag.id} className="book-tag-pill">
+              <span 
+                key={tag.id} 
+                className="book-tag-pill"
+                style={{ '--pill-color': tag.color }}
+              >
                 {tag.name}
               </span>
             ))}
