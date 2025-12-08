@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, CheckSquare, Calendar, BookOpen, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Calendar, BookOpen, User, LogOut, Shield } from 'lucide-react';
 
 const Layout = () => {
   const { user, logout } = useAuth();
@@ -17,6 +17,7 @@ const Layout = () => {
     { path: '/calendar', icon: Calendar, label: 'Calendar' },
     { path: '/books', icon: BookOpen, label: 'Books' },
     { path: '/profile', icon: User, label: 'Profile' },
+    ...(user?.is_admin ? [{ path: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
 
   return (
