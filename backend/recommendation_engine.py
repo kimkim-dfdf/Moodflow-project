@@ -222,7 +222,6 @@ def get_suggested_tasks(emotion_name, limit):
 def get_emotion_statistics_from_repo(user_id, days):
     """Calculate emotion statistics for a user."""
     import repository
-    import static_data
     
     start_date = datetime.now() - timedelta(days=days)
     start_date_str = start_date.strftime('%Y-%m-%d')
@@ -232,7 +231,7 @@ def get_emotion_statistics_from_repo(user_id, days):
     daily_emotions = {}
     
     for entry in history:
-        emotion = static_data.get_emotion_by_id(entry['emotion_id'])
+        emotion = repository.get_emotion_by_id(entry['emotion_id'])
         if emotion:
             emotion_name = emotion['name']
             emotion_emoji = emotion['emoji']

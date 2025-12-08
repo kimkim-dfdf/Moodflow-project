@@ -14,7 +14,6 @@ import uuid
 
 import repository
 import recommendation_engine
-import static_data
 
 
 # ==============================================
@@ -116,7 +115,7 @@ def register_routes(app):
     @app.route('/api/emotions', methods=['GET'])
     def get_emotions():
         """Get list of all available emotions."""
-        return jsonify(static_data.EMOTIONS)
+        return jsonify(repository.get_all_emotions())
     
     
     @app.route('/api/emotions/record', methods=['POST'])
@@ -145,7 +144,7 @@ def register_routes(app):
             data.get('photo_url')
         )
         
-        emotion = static_data.get_emotion_by_id(entry['emotion_id'])
+        emotion = repository.get_emotion_by_id(entry['emotion_id'])
         entry_dict = dict(entry)
         entry_dict['emotion'] = emotion
         
@@ -163,7 +162,7 @@ def register_routes(app):
         entry = repository.get_emotion_entry_by_date(user.id, date_str)
         
         if entry:
-            emotion = static_data.get_emotion_by_id(entry['emotion_id'])
+            emotion = repository.get_emotion_by_id(entry['emotion_id'])
             entry_dict = dict(entry)
             entry_dict['emotion'] = emotion
             return jsonify(entry_dict)
@@ -376,7 +375,7 @@ def register_routes(app):
         
         limit = request.args.get('limit', 4, type=int)
         
-        music_list = static_data.get_music_by_emotion(emotion, limit)
+        music_list = repository.get_music_by_emotion(emotion, limit)
         
         return jsonify(music_list)
     
@@ -384,7 +383,7 @@ def register_routes(app):
     @app.route('/api/music/all', methods=['GET'])
     def get_all_music():
         """Get all music recommendations."""
-        return jsonify(static_data.MUSIC_RECOMMENDATIONS)
+        return jsonify(repository.get_all_music())
     
     
     @app.route('/api/music/favorites', methods=['GET'])
@@ -394,9 +393,10 @@ def register_routes(app):
         user = current_user
         favorite_ids = repository.get_user_music_favorites(user.id)
         
+        all_music = repository.get_all_music()
         result = []
         for music_id in favorite_ids:
-            for music in static_data.MUSIC_RECOMMENDATIONS:
+            for music in all_music:
                 if music['id'] == music_id:
                     music_copy = dict(music)
                     music_copy['is_favorite'] = True
@@ -448,15 +448,23 @@ def register_routes(app):
     @app.route('/api/books/tags', methods=['GET'])
     def get_book_tags():
         """Get all book tags with their book counts."""
-        tags = static_data.get_all_book_tags()
+        tags = repository.get_all_book_tags()
+        all_books = repository.get_all_books()
         
         result = []
         for tag in tags:
             tag_copy = dict(tag)
             
             count = 0
-            for book in static_data.BOOK_RECOMMENDATIONS:
-                if tag['slug'] in book['tags']:
+            for book in all_books:
+                book_tag_slugs = []
+                for t in book.get('tags', []):
+                    if isinstance(t, dict):
+                        book_tag_slugs.append(t.get('slug', ''))
+                    else:
+                        book_tag_slugs.append(t)
+                
+                if tag['slug'] in book_tag_slugs:
                     count = count + 1
             
             tag_copy['book_count'] = count
@@ -481,26 +489,15 @@ def register_routes(app):
         
         limit = request.args.get('limit', 24, type=int)
         
-        books = static_data.get_books_by_tags(tag_slugs, limit)
+        books = repository.get_books_by_tags(tag_slugs, limit)
         
-        result = []
-        for book in books:
-            book_copy = dict(book)
-            book_copy['tags'] = static_data.get_tag_objects_for_book(book)
-            result.append(book_copy)
-        
-        return jsonify(result)
+        return jsonify(books)
     
     
     @app.route('/api/books/all', methods=['GET'])
     def get_all_books():
         """Get all book recommendations."""
-        result = []
-        for book in static_data.BOOK_RECOMMENDATIONS:
-            book_copy = dict(book)
-            book_copy['tags'] = static_data.get_tag_objects_for_book(book)
-            result.append(book_copy)
-        return jsonify(result)
+        return jsonify(repository.get_all_books())
     
     
     @app.route('/api/books/search', methods=['GET'])
@@ -514,8 +511,9 @@ def register_routes(app):
         
         query_lower = query.lower()
         
+        all_books = repository.get_all_books()
         result = []
-        for book in static_data.BOOK_RECOMMENDATIONS:
+        for book in all_books:
             title_lower = book['title'].lower()
             author_lower = book['author'].lower()
             
@@ -523,9 +521,7 @@ def register_routes(app):
             author_match = query_lower in author_lower
             
             if title_match or author_match:
-                book_copy = dict(book)
-                book_copy['tags'] = static_data.get_tag_objects_for_book(book)
-                result.append(book_copy)
+                result.append(book)
         
         if len(result) > limit:
             result = result[:limit]
@@ -544,12 +540,12 @@ def register_routes(app):
         user = current_user
         favorite_ids = repository.get_user_book_favorites(user.id)
         
+        all_books = repository.get_all_books()
         result = []
         for book_id in favorite_ids:
-            for book in static_data.BOOK_RECOMMENDATIONS:
+            for book in all_books:
                 if book['id'] == book_id:
                     book_copy = dict(book)
-                    book_copy['tags'] = static_data.get_tag_objects_for_book(book)
                     book_copy['is_favorite'] = True
                     result.append(book_copy)
                     break
@@ -639,7 +635,7 @@ def register_routes(app):
         
         emotion_details = []
         for emotion_id, count in emotion_stats.items():
-            emotion = static_data.get_emotion_by_id(int(emotion_id))
+            emotion = repository.get_emotion_by_id(int(emotion_id))
             if emotion:
                 emotion_details.append({
                     'emotion': emotion,
@@ -658,26 +654,21 @@ def register_routes(app):
     @admin_required
     def get_all_music_admin():
         """Get all music for admin."""
-        return jsonify(static_data.MUSIC_RECOMMENDATIONS)
+        return jsonify(repository.get_all_music())
     
     
     @app.route('/api/admin/books', methods=['GET'])
     @admin_required
     def get_all_books_admin():
         """Get all books for admin."""
-        result = []
-        for book in static_data.BOOK_RECOMMENDATIONS:
-            book_copy = dict(book)
-            book_copy['tags'] = static_data.get_tag_objects_for_book(book)
-            result.append(book_copy)
-        return jsonify(result)
+        return jsonify(repository.get_all_books())
     
     
     @app.route('/api/admin/tags', methods=['GET'])
     @admin_required
     def get_all_tags_admin():
         """Get all book tags for admin."""
-        return jsonify(static_data.BOOK_TAGS)
+        return jsonify(repository.get_all_book_tags())
     
     
     # ==========================================
@@ -707,7 +698,7 @@ def register_routes(app):
         
         today_emotion_dict = None
         if today_emotion:
-            emotion = static_data.get_emotion_by_id(today_emotion['emotion_id'])
+            emotion = repository.get_emotion_by_id(today_emotion['emotion_id'])
             today_emotion_dict = dict(today_emotion)
             today_emotion_dict['emotion'] = emotion
         

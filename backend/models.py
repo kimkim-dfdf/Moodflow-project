@@ -172,7 +172,7 @@ class BookFavorite(db.Model):
 class MusicFavorite(db.Model):
     """
     MusicFavorite table for storing user's favorite music.
-    Links users to their favorite music IDs from static recommendations.
+    Links users to their favorite music IDs from database.
     """
     __tablename__ = 'music_favorites'
     
@@ -188,5 +188,123 @@ class MusicFavorite(db.Model):
             'user_id': self.user_id,
             'music_id': self.music_id,
             'added_at': self.added_at.isoformat() if self.added_at else None
+        }
+        return result
+
+
+# ==============================================
+# Emotion Model
+# ==============================================
+
+class Emotion(db.Model):
+    """
+    Emotion table for storing emotion types.
+    Contains predefined emotions with their visual properties.
+    """
+    __tablename__ = 'emotions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    emoji = db.Column(db.String(10), nullable=False)
+    color = db.Column(db.String(20), nullable=False)
+    
+    def to_dict(self):
+        """Convert emotion to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'name': self.name,
+            'emoji': self.emoji,
+            'color': self.color
+        }
+        return result
+
+
+# ==============================================
+# Music Model
+# ==============================================
+
+class Music(db.Model):
+    """
+    Music table for storing music recommendations.
+    Each music is linked to an emotion.
+    """
+    __tablename__ = 'music'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    emotion = db.Column(db.String(50), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    artist = db.Column(db.String(200), nullable=False)
+    genre = db.Column(db.String(100), nullable=False)
+    youtube_url = db.Column(db.String(500), nullable=False)
+    
+    def to_dict(self):
+        """Convert music to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'emotion': self.emotion,
+            'title': self.title,
+            'artist': self.artist,
+            'genre': self.genre,
+            'youtube_url': self.youtube_url
+        }
+        return result
+
+
+# ==============================================
+# Book Tag Model
+# ==============================================
+
+class BookTag(db.Model):
+    """
+    BookTag table for storing book tags.
+    Used for filtering books by tag.
+    """
+    __tablename__ = 'book_tags'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    slug = db.Column(db.String(50), unique=True, nullable=False)
+    color = db.Column(db.String(20), nullable=False)
+    
+    def to_dict(self):
+        """Convert tag to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'name': self.name,
+            'slug': self.slug,
+            'color': self.color
+        }
+        return result
+
+
+# ==============================================
+# Book Model
+# ==============================================
+
+class Book(db.Model):
+    """
+    Book table for storing book recommendations.
+    Each book is linked to an emotion and has multiple tags.
+    """
+    __tablename__ = 'books'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    emotion = db.Column(db.String(50), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    author = db.Column(db.String(200), nullable=False)
+    genre = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    tags = db.Column(db.String(500), nullable=False)
+    
+    def to_dict(self):
+        """Convert book to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'emotion': self.emotion,
+            'title': self.title,
+            'author': self.author,
+            'genre': self.genre,
+            'description': self.description,
+            'tags': self.tags.split(',') if self.tags else []
         }
         return result

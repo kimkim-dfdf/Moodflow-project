@@ -84,6 +84,10 @@ def create_app():
         
         # Seed demo users if they don't exist
         seed_demo_users()
+        
+        # Seed static data (emotions, music, books, tags)
+        import repository
+        repository.seed_all_static_data()
     
     # Register all API routes
     from routes import register_routes
@@ -143,12 +147,11 @@ def seed_demo_users():
         
         if existing_user is None:
             # Create new user (let database assign ID)
-            new_user = User(
-                email=user_data['email'],
-                username=user_data['username'],
-                password=user_data['password'],
-                is_admin=user_data['is_admin']
-            )
+            new_user = User()
+            new_user.email = user_data['email']
+            new_user.username = user_data['username']
+            new_user.password = user_data['password']
+            new_user.is_admin = user_data['is_admin']
             db.session.add(new_user)
             print("Created demo user: " + user_data['email'])
             users_created = True
