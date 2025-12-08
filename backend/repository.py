@@ -32,6 +32,7 @@ class User(UserMixin):
         self.username = user_data['username']
         self.password = user_data['password']
         self.created_at = user_data['created_at']
+        self.is_admin = user_data.get('is_admin', False)
     
     def get_id(self):
         """Return user ID as string for Flask-Login."""
@@ -43,7 +44,8 @@ class User(UserMixin):
             'id': self.id,
             'email': self.email,
             'username': self.username,
-            'created_at': self.created_at
+            'created_at': self.created_at,
+            'is_admin': self.is_admin
         }
 
 
@@ -59,21 +61,32 @@ DEMO_USERS = [
         'email': 'seven@gmail.com',
         'username': 'Seven',
         'password': 'ekdus123',
-        'created_at': '2024-01-01T00:00:00'
+        'created_at': '2024-01-01T00:00:00',
+        'is_admin': False
     },
     {
         'id': 2,
         'email': 'elly@gmail.com',
         'username': 'Elly',
         'password': 'ekdus123',
-        'created_at': '2024-01-01T00:00:00'
+        'created_at': '2024-01-01T00:00:00',
+        'is_admin': False
     },
     {
         'id': 3,
         'email': 'nicole@gmail.com',
         'username': 'Nicole',
         'password': 'ekdus123',
-        'created_at': '2024-01-01T00:00:00'
+        'created_at': '2024-01-01T00:00:00',
+        'is_admin': False
+    },
+    {
+        'id': 4,
+        'email': 'admin@moodflow.com',
+        'username': 'Admin',
+        'password': 'admin123',
+        'created_at': '2024-01-01T00:00:00',
+        'is_admin': True
     }
 ]
 
@@ -84,9 +97,13 @@ DEMO_USERS = [
 
 tasks = []
 emotion_history = []
+custom_music = []
+custom_books = []
 
 next_task_id = 1
 next_emotion_id = 1
+next_music_id = 100
+next_book_id = 100
 
 
 # ==============================================
@@ -98,8 +115,8 @@ def load_data():
     Load all data from the JSON file into memory.
     This is called when the app starts.
     """
-    global tasks, emotion_history
-    global next_task_id, next_emotion_id
+    global tasks, emotion_history, custom_music, custom_books
+    global next_task_id, next_emotion_id, next_music_id, next_book_id
     
     # Check if data file exists
     if not os.path.exists(DATA_FILE):
@@ -113,10 +130,14 @@ def load_data():
     # Load each data type
     tasks = data.get('tasks', [])
     emotion_history = data.get('emotion_history', [])
+    custom_music = data.get('custom_music', [])
+    custom_books = data.get('custom_books', [])
     
     # Calculate next IDs based on existing data
     next_task_id = find_max_id(tasks) + 1
     next_emotion_id = find_max_id(emotion_history) + 1
+    next_music_id = max(find_max_id(custom_music) + 1, 100)
+    next_book_id = max(find_max_id(custom_books) + 1, 100)
 
 
 def save_data():
@@ -126,7 +147,9 @@ def save_data():
     """
     data = {
         'tasks': tasks,
-        'emotion_history': emotion_history
+        'emotion_history': emotion_history,
+        'custom_music': custom_music,
+        'custom_books': custom_books
     }
     
     file = open(DATA_FILE, 'w')
@@ -459,6 +482,190 @@ def get_emotion_history_since(user_id, start_date):
             result.append(entry)
     
     return result
+
+
+# ==============================================
+# Music Operations (Admin)
+# ==============================================
+
+def get_all_custom_music():
+    """Get all custom music entries."""
+    return custom_music
+
+
+def create_music(emotion, title, artist, genre, youtube_url):
+    """Create a new music recommendation."""
+    global next_music_id
+    
+    music = {
+        'id': next_music_id,
+        'emotion': emotion,
+        'title': title,
+        'artist': artist,
+        'genre': genre,
+        'youtube_url': youtube_url,
+        'is_custom': True
+    }
+    
+    custom_music.append(music)
+    next_music_id = next_music_id + 1
+    save_data()
+    
+    return music
+
+
+def update_music(music_id, emotion, title, artist, genre, youtube_url):
+    """Update an existing custom music entry."""
+    for music in custom_music:
+        if music['id'] == music_id:
+            music['emotion'] = emotion
+            music['title'] = title
+            music['artist'] = artist
+            music['genre'] = genre
+            music['youtube_url'] = youtube_url
+            save_data()
+            return music
+    return None
+
+
+def delete_music(music_id):
+    """Delete a custom music entry."""
+    global custom_music
+    
+    for i in range(len(custom_music)):
+        if custom_music[i]['id'] == music_id:
+            custom_music.pop(i)
+            save_data()
+            return True
+    return False
+
+
+# ==============================================
+# Book Operations (Admin)
+# ==============================================
+
+def get_all_custom_books():
+    """Get all custom book entries."""
+    return custom_books
+
+
+def create_book(emotion, title, author, genre, description, tags):
+    """Create a new book recommendation."""
+    global next_book_id
+    
+    book = {
+        'id': next_book_id,
+        'emotion': emotion,
+        'title': title,
+        'author': author,
+        'genre': genre,
+        'description': description,
+        'tags': tags,
+        'is_custom': True
+    }
+    
+    custom_books.append(book)
+    next_book_id = next_book_id + 1
+    save_data()
+    
+    return book
+
+
+def update_book(book_id, emotion, title, author, genre, description, tags):
+    """Update an existing custom book entry."""
+    for book in custom_books:
+        if book['id'] == book_id:
+            book['emotion'] = emotion
+            book['title'] = title
+            book['author'] = author
+            book['genre'] = genre
+            book['description'] = description
+            book['tags'] = tags
+            save_data()
+            return book
+    return None
+
+
+def delete_book(book_id):
+    """Delete a custom book entry."""
+    global custom_books
+    
+    for i in range(len(custom_books)):
+        if custom_books[i]['id'] == book_id:
+            custom_books.pop(i)
+            save_data()
+            return True
+    return False
+
+
+# ==============================================
+# Admin Statistics Operations
+# ==============================================
+
+def get_all_users_stats():
+    """Get statistics for all users."""
+    stats = []
+    
+    for user_data in DEMO_USERS:
+        if user_data.get('is_admin'):
+            continue
+        
+        user_id = user_data['id']
+        task_counts = count_tasks(user_id)
+        emotion_count = 0
+        
+        for entry in emotion_history:
+            if entry['user_id'] == user_id:
+                emotion_count = emotion_count + 1
+        
+        stats.append({
+            'user_id': user_id,
+            'username': user_data['username'],
+            'email': user_data['email'],
+            'total_tasks': task_counts['total'],
+            'completed_tasks': task_counts['completed'],
+            'emotion_entries': emotion_count
+        })
+    
+    return stats
+
+
+def get_overall_emotion_stats():
+    """Get overall emotion statistics across all users."""
+    emotion_counts = {}
+    
+    for entry in emotion_history:
+        emotion_id = entry['emotion_id']
+        if emotion_id in emotion_counts:
+            emotion_counts[emotion_id] = emotion_counts[emotion_id] + 1
+        else:
+            emotion_counts[emotion_id] = 1
+    
+    return emotion_counts
+
+
+def get_overall_task_stats():
+    """Get overall task statistics across all users."""
+    total = len(tasks)
+    completed = 0
+    category_counts = {}
+    
+    for task in tasks:
+        if task['is_completed']:
+            completed = completed + 1
+        
+        category = task['category']
+        if category in category_counts:
+            category_counts[category] = category_counts[category] + 1
+        else:
+            category_counts[category] = 1
+    
+    return {
+        'total': total,
+        'completed': completed,
+        'pending': total - completed,
+        'by_category': category_counts
+    }
 
 
 # ==============================================

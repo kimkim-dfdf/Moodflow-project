@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, CheckSquare, Calendar, BookOpen, User, LogOut } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Calendar, BookOpen, User, LogOut, Settings } from 'lucide-react';
 
 function Layout() {
   const { user, logout } = useAuth();
@@ -37,6 +37,9 @@ function Layout() {
           <li><NavLink to="/calendar" className={function(p) { return getNavClass(p.isActive); }}><Calendar size={20} /><span>Calendar</span></NavLink></li>
           <li><NavLink to="/books" className={function(p) { return getNavClass(p.isActive); }}><BookOpen size={20} /><span>Books</span></NavLink></li>
           <li><NavLink to="/profile" className={function(p) { return getNavClass(p.isActive); }}><User size={20} /><span>Profile</span></NavLink></li>
+          {user && user.is_admin && (
+            <li><NavLink to="/admin" className={function(p) { return getNavClass(p.isActive); }}><Settings size={20} /><span>Admin</span></NavLink></li>
+          )}
         </ul>
 
         <div className="sidebar-footer">

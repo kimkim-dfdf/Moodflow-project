@@ -11,6 +11,7 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 import os
 import uuid
+import hashlib
 
 import repository
 import recommendation_engine
@@ -546,6 +547,209 @@ def register_routes(app):
         
         return jsonify(repository.user_to_dict(user))
     
+    
+    # ==========================================
+    # Admin Routes
+    # ==========================================
+    
+    def admin_required(f):
+        """Decorator to require admin access."""
+        from functools import wraps
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return jsonify({'error': 'Login required'}), 401
+            if not current_user.is_admin:
+                return jsonify({'error': 'Admin access required'}), 403
+            return f(*args, **kwargs)
+        return decorated_function
+    
+    @app.route('/api/admin/stats', methods=['GET'])
+    @admin_required
+    def get_admin_stats():
+        """Get overall statistics for admin dashboard."""
+        user_stats = repository.get_all_users_stats()
+        emotion_stats = repository.get_overall_emotion_stats()
+        task_stats = repository.get_overall_task_stats()
+        
+        emotion_details = []
+        for emotion_id, count in emotion_stats.items():
+            emotion = static_data.get_emotion_by_id(int(emotion_id))
+            if emotion:
+                emotion_details.append({
+                    'emotion': emotion,
+                    'count': count
+                })
+        
+        return jsonify({
+            'users': user_stats,
+            'emotions': emotion_details,
+            'tasks': task_stats,
+            'total_users': len(user_stats)
+        })
+    
+    @app.route('/api/admin/music', methods=['GET'])
+    @admin_required
+    def get_all_music():
+        """Get all music (static + custom)."""
+        all_music = []
+        for m in static_data.MUSIC_RECOMMENDATIONS:
+            music_copy = dict(m)
+            music_copy['is_custom'] = False
+            all_music.append(music_copy)
+        custom = repository.get_all_custom_music()
+        for m in custom:
+            all_music.append(m)
+        return jsonify(all_music)
+    
+    @app.route('/api/admin/music', methods=['POST'])
+    @admin_required
+    def create_music():
+        """Create a new music recommendation."""
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        if not data.get('title'):
+            return jsonify({'error': 'Title is required'}), 400
+        if not data.get('emotion'):
+            return jsonify({'error': 'Emotion is required'}), 400
+        
+        music = repository.create_music(
+            data['emotion'],
+            data['title'],
+            data.get('artist', ''),
+            data.get('genre', ''),
+            data.get('youtube_url', '')
+        )
+        
+        return jsonify(music), 201
+    
+    @app.route('/api/admin/music/<int:music_id>', methods=['PUT'])
+    @admin_required
+    def update_music(music_id):
+        """Update a custom music entry."""
+        data = request.get_json()
+        
+        music = repository.update_music(
+            music_id,
+            data.get('emotion'),
+            data.get('title'),
+            data.get('artist'),
+            data.get('genre'),
+            data.get('youtube_url')
+        )
+        
+        if not music:
+            return jsonify({'error': 'Music not found or is static'}), 404
+        
+        return jsonify(music)
+    
+    @app.route('/api/admin/music/<int:music_id>', methods=['DELETE'])
+    @admin_required
+    def delete_music(music_id):
+        """Delete a custom music entry."""
+        success = repository.delete_music(music_id)
+        
+        if not success:
+            return jsonify({'error': 'Music not found or is static'}), 404
+        
+        return jsonify({'message': 'Music deleted'})
+    
+    @app.route('/api/admin/books', methods=['GET'])
+    @admin_required
+    def get_all_books_admin():
+        """Get all books (static + custom) for admin."""
+        all_books = []
+        for b in static_data.BOOK_RECOMMENDATIONS:
+            book_copy = dict(b)
+            book_copy['is_custom'] = False
+            all_books.append(book_copy)
+        custom = repository.get_all_custom_books()
+        for b in custom:
+            all_books.append(b)
+        return jsonify(all_books)
+    
+    @app.route('/api/admin/books', methods=['POST'])
+    @admin_required
+    def create_book():
+        """Create a new book recommendation."""
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        if not data.get('title'):
+            return jsonify({'error': 'Title is required'}), 400
+        
+        book = repository.create_book(
+            data.get('emotion', 'Neutral'),
+            data['title'],
+            data.get('author', ''),
+            data.get('genre', ''),
+            data.get('description', ''),
+            data.get('tags', [])
+        )
+        
+        return jsonify(book), 201
+    
+    @app.route('/api/admin/books/<int:book_id>', methods=['PUT'])
+    @admin_required
+    def update_book(book_id):
+        """Update a custom book entry."""
+        data = request.get_json()
+        
+        book = repository.update_book(
+            book_id,
+            data.get('emotion'),
+            data.get('title'),
+            data.get('author'),
+            data.get('genre'),
+            data.get('description'),
+            data.get('tags', [])
+        )
+        
+        if not book:
+            return jsonify({'error': 'Book not found or is static'}), 404
+        
+        return jsonify(book)
+    
+    @app.route('/api/admin/books/<int:book_id>', methods=['DELETE'])
+    @admin_required
+    def delete_book(book_id):
+        """Delete a custom book entry."""
+        success = repository.delete_book(book_id)
+        
+        if not success:
+            return jsonify({'error': 'Book not found or is static'}), 404
+        
+        return jsonify({'message': 'Book deleted'})
+    
+    @app.route('/api/admin/tags', methods=['GET'])
+    @admin_required
+    def get_all_tags_admin():
+        """Get all book tags for admin including custom book tags."""
+        all_tags = []
+        existing_slugs = set()
+        
+        for tag in static_data.BOOK_TAGS:
+            all_tags.append(dict(tag))
+            existing_slugs.add(tag['slug'])
+        
+        custom_books = repository.get_all_custom_books()
+        for book in custom_books:
+            for tag_slug in book.get('tags', []):
+                if tag_slug not in existing_slugs:
+                    hash_digest = hashlib.md5(tag_slug.encode()).hexdigest()
+                    stable_id = 1000 + int(hash_digest[:8], 16) % 9000
+                    all_tags.append({
+                        'id': stable_id,
+                        'slug': tag_slug,
+                        'name': tag_slug.replace('-', ' ').title(),
+                        'color': '#6B7280'
+                    })
+                    existing_slugs.add(tag_slug)
+        
+        return jsonify(all_tags)
     
     # ==========================================
     # Dashboard Routes

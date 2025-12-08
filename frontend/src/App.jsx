@@ -8,6 +8,7 @@ import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
 import Books from './pages/Books';
 import Profile from './pages/Profile';
+import Admin from './pages/Admin';
 import './index.css';
 
 const PrivateRoute = ({ children }) => {
@@ -52,6 +53,7 @@ function App() {
             <Route path="calendar" element={<Calendar />} />
             <Route path="books" element={<Books />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="admin" element={<Admin />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" />} />
           </Routes>
