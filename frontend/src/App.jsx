@@ -28,7 +28,22 @@ const PublicRoute = ({ children }) => {
     return <div className="loading-screen">Loading...</div>;
   }
   
-  return !user ? children : <Navigate to="/dashboard" />;
+  if (user) {
+    if (user.is_admin) {
+      return <Navigate to="/admin" />;
+    }
+    return <Navigate to="/dashboard" />;
+  }
+  
+  return children;
+};
+
+const DefaultRedirect = () => {
+  const { user } = useAuth();
+  if (user && user.is_admin) {
+    return <Navigate to="/admin" />;
+  }
+  return <Navigate to="/dashboard" />;
 };
 
 function App() {
@@ -47,7 +62,7 @@ function App() {
               <Layout />
             </PrivateRoute>
           }>
-            <Route index element={<Navigate to="/dashboard" />} />
+            <Route index element={<DefaultRedirect />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="calendar" element={<Calendar />} />
@@ -55,7 +70,7 @@ function App() {
             <Route path="profile" element={<Profile />} />
             <Route path="admin" element={<Admin />} />
           </Route>
-          <Route path="*" element={<Navigate to="/dashboard" />} />
+          <Route path="*" element={<DefaultRedirect />} />
           </Routes>
         </Router>
       </DateProvider>

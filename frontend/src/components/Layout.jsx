@@ -32,13 +32,16 @@ function Layout() {
         </div>
         
         <ul className="nav-menu">
-          <li><NavLink to="/dashboard" className={function(p) { return getNavClass(p.isActive); }}><LayoutDashboard size={20} /><span>Dashboard</span></NavLink></li>
-          <li><NavLink to="/tasks" className={function(p) { return getNavClass(p.isActive); }}><CheckSquare size={20} /><span>Tasks</span></NavLink></li>
-          <li><NavLink to="/calendar" className={function(p) { return getNavClass(p.isActive); }}><Calendar size={20} /><span>Calendar</span></NavLink></li>
-          <li><NavLink to="/books" className={function(p) { return getNavClass(p.isActive); }}><BookOpen size={20} /><span>Books</span></NavLink></li>
-          <li><NavLink to="/profile" className={function(p) { return getNavClass(p.isActive); }}><User size={20} /><span>Profile</span></NavLink></li>
-          {user && user.is_admin && (
+          {user && user.is_admin ? (
             <li><NavLink to="/admin" className={function(p) { return getNavClass(p.isActive); }}><Settings size={20} /><span>Admin</span></NavLink></li>
+          ) : (
+            <>
+              <li><NavLink to="/dashboard" className={function(p) { return getNavClass(p.isActive); }}><LayoutDashboard size={20} /><span>Dashboard</span></NavLink></li>
+              <li><NavLink to="/tasks" className={function(p) { return getNavClass(p.isActive); }}><CheckSquare size={20} /><span>Tasks</span></NavLink></li>
+              <li><NavLink to="/calendar" className={function(p) { return getNavClass(p.isActive); }}><Calendar size={20} /><span>Calendar</span></NavLink></li>
+              <li><NavLink to="/books" className={function(p) { return getNavClass(p.isActive); }}><BookOpen size={20} /><span>Books</span></NavLink></li>
+              <li><NavLink to="/profile" className={function(p) { return getNavClass(p.isActive); }}><User size={20} /><span>Profile</span></NavLink></li>
+            </>
           )}
         </ul>
 
