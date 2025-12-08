@@ -6,7 +6,7 @@
 # Called automatically when the app starts.
 # ==============================================
 
-from models import db, Emotion, Music, BookTag, Book
+from models import db, Emotion, Music, BookTag, Book, Task
 
 
 def seed_all_static_data():
@@ -20,6 +20,7 @@ def seed_all_static_data():
     seed_book_tags()
     seed_music()
     seed_books()
+    seed_tasks()
     
     print("Static data seeding complete.")
 
@@ -212,3 +213,53 @@ def seed_books():
     
     db.session.commit()
     print("Seeded 15 books.")
+
+
+def seed_tasks():
+    """
+    Seed sample tasks for demo users.
+    Creates tasks for user_id 1 (seven@gmail.com).
+    """
+    
+    # Check if tasks already exist
+    existing_count = Task.query.count()
+    if existing_count > 0:
+        print("Tasks already exist, skipping...")
+        return
+    
+    # Sample tasks for user_id 1 (seven@gmail.com)
+    tasks_data = [
+        # Work tasks
+        {'user_id': 1, 'title': 'Complete project report', 'category': 'Work', 'priority': 'High', 'is_completed': False, 'task_date': '2025-12-09'},
+        {'user_id': 1, 'title': 'Review team feedback', 'category': 'Work', 'priority': 'Medium', 'is_completed': False, 'task_date': '2025-12-09'},
+        {'user_id': 1, 'title': 'Organize workspace', 'category': 'Work', 'priority': 'Low', 'is_completed': True, 'task_date': '2025-12-08'},
+        
+        # Study tasks
+        {'user_id': 1, 'title': 'Read chapter 5 of textbook', 'category': 'Study', 'priority': 'High', 'is_completed': False, 'task_date': '2025-12-09'},
+        {'user_id': 1, 'title': 'Practice coding problems', 'category': 'Study', 'priority': 'Medium', 'is_completed': False, 'task_date': '2025-12-10'},
+        {'user_id': 1, 'title': 'Watch tutorial video', 'category': 'Study', 'priority': 'Low', 'is_completed': True, 'task_date': '2025-12-07'},
+        
+        # Health tasks
+        {'user_id': 1, 'title': 'Morning stretching', 'category': 'Health', 'priority': 'Medium', 'is_completed': False, 'task_date': '2025-12-09'},
+        {'user_id': 1, 'title': 'Drink 8 glasses of water', 'category': 'Health', 'priority': 'Low', 'is_completed': False, 'task_date': '2025-12-09'},
+        {'user_id': 1, 'title': 'Go for a 30-minute walk', 'category': 'Health', 'priority': 'Medium', 'is_completed': True, 'task_date': '2025-12-08'},
+        
+        # Personal tasks
+        {'user_id': 1, 'title': 'Call a friend', 'category': 'Personal', 'priority': 'Low', 'is_completed': False, 'task_date': '2025-12-09'},
+        {'user_id': 1, 'title': 'Plan weekend activities', 'category': 'Personal', 'priority': 'Low', 'is_completed': False, 'task_date': '2025-12-10'},
+        {'user_id': 1, 'title': 'Clean room', 'category': 'Personal', 'priority': 'Medium', 'is_completed': True, 'task_date': '2025-12-07'}
+    ]
+    
+    # Add each task to database
+    for task_data in tasks_data:
+        task = Task()
+        task.user_id = task_data['user_id']
+        task.title = task_data['title']
+        task.category = task_data['category']
+        task.priority = task_data['priority']
+        task.is_completed = task_data['is_completed']
+        task.task_date = task_data['task_date']
+        db.session.add(task)
+    
+    db.session.commit()
+    print("Seeded 12 sample tasks.")
