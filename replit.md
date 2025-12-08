@@ -31,17 +31,7 @@ backend/
 ├── models.py                 # SQLAlchemy database models
 ├── repository.py             # Database operations (CRUD) and helper queries
 ├── recommendation_engine.py  # Task scoring algorithm
-├── routes/                   # API endpoints (Blueprint pattern)
-│   ├── __init__.py           # Blueprint registration
-│   ├── auth.py               # Authentication routes
-│   ├── emotions.py           # Emotion routes
-│   ├── tasks.py              # Task routes
-│   ├── music.py              # Music routes
-│   ├── books.py              # Book routes
-│   ├── admin.py              # Admin routes
-│   ├── dashboard.py          # Dashboard routes
-│   ├── profile.py            # Profile routes
-│   └── uploads.py            # File upload routes
+├── routes.py                 # API endpoints
 └── uploads/                  # Photo uploads
 ```
 
@@ -145,10 +135,9 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
-- December 8, 2025: Backend refactoring
-  - Split routes.py (715 lines) into 9 Blueprint files in routes/ directory
+- December 8, 2025: Code cleanup
   - Removed unused legacy functions from repository.py (640 lines now)
-  - Clean Blueprint structure: auth, emotions, tasks, music, books, admin, dashboard, profile, uploads
+  - Cleaned up deprecated functions (load_data, save_data, etc.)
 
 - December 8, 2025: Full static data migration to PostgreSQL
   - Created new database models: Emotion, Music, Book, BookTag, BookTag_Book (many-to-many)
