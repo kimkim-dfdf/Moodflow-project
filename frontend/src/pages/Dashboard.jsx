@@ -74,7 +74,7 @@ function Dashboard() {
     Promise.all([
       api.get('/tasks/recommended', { params: { emotion: emotionName, limit: 3, date: dateStr } }),
       api.get('/tasks/suggestions', { params: { emotion: emotionName, limit: 3 } }),
-      api.get('/music/recommendations', { params: { emotion: emotionName, limit: 4 } })
+      api.get('/music/recommendations', { params: { emotion: emotionName, limit: 20 } })
     ]).then(function(results) {
       setRecommendedTasks(results[0].data);
       setSuggestedTasks(results[1].data);
