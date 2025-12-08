@@ -15,23 +15,23 @@ MoodFlow is a modern web application that helps users track their emotional stat
 - **Port**: 8000
 - **Key Technologies**: Flask, Flask-CORS
 
-### Data Storage (JSON File)
-- **File**: `backend/data.json` (created automatically)
-- **No database connection required**
-- Data persists in JSON file
+### Data Storage (PostgreSQL Database)
+- **Database**: PostgreSQL (Neon-backed)
+- **ORM**: SQLAlchemy with Flask-SQLAlchemy
+- **Environment**: DATABASE_URL environment variable
 - Static data (emotions, music, books) stored in `static_data.py`
 
 ## Backend File Structure
 
 ```
 backend/
-├── app.py                    # Flask app factory (40 lines)
-├── run.py                    # Entry point (17 lines)
-├── repository.py             # JSON data storage (760 lines)
-├── static_data.py            # Static data (511 lines)
-├── recommendation_engine.py  # Task scoring algorithm (291 lines)
-├── routes.py                 # API endpoints (968 lines)
-├── data.json                 # User data (auto-generated)
+├── app.py                    # Flask app factory with DB config
+├── run.py                    # Entry point
+├── models.py                 # SQLAlchemy database models
+├── repository.py             # Database operations (CRUD)
+├── static_data.py            # Static data (emotions, music, books)
+├── recommendation_engine.py  # Task scoring algorithm
+├── routes.py                 # API endpoints
 └── uploads/                  # Photo uploads
 ```
 
@@ -136,6 +136,13 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
+- December 8, 2025: PostgreSQL database migration
+  - Changed from JSON file storage to PostgreSQL database
+  - Created models.py with SQLAlchemy models (User, Task, EmotionHistory, etc.)
+  - Updated app.py with database configuration
+  - Updated repository.py to use SQLAlchemy queries
+  - Demo users are seeded on application startup
+
 - December 8, 2025: Backend code cleanup
   - Removed unused `is_favorite` function from repository.py
   - Verified all functions in static_data.py and recommendation_engine.py are in use
@@ -143,27 +150,16 @@ This project uses **student-friendly** code patterns:
 
 - December 3, 2025: Simplified authentication
   - Removed password hashing (no security for demo)
-  - Only 3 demo accounts can log in
+  - Only 4 demo accounts can log in
   - Registration disabled
   - Login page shows demo account info
-
-- December 3, 2025: Complete backend refactoring
-  - Added comprehensive comments to all files
-  - Organized code into clear sections
-  - Improved function documentation
-  - Maintained student-friendly code style
-
-- December 3, 2025: Removed database
-  - No PostgreSQL, no SQLite
-  - Data stored in JSON file (`data.json`)
-  - Created `repository.py` for data operations
 
 ## User Preferences
 - Clean, minimal interface
 - Soft colors and rounded cards
 - Student-friendly code style (simple patterns)
 - Left-side navigation with 5 menu items
-- No database connection required
+- PostgreSQL database required for professor's requirements
 
 ## Running Locally
 
