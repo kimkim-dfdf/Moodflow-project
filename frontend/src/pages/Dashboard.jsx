@@ -6,7 +6,7 @@ import TaskCard from '../components/TaskCard';
 import MiniCalendar from '../components/MiniCalendar';
 import api from '../api/axios';
 import { format, isToday } from 'date-fns';
-import { Music, CheckCircle2, Calendar, ExternalLink } from 'lucide-react';
+import { Music, CheckCircle2, Calendar, ExternalLink, Quote, RefreshCw } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 function Dashboard() {
@@ -21,6 +21,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [addedTasks, setAddedTasks] = useState(new Set());
   const [calendarKey, setCalendarKey] = useState(0);
+  const [todayQuote, setTodayQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
 
   useEffect(function() {
     fetchData();
@@ -29,6 +31,9 @@ function Dashboard() {
   useEffect(function() {
     if (selectedEmotion) {
       fetchRecommendations(selectedEmotion.name);
+      fetchQuote(selectedEmotion.name);
+    } else {
+      setTodayQuote(null);
     }
   }, [selectedEmotion]);
 
@@ -82,6 +87,25 @@ function Dashboard() {
     }).catch(function(error) {
       console.error('Error:', error);
     });
+  }
+
+  function fetchQuote(emotionName) {
+    setQuoteLoading(true);
+    api.get('/quotes/random', { params: { emotion: emotionName } })
+      .then(function(response) {
+        setTodayQuote(response.data);
+        setQuoteLoading(false);
+      })
+      .catch(function(error) {
+        console.error('Error fetching quote:', error);
+        setQuoteLoading(false);
+      });
+  }
+
+  function handleRefreshQuote() {
+    if (selectedEmotion) {
+      fetchQuote(selectedEmotion.name);
+    }
   }
 
   function handleTaskToggle(task) {
@@ -239,6 +263,24 @@ function Dashboard() {
         </div>
 
         <aside className="dashboard-sidebar">
+          {selectedEmotion && todayQuote && (
+            <section className="card quote-card">
+              <div className="quote-header">
+                <h3><Quote size={18} /> Today's Quote</h3>
+                <button className="quote-refresh-btn" onClick={handleRefreshQuote} disabled={quoteLoading}>
+                  <RefreshCw size={16} className={quoteLoading ? 'spinning' : ''} />
+                </button>
+              </div>
+              <div className="quote-content">
+                <p className="quote-text">"{todayQuote.text}"</p>
+                <p className="quote-author">- {todayQuote.author}</p>
+              </div>
+              <div className="quote-emotion-tag" style={{ background: selectedEmotion.color }}>
+                {selectedEmotion.emoji} {selectedEmotion.name}
+              </div>
+            </section>
+          )}
+
           <section className="card">
             <h3 className="calendar-title">Select Date</h3>
             <MiniCalendar key={calendarKey} onDateSelect={setSelectedDate} selectedDate={selectedDate} />

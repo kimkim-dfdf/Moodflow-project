@@ -143,6 +143,20 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .music-link { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--primary); text-decoration: none; padding: 4px 8px; background: var(--surface); border-radius: 4px; }
 .music-link:hover { background: var(--primary); color: white; }
 
+/* Quote Card */
+.quote-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; }
+.quote-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.quote-header h3 { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.quote-refresh-btn { background: rgba(255,255,255,0.2); border: none; padding: 8px; border-radius: 50%; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
+.quote-refresh-btn:hover { background: rgba(255,255,255,0.3); }
+.quote-refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.quote-refresh-btn .spinning { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.quote-content { margin-bottom: 16px; }
+.quote-text { font-size: 15px; font-style: italic; line-height: 1.6; margin-bottom: 12px; opacity: 0.95; }
+.quote-author { font-size: 13px; font-weight: 500; opacity: 0.85; text-align: right; }
+.quote-emotion-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+
 /* Mini Calendar */
 .mini-calendar { width: 100%; }
 .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
