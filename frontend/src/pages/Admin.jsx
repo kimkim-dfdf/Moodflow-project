@@ -250,7 +250,9 @@ function Admin() {
                       <td>
                         <div className="tag-list">
                           {(b.tags || []).slice(0, 2).map(function(t) {
-                            return <span key={t} className="tag-mini">{t}</span>;
+                            var tagName = typeof t === 'string' ? t : t.name;
+                            var tagKey = typeof t === 'string' ? t : t.slug;
+                            return <span key={tagKey} className="tag-mini">{tagName}</span>;
                           })}
                           {(b.tags || []).length > 2 && <span className="tag-more">+{b.tags.length - 2}</span>}
                         </div>
@@ -381,13 +383,27 @@ function MusicModal({ music, emotions, onSave, onClose }) {
 }
 
 function BookModal({ book, emotions, tags, onSave, onClose }) {
+  function getTagSlugs(bookTags) {
+    if (!bookTags) return [];
+    var result = [];
+    for (var i = 0; i < bookTags.length; i++) {
+      var t = bookTags[i];
+      if (typeof t === 'string') {
+        result.push(t);
+      } else {
+        result.push(t.slug);
+      }
+    }
+    return result;
+  }
+
   const [form, setForm] = useState({
     title: book ? book.title : '',
     author: book ? book.author : '',
     genre: book ? book.genre : '',
     emotion: book ? book.emotion : 'Happy',
     description: book ? book.description : '',
-    tags: book ? book.tags : []
+    tags: book ? getTagSlugs(book.tags) : []
   });
 
   function handleSubmit(e) {
