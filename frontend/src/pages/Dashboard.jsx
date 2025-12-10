@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDate } from '../context/DateContext';
 import EmotionSelector from '../components/EmotionSelector';
@@ -211,7 +212,10 @@ function Dashboard() {
               </section>
 
               <section className="card">
-                <div className="section-header"><h3><Music size={20} /> Music</h3></div>
+                <div className="section-header">
+                  <h3><Music size={20} /> Music</h3>
+                  <Link to="/music" className="see-more-link">See More</Link>
+                </div>
                 <div className="music-grid">
                   {musicList.map(function(m) {
                     return (
