@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDate } from '../context/DateContext';
 import EmotionSelector from '../components/EmotionSelector';
@@ -7,11 +6,10 @@ import TaskCard from '../components/TaskCard';
 import MiniCalendar from '../components/MiniCalendar';
 import api from '../api/axios';
 import { format, isToday } from 'date-fns';
-import { Music, CheckCircle2, Calendar, ExternalLink, ArrowRight } from 'lucide-react';
+import { Music, CheckCircle2, Calendar, ExternalLink } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 function Dashboard() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { selectedDate, setSelectedDate } = useDate();
   const [selectedEmotion, setSelectedEmotion] = useState(null);
@@ -213,12 +211,7 @@ function Dashboard() {
               </section>
 
               <section className="card">
-                <div className="section-header">
-                  <h3><Music size={20} /> Music</h3>
-                  <button className="view-all-btn" onClick={function() { navigate('/music'); }}>
-                    View All <ArrowRight size={16} />
-                  </button>
-                </div>
+                <div className="section-header"><h3><Music size={20} /> Music</h3></div>
                 <div className="music-grid">
                   {musicList.map(function(m) {
                     return (

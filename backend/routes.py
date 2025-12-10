@@ -399,55 +399,6 @@ def register_routes(app):
         return jsonify(repository.get_all_music())
     
     
-    @app.route('/api/music/favorites', methods=['GET'])
-    @login_required
-    def get_music_favorites():
-        """Get user's favorite music list."""
-        favorites = repository.get_user_music_favorites(current_user.id)
-        return jsonify(favorites)
-    
-    
-    @app.route('/api/music/favorites/ids', methods=['GET'])
-    @login_required
-    def get_music_favorite_ids():
-        """Get list of music IDs that user has favorited."""
-        favorite_ids = repository.get_user_favorite_music_ids(current_user.id)
-        return jsonify(list(favorite_ids))
-    
-    
-    @app.route('/api/music/favorites/<int:music_id>', methods=['POST'])
-    @login_required
-    def add_music_favorite(music_id):
-        """Add a music to favorites."""
-        result = repository.add_music_favorite(current_user.id, music_id)
-        
-        if result is None:
-            return jsonify({'message': 'Already in favorites'}), 200
-        
-        return jsonify({'message': 'Added to favorites', 'favorite': result}), 201
-    
-    
-    @app.route('/api/music/favorites/<int:music_id>', methods=['DELETE'])
-    @login_required
-    def remove_music_favorite(music_id):
-        """Remove a music from favorites."""
-        success = repository.remove_music_favorite(current_user.id, music_id)
-        
-        if not success:
-            return jsonify({'error': 'Not found in favorites'}), 404
-        
-        return jsonify({'message': 'Removed from favorites'}), 200
-    
-    
-    @app.route('/api/music/similar', methods=['GET'])
-    @login_required
-    def get_similar_music():
-        """Get similar music based on user's favorites."""
-        limit = request.args.get('limit', 6, type=int)
-        similar = repository.get_similar_music(current_user.id, limit)
-        return jsonify(similar)
-    
-    
     # ==========================================
     # Book Routes
     # ==========================================
