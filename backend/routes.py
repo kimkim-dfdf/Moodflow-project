@@ -487,6 +487,67 @@ def register_routes(app):
         return jsonify(result)
     
     
+    @app.route('/api/books/recommended', methods=['GET'])
+    @login_required
+    def get_recommended_books():
+        """
+        Get personalized book recommendations based on current emotion
+        and user's favorite history.
+        Uses content-based filtering algorithm.
+        """
+        emotion = request.args.get('emotion', 'Neutral')
+        limit = request.args.get('limit', 5, type=int)
+        
+        import recommendation_engine
+        books = recommendation_engine.get_recommended_books(
+            current_user.id,
+            emotion,
+            limit
+        )
+        
+        return jsonify(books)
+    
+    
+    @app.route('/api/books/favorites', methods=['GET'])
+    @login_required
+    def get_book_favorites():
+        """Get user's favorite books."""
+        favorites = repository.get_user_favorite_books(current_user.id)
+        return jsonify(favorites)
+    
+    
+    @app.route('/api/books/favorites/ids', methods=['GET'])
+    @login_required
+    def get_book_favorite_ids():
+        """Get user's favorite book IDs."""
+        favorite_ids = repository.get_user_book_favorites(current_user.id)
+        return jsonify(favorite_ids)
+    
+    
+    @app.route('/api/books/<int:book_id>/favorite', methods=['POST'])
+    @login_required
+    def add_book_to_favorites(book_id):
+        """Add a book to user's favorites."""
+        success = repository.add_book_favorite(current_user.id, book_id)
+        
+        if success:
+            return jsonify({'message': 'Book added to favorites'})
+        else:
+            return jsonify({'message': 'Book already in favorites'})
+    
+    
+    @app.route('/api/books/<int:book_id>/favorite', methods=['DELETE'])
+    @login_required
+    def remove_book_from_favorites(book_id):
+        """Remove a book from user's favorites."""
+        success = repository.remove_book_favorite(current_user.id, book_id)
+        
+        if success:
+            return jsonify({'message': 'Book removed from favorites'})
+        else:
+            return jsonify({'message': 'Book not in favorites'}), 404
+    
+    
     # ==========================================
     # Profile Routes
     # ==========================================
