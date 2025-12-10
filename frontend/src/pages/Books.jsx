@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
-import { BookOpen, X, Search, Heart, Share2 } from 'lucide-react';
+import { BookOpen, X, Search, Heart, Share2, Star, Trash2, User } from 'lucide-react';
 
 function BookCard(props) {
   var book = props.book;
@@ -55,7 +55,36 @@ function BookDetailModal(props) {
   var onClose = props.onClose;
   var isFavorite = props.isFavorite;
   var onToggleFavorite = props.onToggleFavorite;
+  var currentUserId = props.currentUserId;
   var [shareMessage, setShareMessage] = useState('');
+  var [reviews, setReviews] = useState([]);
+  var [reviewRating, setReviewRating] = useState(5);
+  var [reviewContent, setReviewContent] = useState('');
+  var [isSubmitting, setIsSubmitting] = useState(false);
+  var [reviewError, setReviewError] = useState('');
+  var [hasUserReview, setHasUserReview] = useState(false);
+  
+  useEffect(function() {
+    if (book) {
+      loadReviews();
+    }
+  }, [book]);
+  
+  function loadReviews() {
+    api.get('/books/' + book.id + '/reviews').then(function(res) {
+      setReviews(res.data);
+      var userHasReview = false;
+      for (var i = 0; i < res.data.length; i++) {
+        if (res.data[i].user_id === currentUserId) {
+          userHasReview = true;
+          break;
+        }
+      }
+      setHasUserReview(userHasReview);
+    }).catch(function() {
+      setReviews([]);
+    });
+  }
   
   if (!book) {
     return null;
@@ -74,7 +103,6 @@ function BookDetailModal(props) {
   }
   
   function handleShareClick() {
-    // Create share text with book info
     var shareText = 'Check out this book I found on MoodFlow!\n\n';
     shareText = shareText + book.title + ' by ' + book.author + '\n';
     shareText = shareText + 'Genre: ' + book.genre + '\n';
@@ -82,17 +110,14 @@ function BookDetailModal(props) {
       shareText = shareText + '\n' + book.description;
     }
     
-    // Check if Web Share API is available (mobile devices)
     if (navigator.share) {
       navigator.share({
         title: book.title,
         text: shareText
       }).catch(function(error) {
-        // User cancelled or error occurred
         console.log('Share cancelled');
       });
     } else {
-      // Fallback: Copy to clipboard
       navigator.clipboard.writeText(shareText).then(function() {
         setShareMessage('Copied to clipboard!');
         setTimeout(function() {
@@ -105,6 +130,73 @@ function BookDetailModal(props) {
         }, 2000);
       });
     }
+  }
+  
+  function handleSubmitReview() {
+    if (!reviewContent.trim()) {
+      setReviewError('Please write a review');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setReviewError('');
+    
+    api.post('/books/' + book.id + '/reviews', {
+      rating: reviewRating,
+      content: reviewContent
+    }).then(function(res) {
+      setReviews([res.data].concat(reviews));
+      setReviewContent('');
+      setReviewRating(5);
+      setHasUserReview(true);
+      setIsSubmitting(false);
+    }).catch(function(err) {
+      var message = 'Failed to submit review';
+      if (err.response && err.response.data && err.response.data.error) {
+        message = err.response.data.error;
+      }
+      setReviewError(message);
+      setIsSubmitting(false);
+    });
+  }
+  
+  function handleDeleteReview(reviewId) {
+    api.delete('/books/reviews/' + reviewId).then(function() {
+      var newReviews = [];
+      for (var i = 0; i < reviews.length; i++) {
+        if (reviews[i].id !== reviewId) {
+          newReviews.push(reviews[i]);
+        }
+      }
+      setReviews(newReviews);
+      setHasUserReview(false);
+    }).catch(function() {
+      setReviewError('Failed to delete review');
+    });
+  }
+  
+  function renderStars(rating, interactive) {
+    var stars = [];
+    for (var i = 1; i <= 5; i++) {
+      if (interactive) {
+        var starIndex = i;
+        stars.push(
+          <button 
+            key={i} 
+            type="button"
+            className="star-btn"
+            onClick={function() { setReviewRating(starIndex); }.bind(null, starIndex)}
+          >
+            <Star size={20} fill={i <= reviewRating ? '#fbbf24' : 'none'} color={i <= reviewRating ? '#fbbf24' : '#d1d5db'} />
+          </button>
+        );
+      } else {
+        stars.push(
+          <Star key={i} size={16} fill={i <= rating ? '#fbbf24' : 'none'} color={i <= rating ? '#fbbf24' : '#d1d5db'} />
+        );
+      }
+    }
+    return stars;
   }
   
   return (
@@ -157,6 +249,71 @@ function BookDetailModal(props) {
               </div>
             </div>
           )}
+          
+          <div className="modal-reviews">
+            <h4>Reviews ({reviews.length})</h4>
+            
+            {!hasUserReview && currentUserId && (
+              <div className="review-form">
+                <div className="review-rating-input">
+                  <span>Your Rating:</span>
+                  <div className="stars-input">{renderStars(reviewRating, true)}</div>
+                </div>
+                <textarea
+                  className="review-textarea"
+                  placeholder="Write your review..."
+                  value={reviewContent}
+                  onChange={function(e) { setReviewContent(e.target.value); }}
+                  rows={3}
+                />
+                {reviewError && <div className="review-error">{reviewError}</div>}
+                <button 
+                  className="review-submit-btn"
+                  onClick={handleSubmitReview}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </div>
+            )}
+            
+            {hasUserReview && (
+              <div className="review-notice">You have already reviewed this book.</div>
+            )}
+            
+            <div className="reviews-list">
+              {reviews.length === 0 ? (
+                <p className="no-reviews">No reviews yet. Be the first to review!</p>
+              ) : (
+                reviews.map(function(review) {
+                  return (
+                    <div key={review.id} className="review-item">
+                      <div className="review-header">
+                        <div className="review-user">
+                          <User size={16} />
+                          <span>{review.username}</span>
+                        </div>
+                        <div className="review-stars">{renderStars(review.rating, false)}</div>
+                        {review.user_id === currentUserId && (
+                          <button 
+                            className="review-delete-btn"
+                            onClick={function() { handleDeleteReview(review.id); }}
+                            title="Delete review"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                      <p className="review-content">{review.content}</p>
+                      <span className="review-date">
+                        {new Date(review.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </div>
         
         <div className="modal-footer">
@@ -213,6 +370,7 @@ function Books() {
   const [activeTab, setActiveTab] = useState('all');
   const [allBooks, setAllBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const fetchIdRef = useRef(0);
   const searchTimeoutRef = useRef(null);
 
@@ -222,6 +380,11 @@ function Books() {
     });
     api.get('/books').then(function(res) {
       setAllBooks(res.data);
+    });
+    api.get('/auth/me').then(function(res) {
+      setCurrentUserId(res.data.id);
+    }).catch(function() {
+      setCurrentUserId(null);
     });
     fetchBooks([]);
   }, []);
@@ -506,6 +669,7 @@ function Books() {
           onClose={closeBookDetail}
           isFavorite={isFavorite(selectedBook.id)}
           onToggleFavorite={toggleFavorite}
+          currentUserId={currentUserId}
         />
       )}
     </div>
