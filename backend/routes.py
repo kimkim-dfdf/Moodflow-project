@@ -488,6 +488,88 @@ def register_routes(app):
     
     
     # ==========================================
+    # Book Review Routes
+    # ==========================================
+    
+    @app.route('/api/books/<int:book_id>/reviews', methods=['GET'])
+    def get_book_reviews(book_id):
+        """Get all reviews for a specific book."""
+        reviews = repository.get_reviews_for_book(book_id)
+        return jsonify(reviews)
+    
+    
+    @app.route('/api/books/<int:book_id>/reviews', methods=['POST'])
+    @login_required
+    def create_review(book_id):
+        """Create a new review for a book."""
+        data = request.get_json()
+        
+        rating = data.get('rating')
+        content = data.get('content', '')
+        
+        if rating is None:
+            return jsonify({'error': 'Rating is required'}), 400
+        
+        if rating < 1 or rating > 5:
+            return jsonify({'error': 'Rating must be between 1 and 5'}), 400
+        
+        if not content.strip():
+            return jsonify({'error': 'Review content is required'}), 400
+        
+        review = repository.create_book_review(
+            user_id=current_user.id,
+            book_id=book_id,
+            rating=rating,
+            content=content.strip()
+        )
+        
+        if review is None:
+            return jsonify({'error': 'You have already reviewed this book'}), 400
+        
+        return jsonify(review), 201
+    
+    
+    @app.route('/api/books/reviews/<int:review_id>', methods=['PUT'])
+    @login_required
+    def update_review(review_id):
+        """Update an existing review."""
+        data = request.get_json()
+        
+        rating = data.get('rating')
+        content = data.get('content', '')
+        
+        if rating is None:
+            return jsonify({'error': 'Rating is required'}), 400
+        
+        if rating < 1 or rating > 5:
+            return jsonify({'error': 'Rating must be between 1 and 5'}), 400
+        
+        review = repository.update_book_review(
+            review_id=review_id,
+            user_id=current_user.id,
+            rating=rating,
+            content=content.strip()
+        )
+        
+        if review is None:
+            return jsonify({'error': 'Review not found or not authorized'}), 404
+        
+        return jsonify(review)
+    
+    
+    @app.route('/api/books/reviews/<int:review_id>', methods=['DELETE'])
+    @login_required
+    def delete_review(review_id):
+        """Delete a review."""
+        success = repository.delete_book_review(review_id, current_user.id)
+        
+        if not success:
+            return jsonify({'error': 'Review not found or not authorized'}), 404
+        
+        return jsonify({'message': 'Review deleted successfully'})
+    
+    
+    # ==========================================
     # Profile Routes
     # ==========================================
     
