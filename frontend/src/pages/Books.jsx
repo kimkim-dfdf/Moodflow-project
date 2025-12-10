@@ -175,17 +175,22 @@ function BookDetailModal(props) {
     });
   }
   
+  function createStarClickHandler(starValue) {
+    return function() {
+      setReviewRating(starValue);
+    };
+  }
+  
   function renderStars(rating, interactive) {
     var stars = [];
     for (var i = 1; i <= 5; i++) {
       if (interactive) {
-        var starIndex = i;
         stars.push(
           <button 
             key={i} 
             type="button"
             className="star-btn"
-            onClick={function() { setReviewRating(starIndex); }.bind(null, starIndex)}
+            onClick={createStarClickHandler(i)}
           >
             <Star size={20} fill={i <= reviewRating ? '#fbbf24' : 'none'} color={i <= reviewRating ? '#fbbf24' : '#d1d5db'} />
           </button>
