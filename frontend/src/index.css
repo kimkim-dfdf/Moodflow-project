@@ -476,6 +476,23 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .music-play-btn { display: flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--primary); color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 500; flex-shrink: 0; }
 .music-play-btn:hover { background: var(--primary-dark); }
 
+.music-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+.tab-btn { display: flex; align-items: center; gap: 6px; padding: 10px 20px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); font-size: 14px; font-weight: 500; cursor: pointer; }
+.tab-btn:hover { border-color: var(--primary); }
+.tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+.similar-section { margin-bottom: 24px; }
+.similar-section .section-header { margin-bottom: 16px; }
+.similar-section .section-header h3 { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 600; color: var(--primary); }
+.similar-section .section-hint { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+.similar-music-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+
+.music-card-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.music-list-card .favorite-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px; cursor: pointer; color: #ccc; transition: all 0.2s; }
+.music-list-card .favorite-btn:hover { border-color: #ef4444; color: #ef4444; }
+.music-list-card .favorite-btn.active { border-color: #ef4444; color: #ef4444; }
+.music-score-tag { font-size: 11px; padding: 3px 8px; background: #dcfce7; color: #166534; border-radius: 10px; font-weight: 500; }
+
 /* Responsive */
 @media (max-width: 1200px) {
   .dashboard-grid { grid-template-columns: 1fr; }
