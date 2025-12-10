@@ -45,6 +45,7 @@ backend/
 - Music recommendations with YouTube links
 - Mini calendar with emotion tracking
 - Weekly mood statistics chart
+- **Streak counter** showing consecutive days of emotion recording
 
 ### 2. Tasks
 - AI-based task suggestions (no manual input)
@@ -53,10 +54,12 @@ backend/
 - Emotion-based task generation
 - Delete tasks with trash icon
 
-### 3. Calendar
+### 3. Calendar (Mood Diary)
 - Monthly calendar view
 - Record emotions for any day
 - Visual emotion indicators on calendar
+- **Extended diary** with longer text entries (Daily Journal)
+- Photo attachments for diary entries
 
 ### 4. Books
 - Tag-based filtering with 10 emotion tags
@@ -99,6 +102,7 @@ Only 4 fixed accounts can log in (no registration):
 - `POST /api/emotions/record` - Record emotion for a day
 - `GET /api/emotions/statistics` - Get emotion statistics
 - `GET /api/emotions/diary/<date>` - Get diary entry for date
+- `GET /api/emotions/streak` - Get user's streak data (current, longest, total)
 
 ### Tasks
 - `GET /api/tasks` - List tasks
@@ -135,6 +139,12 @@ This project uses **student-friendly** code patterns:
 - Comprehensive comments
 
 ## Recent Changes
+
+- December 10, 2025: New features added
+  - **Streak counter** - Shows consecutive days of emotion recording on dashboard
+  - New API endpoint `/api/emotions/streak` with current_streak, longest_streak, total_entries
+  - Extended diary with larger textarea for Daily Journal entries
+  - Improved diary modal UI with better styling
 
 - December 8, 2025: Code cleanup
   - Removed unused legacy functions from repository.py (640 lines now)
