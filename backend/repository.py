@@ -7,7 +7,7 @@
 # ==============================================
 
 from datetime import datetime
-from models import db, User, Task, EmotionHistory, Emotion, Music, BookTag, Book
+from models import db, User, Task, EmotionHistory, Emotion, Music, BookTag, Book, BookReview
 
 
 # ==============================================
@@ -628,5 +628,102 @@ def get_tag_objects_for_book(book_dict, tags_cache=None):
             result.append(tags_cache[tag_slug])
     
     return result
+
+
+# ==============================================
+# Book Review Operations
+# ==============================================
+
+def get_reviews_for_book(book_id):
+    """
+    Get all reviews for a specific book.
+    Returns reviews with user information.
+    """
+    reviews = BookReview.query.filter_by(book_id=book_id).order_by(BookReview.created_at.desc()).all()
+    
+    result = []
+    for review in reviews:
+        review_dict = review.to_dict()
+        user = db.session.get(User, review.user_id)
+        if user:
+            review_dict['username'] = user.username
+        else:
+            review_dict['username'] = 'Unknown'
+        result.append(review_dict)
+    
+    return result
+
+
+def get_user_review_for_book(user_id, book_id):
+    """
+    Get a specific user's review for a book.
+    Returns None if no review exists.
+    """
+    review = BookReview.query.filter_by(user_id=user_id, book_id=book_id).first()
+    if review:
+        return review.to_dict()
+    return None
+
+
+def create_book_review(user_id, book_id, rating, content):
+    """
+    Create a new book review.
+    Each user can only have one review per book.
+    """
+    existing = BookReview.query.filter_by(user_id=user_id, book_id=book_id).first()
+    if existing:
+        return None
+    
+    review = BookReview()
+    review.user_id = user_id
+    review.book_id = book_id
+    review.rating = rating
+    review.content = content
+    review.created_at = datetime.utcnow()
+    
+    db.session.add(review)
+    db.session.commit()
+    
+    result = review.to_dict()
+    user = db.session.get(User, user_id)
+    if user:
+        result['username'] = user.username
+    
+    return result
+
+
+def update_book_review(review_id, user_id, rating, content):
+    """
+    Update an existing book review.
+    Only the review owner can update it.
+    """
+    review = BookReview.query.filter_by(id=review_id, user_id=user_id).first()
+    if review is None:
+        return None
+    
+    review.rating = rating
+    review.content = content
+    db.session.commit()
+    
+    result = review.to_dict()
+    user = db.session.get(User, user_id)
+    if user:
+        result['username'] = user.username
+    
+    return result
+
+
+def delete_book_review(review_id, user_id):
+    """
+    Delete a book review.
+    Only the review owner can delete it.
+    """
+    review = BookReview.query.filter_by(id=review_id, user_id=user_id).first()
+    if review is None:
+        return False
+    
+    db.session.delete(review)
+    db.session.commit()
+    return True
 
 
