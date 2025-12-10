@@ -45,7 +45,6 @@ backend/
 - Music recommendations with YouTube links
 - Mini calendar with emotion tracking
 - Weekly mood statistics chart
-- **Streak counter** showing consecutive days of emotion recording
 
 ### 2. Tasks
 - AI-based task suggestions (no manual input)
@@ -54,29 +53,38 @@ backend/
 - Emotion-based task generation
 - Delete tasks with trash icon
 
-### 3. Calendar (Mood Diary)
+### 3. Calendar
 - Monthly calendar view
 - Record emotions for any day
 - Visual emotion indicators on calendar
-- **Extended diary** with longer text entries (Daily Journal)
-- Photo attachments for diary entries
 
 ### 4. Books
 - Tag-based filtering with 10 emotion tags
 - AND logic for multi-tag filtering
 - 15 curated books with 3 tags each
+- Content-based book recommendations (Recommended tab)
+- Emotion selector for mood-based recommendations
 
 ### 5. Profile
 - User settings management
 
-## Recommendation Algorithm
+## Recommendation Algorithms
 
+### Task Recommendations
 **Total Score = Category Score (57%) + Priority Score (43%)**
 
 - Category weight from emotion-to-category mapping
 - Priority scoring inverts based on emotion preference
 - Happy/energetic = prefer High priority tasks
 - Tired/sad = prefer Low priority tasks
+
+### Book Recommendations (Content-Based Filtering)
+**Total Score = Emotion Score (70%) + Favorite Score (30%)**
+
+- Emotion-Tag Matching (70%): Each emotion has weighted preferences for 10 tags (hopeful, comforting, peaceful, growth, emotional, escapism, recharge, courage, new-perspective, focus)
+- Favorite History (30%): Based on tag frequency from user's favorited books
+- Books already in favorites are excluded from recommendations
+- Uses bubble sort for student-friendly sorting
 
 ## Demo Accounts (Simplified Login)
 
@@ -102,7 +110,6 @@ Only 4 fixed accounts can log in (no registration):
 - `POST /api/emotions/record` - Record emotion for a day
 - `GET /api/emotions/statistics` - Get emotion statistics
 - `GET /api/emotions/diary/<date>` - Get diary entry for date
-- `GET /api/emotions/streak` - Get user's streak data (current, longest, total)
 
 ### Tasks
 - `GET /api/tasks` - List tasks
@@ -118,6 +125,10 @@ Only 4 fixed accounts can log in (no registration):
 ### Books
 - `GET /api/books/tags` - Get all book tags
 - `GET /api/books` - Get books filtered by tags (AND logic)
+- `GET /api/books/recommended` - Get recommended books by emotion
+- `GET /api/books/favorites` - Get user's favorite books
+- `POST /api/books/favorites/:id` - Add book to favorites
+- `DELETE /api/books/favorites/:id` - Remove book from favorites
 
 ### Profile
 - `GET /api/user/profile` - Get profile
@@ -140,11 +151,12 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
-- December 10, 2025: New features added
-  - **Streak counter** - Shows consecutive days of emotion recording on dashboard
-  - New API endpoint `/api/emotions/streak` with current_streak, longest_streak, total_entries
-  - Extended diary with larger textarea for Daily Journal entries
-  - Improved diary modal UI with better styling
+- December 10, 2025: Book recommendation algorithm with content-based filtering
+  - Fixed EMOTION_TAG_WEIGHTS to use correct seeded tag slugs (hopeful, comforting, peaceful, growth, emotional, escapism, recharge, courage, new-perspective, focus)
+  - Content-based filtering combines emotion-tag matching (70%) with favorite history (30%)
+  - Books already in favorites are excluded from recommendations
+  - Added "Recommended" tab in Books.jsx with emotion selector
+  - Algorithm uses bubble sort for student-friendly sorting
 
 - December 8, 2025: Code cleanup
   - Removed unused legacy functions from repository.py (640 lines now)

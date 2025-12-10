@@ -6,7 +6,7 @@ import TaskCard from '../components/TaskCard';
 import MiniCalendar from '../components/MiniCalendar';
 import api from '../api/axios';
 import { format, isToday } from 'date-fns';
-import { Music, CheckCircle2, Calendar, ExternalLink, Flame } from 'lucide-react';
+import { Music, CheckCircle2, Calendar, ExternalLink } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 function Dashboard() {
@@ -18,7 +18,6 @@ function Dashboard() {
   const [musicList, setMusicList] = useState([]);
   const [taskSummary, setTaskSummary] = useState({ total: 0, completed: 0, pending: 0 });
   const [moodStats, setMoodStats] = useState(null);
-  const [streakData, setStreakData] = useState({ current_streak: 0, longest_streak: 0, total_entries: 0 });
   const [loading, setLoading] = useState(true);
   const [addedTasks, setAddedTasks] = useState(new Set());
   const [calendarKey, setCalendarKey] = useState(0);
@@ -39,17 +38,14 @@ function Dashboard() {
     Promise.all([
       api.get('/dashboard/summary', { params: { date: dateStr } }),
       api.get('/emotions/diary/' + dateStr),
-      api.get('/tasks', { params: { date: dateStr } }),
-      api.get('/emotions/streak')
+      api.get('/tasks', { params: { date: dateStr } })
     ]).then(function(results) {
       var summary = results[0].data;
       var emotionRes = results[1].data;
       var tasksRes = results[2].data;
-      var streakRes = results[3].data;
       
       setTaskSummary(summary.task_summary);
       setMoodStats(summary.weekly_mood_stats);
-      setStreakData(streakRes);
       
       var titles = new Set();
       for (var i = 0; i < tasksRes.length; i++) {
@@ -166,7 +162,6 @@ function Dashboard() {
           <div className="badge"><span className="badge-value">{taskSummary.total}</span><span className="badge-label">Total</span></div>
           <div className="badge completed"><CheckCircle2 size={16} /><span className="badge-value">{taskSummary.completed}</span><span className="badge-label">Done</span></div>
           <div className="badge"><span className="badge-value">{taskSummary.pending}</span><span className="badge-label">Pending</span></div>
-          <div className="badge streak"><Flame size={16} /><span className="badge-value">{streakData.current_streak}</span><span className="badge-label">Day Streak</span></div>
         </div>
       </header>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
-import { BookOpen, X, Search, Heart } from 'lucide-react';
+import { BookOpen, X, Search, Heart, Sparkles } from 'lucide-react';
 
 function BookCard(props) {
   var book = props.book;
@@ -138,38 +138,24 @@ function BookDetailModal(props) {
   );
 }
 
-function getFavoritesFromStorage() {
-  try {
-    var stored = localStorage.getItem('book_favorites');
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-  }
-  return [];
-}
-
-function saveFavoritesToStorage(favoriteIds) {
-  try {
-    localStorage.setItem('book_favorites', JSON.stringify(favoriteIds));
-  } catch (e) {
-  }
-}
-
 function Books() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [books, setBooks] = useState([]);
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [favoriteIds, setFavoriteIds] = useState(getFavoritesFromStorage());
+  const [favoriteIds, setFavoriteIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState('recommended');
   const [allBooks, setAllBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
+  const [recommendedBooks, setRecommendedBooks] = useState([]);
+  const [selectedEmotion, setSelectedEmotion] = useState('Neutral');
   const fetchIdRef = useRef(0);
   const searchTimeoutRef = useRef(null);
+
+  var emotions = ['Happy', 'Sad', 'Tired', 'Angry', 'Stressed', 'Neutral'];
 
   useEffect(function() {
     api.get('/books/tags').then(function(res) {
@@ -178,8 +164,27 @@ function Books() {
     api.get('/books').then(function(res) {
       setAllBooks(res.data);
     });
+    api.get('/books/favorites/ids').then(function(res) {
+      setFavoriteIds(res.data);
+    }).catch(function() {
+      setFavoriteIds([]);
+    });
+    fetchRecommendedBooks('Neutral');
     fetchBooks([]);
   }, []);
+
+  function fetchRecommendedBooks(emotion) {
+    api.get('/books/recommended?emotion=' + emotion + '&limit=6').then(function(res) {
+      setRecommendedBooks(res.data);
+    }).catch(function() {
+      setRecommendedBooks([]);
+    });
+  }
+
+  function handleEmotionChange(emotion) {
+    setSelectedEmotion(emotion);
+    fetchRecommendedBooks(emotion);
+  }
 
   function fetchBooks(tagList) {
     var fetchId = ++fetchIdRef.current;
@@ -274,12 +279,15 @@ function Books() {
     
     if (isFav) {
       newIds = favoriteIds.filter(function(id) { return id !== bookId; });
+      setFavoriteIds(newIds);
+      api.delete('/books/' + bookId + '/favorite').catch(function() {});
     } else {
       newIds = favoriteIds.concat([bookId]);
+      setFavoriteIds(newIds);
+      api.post('/books/' + bookId + '/favorite').then(function() {
+        fetchRecommendedBooks(selectedEmotion);
+      }).catch(function() {});
     }
-    
-    setFavoriteIds(newIds);
-    saveFavoritesToStorage(newIds);
   }
 
   function isFavorite(bookId) {
@@ -293,6 +301,8 @@ function Books() {
     
     if (tab === 'all') {
       fetchBooks(selectedTags);
+    } else if (tab === 'recommended') {
+      fetchRecommendedBooks(selectedEmotion);
     }
   }
 
@@ -354,6 +364,13 @@ function Books() {
 
       <div className="books-tabs">
         <button 
+          className={'books-tab ' + (activeTab === 'recommended' ? 'active' : '')}
+          onClick={function() { handleTabChange('recommended'); }}
+        >
+          <Sparkles size={18} />
+          Recommended
+        </button>
+        <button 
           className={'books-tab ' + (activeTab === 'all' ? 'active' : '')}
           onClick={function() { handleTabChange('all'); }}
         >
@@ -368,6 +385,65 @@ function Books() {
           Favorites ({favoriteIds.length})
         </button>
       </div>
+
+      {activeTab === 'recommended' && (
+        <div className="recommendation-section">
+          <div className="emotion-selector">
+            <span className="emotion-selector-label">How are you feeling?</span>
+            <div className="emotion-buttons">
+              {emotions.map(function(emotion) {
+                return (
+                  <button
+                    key={emotion}
+                    className={'emotion-btn ' + (selectedEmotion === emotion ? 'active' : '')}
+                    onClick={function() { handleEmotionChange(emotion); }}
+                  >
+                    {emotion}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          
+          <div className="recommended-books-section">
+            <div className="section-header">
+              <Sparkles size={20} />
+              <h3>Personalized for You</h3>
+            </div>
+            <p className="recommendation-description">
+              Based on your mood and reading history
+            </p>
+            
+            {recommendedBooks.length > 0 ? (
+              <div className="books-grid">
+                {recommendedBooks.map(function(book) {
+                  return (
+                    <div key={book.id} className="recommended-book-card">
+                      <BookCard 
+                        book={book} 
+                        showTags={true}
+                        isFavorite={isFavorite(book.id)}
+                        onToggleFavorite={toggleFavorite}
+                        onOpenDetail={openBookDetail}
+                      />
+                      {book.recommendation_score && (
+                        <div className="match-score">
+                          {book.recommendation_score}% match
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <BookOpen size={48} />
+                <p>Select an emotion to get personalized recommendations!</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {activeTab === 'all' && !searchQuery && (
         <div className="tag-filter-section">

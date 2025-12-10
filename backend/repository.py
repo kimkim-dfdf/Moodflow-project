@@ -7,7 +7,7 @@
 # ==============================================
 
 from datetime import datetime
-from models import db, User, Task, EmotionHistory, Emotion, Music, BookTag, Book
+from models import db, User, Task, EmotionHistory, Emotion, Music, BookTag, Book, BookFavorite
 
 
 # ==============================================
@@ -257,89 +257,6 @@ def get_emotion_entry_by_date(user_id, date):
     if entry:
         return entry.to_dict()
     return None
-
-
-def get_emotion_streak(user_id):
-    """
-    Calculate the user's current emotion recording streak.
-    Counts consecutive days of emotion recording up to today.
-    Returns streak count and longest streak.
-    """
-    from datetime import timedelta
-    
-    # Get all emotion entries for this user, sorted by date descending
-    entries = EmotionHistory.query.filter_by(user_id=user_id).order_by(EmotionHistory.date.desc()).all()
-    
-    if len(entries) == 0:
-        return {'current_streak': 0, 'longest_streak': 0, 'total_entries': 0}
-    
-    # Get today's date
-    today = datetime.utcnow().date()
-    today_str = today.strftime('%Y-%m-%d')
-    
-    # Check if user recorded today
-    current_streak = 0
-    check_date = today
-    
-    # Get all dates as a set for quick lookup
-    recorded_dates = set()
-    for entry in entries:
-        recorded_dates.add(entry.date)
-    
-    # Count current streak (consecutive days ending today or yesterday)
-    # First check if today is recorded
-    if today_str in recorded_dates:
-        current_streak = 1
-        check_date = today - timedelta(days=1)
-    else:
-        # Check if yesterday is recorded (streak can continue from yesterday)
-        yesterday_str = (today - timedelta(days=1)).strftime('%Y-%m-%d')
-        if yesterday_str in recorded_dates:
-            current_streak = 1
-            check_date = today - timedelta(days=2)
-        else:
-            current_streak = 0
-            check_date = None
-    
-    # Continue counting backwards
-    if check_date:
-        while True:
-            date_str = check_date.strftime('%Y-%m-%d')
-            if date_str in recorded_dates:
-                current_streak = current_streak + 1
-                check_date = check_date - timedelta(days=1)
-            else:
-                break
-    
-    # Calculate longest streak
-    longest_streak = 0
-    temp_streak = 0
-    
-    # Sort dates for longest streak calculation
-    sorted_dates = sorted(recorded_dates)
-    
-    for i in range(len(sorted_dates)):
-        if i == 0:
-            temp_streak = 1
-        else:
-            # Check if consecutive with previous date
-            prev_date = datetime.strptime(sorted_dates[i-1], '%Y-%m-%d').date()
-            curr_date = datetime.strptime(sorted_dates[i], '%Y-%m-%d').date()
-            diff = (curr_date - prev_date).days
-            
-            if diff == 1:
-                temp_streak = temp_streak + 1
-            else:
-                temp_streak = 1
-        
-        if temp_streak > longest_streak:
-            longest_streak = temp_streak
-    
-    return {
-        'current_streak': current_streak,
-        'longest_streak': longest_streak,
-        'total_entries': len(entries)
-    }
 
 
 def get_emotion_history_since(user_id, start_date):
@@ -711,5 +628,121 @@ def get_tag_objects_for_book(book_dict, tags_cache=None):
             result.append(tags_cache[tag_slug])
     
     return result
+
+
+# ==============================================
+# Book Favorite Operations
+# ==============================================
+
+def get_user_book_favorites(user_id):
+    """
+    Get all favorite book IDs for a user.
+    Returns a list of book IDs.
+    """
+    favorites = BookFavorite.query.filter_by(user_id=user_id).all()
+    
+    result = []
+    for fav in favorites:
+        result.append(fav.book_id)
+    
+    return result
+
+
+def get_user_favorite_books(user_id):
+    """
+    Get all favorite books for a user with full book data.
+    Returns a list of book dictionaries.
+    """
+    favorites = BookFavorite.query.filter_by(user_id=user_id).all()
+    tags_cache = get_all_tags_as_dict()
+    
+    result = []
+    for fav in favorites:
+        book = Book.query.filter_by(id=fav.book_id).first()
+        if book:
+            book_dict = book.to_dict()
+            book_dict['tags'] = get_tag_objects_for_book(book_dict, tags_cache)
+            result.append(book_dict)
+    
+    return result
+
+
+def add_book_favorite(user_id, book_id):
+    """
+    Add a book to user's favorites.
+    Returns True if added, False if already exists.
+    """
+    existing = BookFavorite.query.filter_by(
+        user_id=user_id,
+        book_id=book_id
+    ).first()
+    
+    if existing:
+        return False
+    
+    new_favorite = BookFavorite()
+    new_favorite.user_id = user_id
+    new_favorite.book_id = book_id
+    db.session.add(new_favorite)
+    db.session.commit()
+    
+    return True
+
+
+def remove_book_favorite(user_id, book_id):
+    """
+    Remove a book from user's favorites.
+    Returns True if removed, False if not found.
+    """
+    favorite = BookFavorite.query.filter_by(
+        user_id=user_id,
+        book_id=book_id
+    ).first()
+    
+    if favorite is None:
+        return False
+    
+    db.session.delete(favorite)
+    db.session.commit()
+    
+    return True
+
+
+def is_book_favorited(user_id, book_id):
+    """
+    Check if a book is in user's favorites.
+    Returns True if favorited, False otherwise.
+    """
+    favorite = BookFavorite.query.filter_by(
+        user_id=user_id,
+        book_id=book_id
+    ).first()
+    
+    if favorite:
+        return True
+    return False
+
+
+def get_favorite_book_tags(user_id):
+    """
+    Get tag frequency from user's favorite books.
+    Returns a dictionary with tag slug as key and count as value.
+    Used for personalized recommendations.
+    """
+    favorites = BookFavorite.query.filter_by(user_id=user_id).all()
+    
+    tag_counts = {}
+    
+    for fav in favorites:
+        book = Book.query.filter_by(id=fav.book_id).first()
+        if book and book.tags:
+            tag_slugs = book.tags.split(',')
+            for tag in tag_slugs:
+                if tag in tag_counts:
+                    tag_counts[tag] = tag_counts[tag] + 1
+                else:
+                    tag_counts[tag] = 1
+    
+    return tag_counts
 
 
