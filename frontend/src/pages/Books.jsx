@@ -8,6 +8,7 @@ function BookCard(props) {
   var isFavorite = props.isFavorite || false;
   var onToggleFavorite = props.onToggleFavorite;
   var onOpenDetail = props.onOpenDetail;
+  var [imgError, setImgError] = useState(false);
   
   function handleFavoriteClick(e) {
     e.stopPropagation();
@@ -22,9 +23,24 @@ function BookCard(props) {
     }
   }
   
+  function handleImgError() {
+    setImgError(true);
+  }
+  
   return (
     <div className="book-card" onClick={handleCardClick}>
-      <div className="book-icon"><BookOpen size={24} /></div>
+      <div className="book-cover">
+        {imgError ? (
+          <div className="book-icon"><BookOpen size={24} /></div>
+        ) : (
+          <img 
+            src={'/books/' + book.id + '.jpg'} 
+            alt={book.title}
+            onError={handleImgError}
+            className="book-cover-img"
+          />
+        )}
+      </div>
       <div className="book-info">
         <div className="book-title-row">
           <h4 className="book-title">{book.title}</h4>
@@ -63,6 +79,7 @@ function BookDetailModal(props) {
   var [isSubmitting, setIsSubmitting] = useState(false);
   var [reviewError, setReviewError] = useState('');
   var [hasUserReview, setHasUserReview] = useState(false);
+  var [modalImgError, setModalImgError] = useState(false);
   
   useEffect(function() {
     if (book) {
@@ -212,8 +229,17 @@ function BookDetailModal(props) {
         </button>
         
         <div className="modal-header">
-          <div className="modal-book-icon">
-            <BookOpen size={48} />
+          <div className="modal-book-cover">
+            {modalImgError ? (
+              <div className="modal-book-icon"><BookOpen size={48} /></div>
+            ) : (
+              <img 
+                src={'/books/' + book.id + '.jpg'} 
+                alt={book.title}
+                onError={function() { setModalImgError(true); }}
+                className="modal-cover-img"
+              />
+            )}
           </div>
           <div className="modal-title-section">
             <h2>{book.title}</h2>
