@@ -24,7 +24,11 @@ function BookCard(props) {
   
   return (
     <div className="book-card" onClick={handleCardClick}>
-      <div className="book-icon"><BookOpen size={24} /></div>
+      {book.cover_url ? (
+        <img src={book.cover_url} alt={book.title} className="book-cover-img" />
+      ) : (
+        <div className="book-icon"><BookOpen size={24} /></div>
+      )}
       <div className="book-info">
         <div className="book-title-row">
           <h4 className="book-title">{book.title}</h4>
@@ -212,9 +216,13 @@ function BookDetailModal(props) {
         </button>
         
         <div className="modal-header">
-          <div className="modal-book-icon">
-            <BookOpen size={48} />
-          </div>
+          {book.cover_url ? (
+            <img src={book.cover_url} alt={book.title} className="modal-book-cover" />
+          ) : (
+            <div className="modal-book-icon">
+              <BookOpen size={48} />
+            </div>
+          )}
           <div className="modal-title-section">
             <h2>{book.title}</h2>
             <p className="modal-author">{book.author}</p>
@@ -599,7 +607,11 @@ function Books() {
             {popularBooks.map(function(book) {
               return (
                 <div key={book.id} className="popular-book-card" onClick={function() { openBookDetail(book); }}>
-                  <div className="popular-book-icon"><BookOpen size={20} /></div>
+                  {book.cover_url ? (
+                    <img src={book.cover_url} alt={book.title} className="popular-book-cover" />
+                  ) : (
+                    <div className="popular-book-icon"><BookOpen size={20} /></div>
+                  )}
                   <div className="popular-book-info">
                     <h4 className="popular-book-title">{book.title}</h4>
                     <p className="popular-book-author">{book.author}</p>

@@ -241,8 +241,9 @@ class Book(db.Model):
     genre = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
     tags = db.Column(db.String(500), nullable=False)
+    cover_url = db.Column(db.String(500), nullable=True)
     
-    def __init__(self, emotion=None, title=None, author=None, genre=None, description=None, tags=None):
+    def __init__(self, emotion=None, title=None, author=None, genre=None, description=None, tags=None, cover_url=None):
         """Initialize a Book object."""
         self.emotion = emotion
         self.title = title
@@ -250,6 +251,7 @@ class Book(db.Model):
         self.genre = genre
         self.description = description
         self.tags = tags
+        self.cover_url = cover_url
     
     def to_dict(self):
         """Convert book to dictionary for API responses."""
@@ -260,7 +262,8 @@ class Book(db.Model):
             'author': self.author,
             'genre': self.genre,
             'description': self.description,
-            'tags': self.tags.split(',') if self.tags else []
+            'tags': self.tags.split(',') if self.tags else [],
+            'cover_url': self.cover_url
         }
         return result
 
