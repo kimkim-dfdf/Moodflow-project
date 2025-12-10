@@ -62,8 +62,17 @@ backend/
 - Tag-based filtering with 10 emotion tags
 - AND logic for multi-tag filtering
 - 15 curated books with 3 tags each
+- Popular Books section (top 5 most reviewed)
+- Book reviews with ratings
 
-### 5. Profile
+### 5. Music
+- Dedicated music page with full music library
+- Emotion-based filtering (6 emotion types)
+- Search by title, artist, or genre
+- Favorites with localStorage persistence
+- YouTube links for each song
+
+### 6. Profile
 - User settings management
 
 ## Recommendation Algorithm
