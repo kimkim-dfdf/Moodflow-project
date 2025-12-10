@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
-import { Music as MusicIcon, X, Search, Heart, ExternalLink, Play, ArrowRight, Sparkles } from 'lucide-react';
+import { Music as MusicIcon, X, Search, Heart, ExternalLink, Play } from 'lucide-react';
 
 function MusicCard(props) {
   var music = props.music;
@@ -79,8 +79,6 @@ function Music() {
   var [favoriteIds, setFavoriteIds] = useState(getMusicFavoritesFromStorage());
   var [searchQuery, setSearchQuery] = useState('');
   var [activeTab, setActiveTab] = useState('all');
-  var [transitionData, setTransitionData] = useState(null);
-  var [transitionLoading, setTransitionLoading] = useState(false);
   var searchTimeoutRef = useRef(null);
 
   useEffect(function() {
@@ -97,22 +95,10 @@ function Music() {
     });
   }, []);
 
-  function fetchTransitionMusic(emotionName) {
-    setTransitionLoading(true);
-    api.get('/music/transition', { params: { emotion: emotionName } }).then(function(res) {
-      setTransitionData(res.data);
-      setTransitionLoading(false);
-    }).catch(function() {
-      setTransitionData(null);
-      setTransitionLoading(false);
-    });
-  }
-
   function handleEmotionFilter(emotionName) {
     if (selectedEmotion === emotionName) {
       setSelectedEmotion('');
       setFilteredMusic(allMusic);
-      setTransitionData(null);
     } else {
       setSelectedEmotion(emotionName);
       var filtered = [];
@@ -122,14 +108,12 @@ function Music() {
         }
       }
       setFilteredMusic(filtered);
-      fetchTransitionMusic(emotionName);
     }
   }
 
   function clearEmotionFilter() {
     setSelectedEmotion('');
     setFilteredMusic(allMusic);
-    setTransitionData(null);
   }
 
   function handleSearch(query) {
@@ -326,56 +310,6 @@ function Music() {
               );
             })}
           </div>
-        </div>
-      )}
-
-      {activeTab === 'all' && selectedEmotion && transitionData && !searchQuery && (
-        <div className="mood-transition-section">
-          <div className="transition-header">
-            <div className="transition-title">
-              <Sparkles size={20} />
-              <h3>Mood Transition Playlist</h3>
-            </div>
-            <p className="transition-description">
-              Music to help you transition from {transitionData.current_emotion} to {transitionData.target_emotion}
-            </p>
-          </div>
-          
-          <div className="transition-path">
-            <span className="transition-step current">{transitionData.current_emotion}</span>
-            {transitionData.transition_path.map(function(step, index) {
-              return (
-                <div key={index} className="transition-arrow-step">
-                  <ArrowRight size={16} className="transition-arrow" />
-                  <span className={'transition-step ' + (index === transitionData.transition_path.length - 1 ? 'target' : '')}>{step}</span>
-                </div>
-              );
-            })}
-          </div>
-          
-          {transitionLoading ? (
-            <div className="loading-state">Loading transition music...</div>
-          ) : transitionData.music && transitionData.music.length > 0 ? (
-            <div className="transition-music-grid">
-              {transitionData.music.slice(0, 6).map(function(music) {
-                return (
-                  <div key={music.id} className="transition-music-card">
-                    <div className="transition-music-icon"><MusicIcon size={20} /></div>
-                    <div className="transition-music-info">
-                      <h4>{music.title}</h4>
-                      <p>{music.artist}</p>
-                      <span className="transition-step-label">{music.transition_step}</span>
-                    </div>
-                    {music.youtube_url && (
-                      <a href={music.youtube_url} target="_blank" rel="noopener noreferrer" className="transition-play-btn">
-                        <Play size={14} />
-                      </a>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : null}
         </div>
       )}
 

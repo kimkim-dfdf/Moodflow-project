@@ -529,30 +529,6 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .music-youtube-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: #ef4444; color: white; border-radius: 8px; font-size: 12px; font-weight: 500; text-decoration: none; flex-shrink: 0; }
 .music-youtube-btn:hover { background: #dc2626; }
 
-/* Mood Transition Section */
-.mood-transition-section { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-radius: 16px; padding: 24px; margin-bottom: 24px; }
-.transition-header { margin-bottom: 16px; }
-.transition-title { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.transition-title h3 { font-size: 18px; font-weight: 600; color: #0369a1; margin: 0; }
-.transition-title svg { color: #0ea5e9; }
-.transition-description { font-size: 14px; color: #0284c7; margin: 0; }
-.transition-path { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-.transition-step { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; background: white; color: #64748b; border: 1px solid #e2e8f0; }
-.transition-step.current { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
-.transition-step.target { background: #dcfce7; color: #166534; border-color: #86efac; }
-.transition-arrow-step { display: flex; align-items: center; gap: 8px; }
-.transition-arrow { color: #94a3b8; }
-.transition-music-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-.transition-music-card { display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border-radius: 10px; border: 1px solid #e2e8f0; }
-.transition-music-card:hover { border-color: #0ea5e9; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1); }
-.transition-music-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; }
-.transition-music-info { flex: 1; min-width: 0; }
-.transition-music-info h4 { font-size: 14px; font-weight: 600; margin: 0 0 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.transition-music-info p { font-size: 12px; color: #64748b; margin: 0 0 4px 0; }
-.transition-step-label { display: inline-block; padding: 2px 8px; background: #e0f2fe; color: #0369a1; border-radius: 10px; font-size: 10px; font-weight: 500; }
-.transition-play-btn { width: 32px; height: 32px; background: #0ea5e9; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; }
-.transition-play-btn:hover { background: #0284c7; }
-
 /* Responsive */
 @media (max-width: 1200px) {
   .dashboard-grid { grid-template-columns: 1fr; }
@@ -569,7 +545,6 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
   .music-grid, .books-grid { grid-template-columns: 1fr; }
   .books-full-grid { grid-template-columns: 1fr; }
   .music-full-grid { grid-template-columns: 1fr; }
-  .transition-music-grid { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: 1fr; }
   .admin-tabs { flex-wrap: wrap; }
   .books-tabs { flex-wrap: wrap; }

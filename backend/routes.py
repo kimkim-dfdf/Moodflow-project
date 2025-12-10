@@ -399,27 +399,6 @@ def register_routes(app):
         return jsonify(repository.get_all_music())
     
     
-    @app.route('/api/music/transition', methods=['GET'])
-    @login_required
-    def get_mood_transition_music():
-        """
-        Get mood transition music recommendations.
-        
-        Mood Transition Algorithm:
-        - Takes user's current emotion
-        - Returns music that helps transition to a better mood
-        - Includes transition path (e.g., Sad -> Neutral -> Happy)
-        """
-        emotion = request.args.get('emotion')
-        
-        if not emotion:
-            emotion = 'Neutral'
-        
-        result = repository.get_mood_transition_music(emotion)
-        
-        return jsonify(result)
-    
-    
     # ==========================================
     # Book Routes
     # ==========================================
