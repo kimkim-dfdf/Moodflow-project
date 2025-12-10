@@ -59,6 +59,7 @@ backend/
 - Visual emotion indicators on calendar
 
 ### 4. Books
+- **Mood-based book recommendations** (personalized based on emotion history)
 - Tag-based filtering with 10 emotion tags
 - AND logic for multi-tag filtering
 - 15 curated books with 3 tags each
@@ -66,14 +67,33 @@ backend/
 ### 5. Profile
 - User settings management
 
-## Recommendation Algorithm
+## Recommendation Algorithms
 
+### Task Recommendation
 **Total Score = Category Score (57%) + Priority Score (43%)**
 
 - Category weight from emotion-to-category mapping
 - Priority scoring inverts based on emotion preference
 - Happy/energetic = prefer High priority tasks
 - Tired/sad = prefer Low priority tasks
+
+### Book Recommendation (Mood-Based)
+**Algorithm: Emotion → Tags → Scores → Sorted Results**
+
+1. Get user's emotion counts for last 14 days
+2. Calculate tag weights based on emotion frequency
+3. Score each book based on matching tags
+4. Sort books by score (bubble sort, highest first)
+
+**Emotion to Tag Mapping:**
+| Emotion | Preferred Tags |
+|---------|----------------|
+| Happy | Hopeful, Motivating, Adventurous |
+| Sad | Comforting, Hopeful, Heartwarming |
+| Tired | Calming, Comforting, Light |
+| Angry | Calming, Thought-Provoking, Escapist |
+| Stressed | Calming, Escapist, Light |
+| Neutral | Thought-Provoking, Adventurous, Motivating |
 
 ## Demo Accounts (Simplified Login)
 
