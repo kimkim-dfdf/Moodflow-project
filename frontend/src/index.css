@@ -484,6 +484,43 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .review-content { font-size: 14px; line-height: 1.6; color: var(--text); margin-bottom: 6px; }
 .review-date { font-size: 12px; color: var(--text-muted); }
 
+/* Music Page */
+.music-page { padding: 30px; }
+.music-search-section { margin-bottom: 16px; }
+.music-search-input { width: 100%; max-width: 400px; padding: 12px 40px 12px 44px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--surface); }
+.music-search-input:focus { outline: none; border-color: var(--primary); }
+.music-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.music-tab { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text-light); }
+.music-tab:hover { border-color: var(--primary); background: #f8f9ff; }
+.music-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+.emotion-filter-section { margin-bottom: 24px; }
+.emotion-filter-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.emotion-filter-label { font-size: 14px; font-weight: 500; color: var(--text-light); }
+.clear-emotion-btn { padding: 6px 12px; border: none; background: var(--secondary); border-radius: 6px; font-size: 12px; cursor: pointer; color: var(--text); }
+.clear-emotion-btn:hover { background: #e5e7eb; }
+.emotion-chips-container { display: flex; flex-wrap: wrap; gap: 8px; }
+.emotion-chip { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text); }
+.emotion-chip:hover { border-color: var(--primary); }
+.emotion-chip.active { color: white; border-color: transparent; }
+.music-container { }
+.music-result-info { font-size: 14px; color: var(--text-light); margin-bottom: 16px; }
+.music-full-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.music-page-card { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; transition: all 0.2s; }
+.music-page-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--primary); }
+.music-page-icon { width: 56px; height: 56px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; }
+.music-page-info { flex: 1; min-width: 0; }
+.music-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.music-page-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.music-page-artist { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.music-page-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+.music-page-genre { display: inline-block; padding: 4px 10px; background: var(--secondary); border-radius: 12px; font-size: 11px; font-weight: 500; }
+.music-page-emotion { display: inline-block; padding: 4px 10px; background: #ede9fe; color: #6d28d9; border-radius: 12px; font-size: 11px; font-weight: 500; }
+.music-favorite-btn { background: none; border: none; cursor: pointer; padding: 4px; color: #ccc; flex-shrink: 0; }
+.music-favorite-btn:hover { color: #ef4444; }
+.music-favorite-btn.active { color: #ef4444; }
+.music-youtube-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: #ef4444; color: white; border-radius: 8px; font-size: 12px; font-weight: 500; text-decoration: none; flex-shrink: 0; }
+.music-youtube-btn:hover { background: #dc2626; }
+
 /* Responsive */
 @media (max-width: 1200px) {
   .dashboard-grid { grid-template-columns: 1fr; }
@@ -499,8 +536,10 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
   .suggestions-grid { grid-template-columns: 1fr; }
   .music-grid, .books-grid { grid-template-columns: 1fr; }
   .books-full-grid { grid-template-columns: 1fr; }
+  .music-full-grid { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: 1fr; }
   .admin-tabs { flex-wrap: wrap; }
   .books-tabs { flex-wrap: wrap; }
+  .music-tabs { flex-wrap: wrap; }
   .search-input-wrapper { max-width: 100%; }
 }
