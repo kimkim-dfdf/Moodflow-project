@@ -232,7 +232,7 @@ function BookDetailModal(props) {
           <div className="modal-reviews">
             <h4>Reviews ({reviews.length})</h4>
             
-            {!hasUserReview && currentUserId && (
+            {!hasUserReview && (
               <div className="review-form">
                 <div className="review-rating-input">
                   <span>Your Rating:</span>
