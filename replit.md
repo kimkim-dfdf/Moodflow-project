@@ -71,6 +71,7 @@ backend/
 - Search by title, artist, or genre
 - Favorites with localStorage persistence
 - YouTube links for each song
+- **Mood Transition Playlist**: When selecting negative emotions (Sad, Angry, Stressed, Tired), shows music to help transition to a happier mood
 
 ### 6. Profile
 - User settings management
