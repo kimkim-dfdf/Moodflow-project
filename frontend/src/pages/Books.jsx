@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
-import { BookOpen, X, Search, Heart } from 'lucide-react';
+import { BookOpen, X, Search, Heart, Sparkles } from 'lucide-react';
 
 function BookCard(props) {
   var book = props.book;
@@ -168,6 +168,8 @@ function Books() {
   const [activeTab, setActiveTab] = useState('all');
   const [allBooks, setAllBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
+  const [recommendedBooks, setRecommendedBooks] = useState([]);
+  const [loadingRecommended, setLoadingRecommended] = useState(true);
   const fetchIdRef = useRef(0);
   const searchTimeoutRef = useRef(null);
 
@@ -179,7 +181,19 @@ function Books() {
       setAllBooks(res.data);
     });
     fetchBooks([]);
+    fetchRecommendedBooks();
   }, []);
+
+  function fetchRecommendedBooks() {
+    setLoadingRecommended(true);
+    api.get('/books/recommended?days=14&limit=6').then(function(res) {
+      setRecommendedBooks(res.data);
+      setLoadingRecommended(false);
+    }).catch(function() {
+      setRecommendedBooks([]);
+      setLoadingRecommended(false);
+    });
+  }
 
   function fetchBooks(tagList) {
     var fetchId = ++fetchIdRef.current;
@@ -368,6 +382,48 @@ function Books() {
           Favorites ({favoriteIds.length})
         </button>
       </div>
+
+      {activeTab === 'all' && !searchQuery && selectedTags.length === 0 && (
+        <div className="recommended-section">
+          <div className="recommended-header">
+            <Sparkles size={20} className="recommended-icon" />
+            <h3>Recommended for You</h3>
+            <span className="recommended-subtitle">Based on your recent emotions</span>
+          </div>
+          {loadingRecommended ? (
+            <div className="recommended-loading">Loading recommendations...</div>
+          ) : recommendedBooks.length > 0 ? (
+            <div className="recommended-grid">
+              {recommendedBooks.map(function(book) {
+                return (
+                  <div key={book.id} className="recommended-book-card" onClick={function() { openBookDetail(book); }}>
+                    <div className="recommended-book-icon"><BookOpen size={20} /></div>
+                    <div className="recommended-book-info">
+                      <h4 className="recommended-book-title">{book.title}</h4>
+                      <p className="recommended-book-author">{book.author}</p>
+                      {book.recommendation_score > 0 && (
+                        <span className="recommendation-score">
+                          Match Score: {book.recommendation_score}
+                        </span>
+                      )}
+                    </div>
+                    <button 
+                      className={'favorite-btn ' + (isFavorite(book.id) ? 'active' : '')} 
+                      onClick={function(e) { e.stopPropagation(); toggleFavorite(book.id); }}
+                    >
+                      <Heart size={16} fill={isFavorite(book.id) ? '#ef4444' : 'none'} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="recommended-empty">
+              <p>Record your emotions to get personalized book recommendations!</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {activeTab === 'all' && !searchQuery && (
         <div className="tag-filter-section">

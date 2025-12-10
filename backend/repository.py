@@ -341,6 +341,47 @@ def get_overall_task_stats():
 
 
 # ==============================================
+# Emotion Statistics for Book Recommendation
+# ==============================================
+
+def get_recent_emotion_counts(user_id, days):
+    """
+    Get emotion counts for the last N days.
+    Used for mood-based book recommendation algorithm.
+    
+    Returns a dictionary like:
+    {'Happy': 3, 'Sad': 2, 'Tired': 1}
+    """
+    from datetime import datetime, timedelta
+    
+    # Calculate the start date (N days ago)
+    today = datetime.now()
+    start_date = today - timedelta(days=days)
+    start_date_str = start_date.strftime('%Y-%m-%d')
+    
+    # Get all emotion entries since start date
+    entries = EmotionHistory.query.filter(
+        EmotionHistory.user_id == user_id,
+        EmotionHistory.date >= start_date_str
+    ).all()
+    
+    # Count each emotion
+    emotion_counts = {}
+    
+    for entry in entries:
+        # Get the emotion name
+        emotion = db.session.get(Emotion, entry.emotion_id)
+        if emotion:
+            emotion_name = emotion.name
+            if emotion_name in emotion_counts:
+                emotion_counts[emotion_name] = emotion_counts[emotion_name] + 1
+            else:
+                emotion_counts[emotion_name] = 1
+    
+    return emotion_counts
+
+
+# ==============================================
 # Emotion Operations
 # ==============================================
 
@@ -480,6 +521,109 @@ def get_all_tags_as_dict():
         result[tag.slug] = tag.to_dict()
     
     return result
+
+
+# ==============================================
+# Mood-Based Book Recommendation Algorithm
+# ==============================================
+
+# Emotion to preferred tags mapping
+# This defines which book tags are preferred for each emotion
+EMOTION_TO_TAGS = {
+    'Happy': ['hopeful', 'motivating', 'adventurous'],
+    'Sad': ['comforting', 'hopeful', 'heartwarming'],
+    'Tired': ['calming', 'comforting', 'light'],
+    'Angry': ['calming', 'thought-provoking', 'escapist'],
+    'Stressed': ['calming', 'escapist', 'light'],
+    'Neutral': ['thought-provoking', 'adventurous', 'motivating']
+}
+
+
+def get_recommended_books(user_id, days, limit):
+    """
+    Get book recommendations based on user's recent emotions.
+    
+    Algorithm:
+    1. Get user's emotion counts for last N days
+    2. Calculate tag weights based on emotion frequency
+    3. Score each book based on matching tags
+    4. Sort books by score (highest first)
+    5. Return top N books
+    
+    Parameters:
+    - user_id: The user's ID
+    - days: Number of days to look back (default 14)
+    - limit: Maximum number of books to return
+    
+    Returns:
+    - List of books sorted by recommendation score
+    """
+    
+    # Step 1: Get emotion counts for recent days
+    emotion_counts = get_recent_emotion_counts(user_id, days)
+    
+    # If no emotion history, return all books without scoring
+    if not emotion_counts:
+        all_books = get_all_books()
+        if limit and limit < len(all_books):
+            return all_books[:limit]
+        return all_books
+    
+    # Step 2: Calculate tag weights based on emotion frequency
+    tag_weights = {}
+    
+    for emotion_name in emotion_counts:
+        emotion_count = emotion_counts[emotion_name]
+        
+        # Get preferred tags for this emotion
+        if emotion_name in EMOTION_TO_TAGS:
+            preferred_tags = EMOTION_TO_TAGS[emotion_name]
+            
+            # Add weight to each preferred tag
+            for tag in preferred_tags:
+                if tag in tag_weights:
+                    tag_weights[tag] = tag_weights[tag] + emotion_count
+                else:
+                    tag_weights[tag] = emotion_count
+    
+    # Step 3: Get all books and calculate scores
+    all_books = get_all_books()
+    books_with_scores = []
+    
+    for book in all_books:
+        score = 0
+        book_tags = book.get('tags', [])
+        
+        # Calculate score based on matching tags
+        for tag_obj in book_tags:
+            tag_slug = tag_obj.get('slug', '')
+            
+            if tag_slug in tag_weights:
+                score = score + tag_weights[tag_slug]
+        
+        # Add book with score to list
+        book_copy = dict(book)
+        book_copy['recommendation_score'] = score
+        books_with_scores.append(book_copy)
+    
+    # Step 4: Sort books by score (using bubble sort for simplicity)
+    n = len(books_with_scores)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            score_a = books_with_scores[j]['recommendation_score']
+            score_b = books_with_scores[j + 1]['recommendation_score']
+            
+            if score_a < score_b:
+                # Swap
+                temp = books_with_scores[j]
+                books_with_scores[j] = books_with_scores[j + 1]
+                books_with_scores[j + 1] = temp
+    
+    # Step 5: Return top N books
+    if limit and limit < len(books_with_scores):
+        return books_with_scores[:limit]
+    
+    return books_with_scores
 
 
 # ==============================================

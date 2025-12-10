@@ -487,6 +487,31 @@ def register_routes(app):
         return jsonify(result)
     
     
+    @app.route('/api/books/recommended', methods=['GET'])
+    @login_required
+    def get_recommended_books():
+        """
+        Get personalized book recommendations based on user's emotion history.
+        
+        Query Parameters:
+        - days: Number of days to look back (default: 14)
+        - limit: Maximum number of books to return (default: 6)
+        
+        Algorithm:
+        1. Analyzes user's emotion history for the past N days
+        2. Calculates tag weights based on emotion frequency
+        3. Scores books based on matching tags
+        4. Returns books sorted by recommendation score (highest first)
+        """
+        user_id = current_user.id
+        days = request.args.get('days', 14, type=int)
+        limit = request.args.get('limit', 6, type=int)
+        
+        recommended_books = repository.get_recommended_books(user_id, days, limit)
+        
+        return jsonify(recommended_books)
+    
+    
     # ==========================================
     # Profile Routes
     # ==========================================
