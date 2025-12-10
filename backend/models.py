@@ -263,30 +263,3 @@ class Book(db.Model):
             'tags': self.tags.split(',') if self.tags else []
         }
         return result
-
-
-# ==============================================
-# Book Favorite Model
-# ==============================================
-
-class BookFavorite(db.Model):
-    """
-    BookFavorite table for storing user's favorite books.
-    Used for personalized book recommendations.
-    """
-    __tablename__ = 'book_favorites'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
-    book_id = db.Column(db.Integer, nullable=False)
-    favorited_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def to_dict(self):
-        """Convert favorite to dictionary for API responses."""
-        result = {
-            'id': self.id,
-            'user_id': self.user_id,
-            'book_id': self.book_id,
-            'favorited_at': self.favorited_at.isoformat() if self.favorited_at else None
-        }
-        return result

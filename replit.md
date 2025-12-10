@@ -62,29 +62,18 @@ backend/
 - Tag-based filtering with 10 emotion tags
 - AND logic for multi-tag filtering
 - 15 curated books with 3 tags each
-- Content-based book recommendations (Recommended tab)
-- Emotion selector for mood-based recommendations
 
 ### 5. Profile
 - User settings management
 
-## Recommendation Algorithms
+## Recommendation Algorithm
 
-### Task Recommendations
 **Total Score = Category Score (57%) + Priority Score (43%)**
 
 - Category weight from emotion-to-category mapping
 - Priority scoring inverts based on emotion preference
 - Happy/energetic = prefer High priority tasks
 - Tired/sad = prefer Low priority tasks
-
-### Book Recommendations (Content-Based Filtering)
-**Total Score = Emotion Score (70%) + Favorite Score (30%)**
-
-- Emotion-Tag Matching (70%): Each emotion has weighted preferences for 10 tags (hopeful, comforting, peaceful, growth, emotional, escapism, recharge, courage, new-perspective, focus)
-- Favorite History (30%): Based on tag frequency from user's favorited books
-- Books already in favorites are excluded from recommendations
-- Uses bubble sort for student-friendly sorting
 
 ## Demo Accounts (Simplified Login)
 
@@ -125,10 +114,6 @@ Only 4 fixed accounts can log in (no registration):
 ### Books
 - `GET /api/books/tags` - Get all book tags
 - `GET /api/books` - Get books filtered by tags (AND logic)
-- `GET /api/books/recommended` - Get recommended books by emotion
-- `GET /api/books/favorites` - Get user's favorite books
-- `POST /api/books/favorites/:id` - Add book to favorites
-- `DELETE /api/books/favorites/:id` - Remove book from favorites
 
 ### Profile
 - `GET /api/user/profile` - Get profile
@@ -150,13 +135,6 @@ This project uses **student-friendly** code patterns:
 - Comprehensive comments
 
 ## Recent Changes
-
-- December 10, 2025: Book recommendation algorithm with content-based filtering
-  - Fixed EMOTION_TAG_WEIGHTS to use correct seeded tag slugs (hopeful, comforting, peaceful, growth, emotional, escapism, recharge, courage, new-perspective, focus)
-  - Content-based filtering combines emotion-tag matching (70%) with favorite history (30%)
-  - Books already in favorites are excluded from recommendations
-  - Added "Recommended" tab in Books.jsx with emotion selector
-  - Algorithm uses bubble sort for student-friendly sorting
 
 - December 8, 2025: Code cleanup
   - Removed unused legacy functions from repository.py (640 lines now)

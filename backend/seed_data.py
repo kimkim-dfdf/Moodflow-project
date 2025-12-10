@@ -6,7 +6,7 @@
 # Called automatically when the app starts.
 # ==============================================
 
-from models import db, Emotion, Music, BookTag, Book, Task, EmotionHistory, BookFavorite
+from models import db, Emotion, Music, BookTag, Book, Task, EmotionHistory
 
 
 def seed_all_static_data():
@@ -22,7 +22,6 @@ def seed_all_static_data():
     seed_books()
     seed_tasks()
     seed_emotion_history()
-    seed_book_favorites()
     
     print("Static data seeding complete.")
 
@@ -303,34 +302,3 @@ def seed_emotion_history():
     
     db.session.commit()
     print("Seeded 8 emotion history records.")
-
-
-def seed_book_favorites():
-    """
-    Seed sample book favorites for demo user.
-    Creates favorite books to demonstrate personalized recommendations.
-    """
-    
-    # Check if book favorites already exist
-    existing_count = BookFavorite.query.count()
-    if existing_count > 0:
-        print("Book favorites already exist, skipping...")
-        return
-    
-    # Sample favorites for user_id 1 (seven@gmail.com)
-    # book_id: matches the order in seed_books (1-15)
-    favorites_data = [
-        {'user_id': 1, 'book_id': 1},   # The Alchemist (hopeful, inspiring)
-        {'user_id': 1, 'book_id': 4},   # A Man Called Ove (comforting, healing)
-        {'user_id': 1, 'book_id': 7},   # Norwegian Wood (peaceful, emotional)
-    ]
-    
-    # Add each favorite to database
-    for entry in favorites_data:
-        favorite = BookFavorite()
-        favorite.user_id = entry['user_id']
-        favorite.book_id = entry['book_id']
-        db.session.add(favorite)
-    
-    db.session.commit()
-    print("Seeded 3 book favorites.")
