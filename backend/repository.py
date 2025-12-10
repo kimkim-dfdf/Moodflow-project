@@ -396,6 +396,60 @@ def get_music_by_emotion(emotion_name, limit):
     return result
 
 
+def get_mood_transition_music(current_emotion):
+    """
+    Get music recommendations for mood transition.
+    
+    Mood Transition Algorithm:
+    - Maps current negative/neutral emotion to a positive target emotion
+    - Returns music from transition steps to help user feel better
+    
+    Transition paths:
+    - Sad -> Neutral -> Happy
+    - Angry -> Neutral -> Happy
+    - Stressed -> Neutral -> Happy
+    - Tired -> Neutral -> Happy
+    - Neutral -> Happy
+    - Happy -> Happy (maintain positive mood)
+    """
+    
+    # Define transition paths for each emotion
+    # Each path shows the journey from current emotion to target emotion
+    transition_map = {
+        'Sad': ['Neutral', 'Happy'],
+        'Angry': ['Neutral', 'Happy'],
+        'Stressed': ['Neutral', 'Happy'],
+        'Tired': ['Neutral', 'Happy'],
+        'Neutral': ['Happy'],
+        'Happy': ['Happy']
+    }
+    
+    # Get the transition path for current emotion
+    if current_emotion in transition_map:
+        transition_path = transition_map[current_emotion]
+    else:
+        transition_path = ['Happy']
+    
+    # Collect music for each step in the transition
+    result = []
+    
+    for step_emotion in transition_path:
+        # Get music for this emotion step
+        step_music = Music.query.filter_by(emotion=step_emotion).all()
+        
+        for music in step_music:
+            music_dict = music.to_dict()
+            music_dict['transition_step'] = step_emotion
+            result.append(music_dict)
+    
+    return {
+        'current_emotion': current_emotion,
+        'transition_path': transition_path,
+        'target_emotion': transition_path[-1] if transition_path else 'Happy',
+        'music': result
+    }
+
+
 # ==============================================
 # Book Tag Operations
 # ==============================================
