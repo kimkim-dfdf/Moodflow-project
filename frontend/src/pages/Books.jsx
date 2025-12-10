@@ -229,32 +229,6 @@ function BookDetailModal(props) {
             )}
           </div>
           
-          {book.description && (
-            <div className="modal-description">
-              <h4>Description</h4>
-              <p>{book.description}</p>
-            </div>
-          )}
-          
-          {book.tags && book.tags.length > 0 && (
-            <div className="modal-tags">
-              <h4>Mood Tags</h4>
-              <div className="modal-tags-list">
-                {book.tags.map(function(tag) {
-                  return (
-                    <span 
-                      key={tag.id} 
-                      className="modal-tag-pill"
-                      style={{ backgroundColor: tag.color || '#6B7280' }}
-                    >
-                      {tag.name}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          
           <div className="modal-reviews">
             <h4>Reviews ({reviews.length})</h4>
             
@@ -319,6 +293,32 @@ function BookDetailModal(props) {
               )}
             </div>
           </div>
+          
+          {book.description && (
+            <div className="modal-description">
+              <h4>Description</h4>
+              <p>{book.description}</p>
+            </div>
+          )}
+          
+          {book.tags && book.tags.length > 0 && (
+            <div className="modal-tags">
+              <h4>Mood Tags</h4>
+              <div className="modal-tags-list">
+                {book.tags.map(function(tag) {
+                  return (
+                    <span 
+                      key={tag.id} 
+                      className="modal-tag-pill"
+                      style={{ backgroundColor: tag.color || '#6B7280' }}
+                    >
+                      {tag.name}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
         
         <div className="modal-footer">
