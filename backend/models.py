@@ -263,3 +263,30 @@ class Book(db.Model):
             'tags': self.tags.split(',') if self.tags else []
         }
         return result
+
+
+# ==============================================
+# Music Favorite Model
+# ==============================================
+
+class MusicFavorite(db.Model):
+    """
+    MusicFavorite table for storing user's favorite music.
+    Each record links a user to a music track.
+    """
+    __tablename__ = 'music_favorites'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    music_id = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert favorite to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'music_id': self.music_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+        return result
