@@ -80,6 +80,15 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .greeting p { color: var(--text-light); }
 .date-display { display: flex; align-items: center; gap: 6px; }
 .today-btn { margin-top: 8px; padding: 6px 12px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.task-summary-badges { display: flex; gap: 12px; }
+.task-summary-badges .badge { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 16px; background: var(--secondary); border-radius: 8px; min-width: 70px; }
+.task-summary-badges .badge-value { font-size: 20px; font-weight: 700; color: var(--text); }
+.task-summary-badges .badge-label { font-size: 11px; color: var(--text-light); text-transform: uppercase; }
+.task-summary-badges .badge.completed { background: #dcfce7; }
+.task-summary-badges .badge.completed svg { color: var(--success); }
+.task-summary-badges .badge.streak { background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 1px solid #fed7aa; }
+.task-summary-badges .badge.streak svg { color: #f97316; }
+.task-summary-badges .badge.streak .badge-value { color: #ea580c; }
 .emotion-header { margin-bottom: 16px; }
 .emotion-header h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
 .emotion-hint { font-size: 13px; color: var(--text-light); }
@@ -247,8 +256,27 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .summary-value.emoji { font-size: 36px; }
 
 /* Diary Modal */
-.diary-modal { max-width: 600px; }
+.diary-modal { max-width: 700px; }
 .diary-content { padding: 24px; }
+.diary-section { margin-bottom: 24px; }
+.diary-section .section-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+.diary-notes { width: 100%; min-height: 200px; padding: 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; line-height: 1.8; resize: vertical; font-family: inherit; }
+.diary-notes:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+.diary-notes::placeholder { color: var(--text-muted); }
+.emotion-grid-diary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.emotion-btn-diary { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 12px; border: 2px solid transparent; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+.emotion-btn-diary:hover { transform: scale(1.02); }
+.emotion-btn-diary.selected { border-width: 3px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.emotion-btn-diary .emotion-emoji { font-size: 32px; }
+.emotion-btn-diary .emotion-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.emotion-btn-diary.selected .emotion-name { color: white; }
+.photo-upload-box { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 32px; border: 2px dashed var(--border); border-radius: 12px; cursor: pointer; color: var(--text-muted); transition: all 0.2s; }
+.photo-upload-box:hover { border-color: var(--primary); background: rgba(99,102,241,0.02); }
+.photo-preview-container { position: relative; }
+.photo-preview-container .photo-preview { width: 100%; max-height: 300px; object-fit: cover; border-radius: 12px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 20px; border-top: 1px solid var(--border); }
+.modal-actions .btn-primary { width: auto; padding: 12px 32px; }
+.modal-actions .btn-secondary { padding: 12px 24px; }
 .diary-emotion-section { text-align: center; margin-bottom: 24px; }
 .selected-emotion { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .selected-emotion .emotion-emoji { font-size: 48px; }

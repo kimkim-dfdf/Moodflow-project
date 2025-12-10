@@ -188,8 +188,8 @@ function Calendar() {
                 </div>
 
                 <div className="diary-section">
-                  <label className="section-label">Notes</label>
-                  <textarea className="diary-notes" placeholder="How was your day?" value={formData.notes} onChange={function(e) { setFormData({ ...formData, notes: e.target.value }); }} rows={4} />
+                  <label className="section-label">Daily Journal</label>
+                  <textarea className="diary-notes" placeholder="Write about your day... What happened? How did you feel? What are you grateful for?" value={formData.notes} onChange={function(e) { setFormData({ ...formData, notes: e.target.value }); }} rows={8} />
                 </div>
 
                 <div className="modal-actions">

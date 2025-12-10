@@ -259,6 +259,89 @@ def get_emotion_entry_by_date(user_id, date):
     return None
 
 
+def get_emotion_streak(user_id):
+    """
+    Calculate the user's current emotion recording streak.
+    Counts consecutive days of emotion recording up to today.
+    Returns streak count and longest streak.
+    """
+    from datetime import timedelta
+    
+    # Get all emotion entries for this user, sorted by date descending
+    entries = EmotionHistory.query.filter_by(user_id=user_id).order_by(EmotionHistory.date.desc()).all()
+    
+    if len(entries) == 0:
+        return {'current_streak': 0, 'longest_streak': 0, 'total_entries': 0}
+    
+    # Get today's date
+    today = datetime.utcnow().date()
+    today_str = today.strftime('%Y-%m-%d')
+    
+    # Check if user recorded today
+    current_streak = 0
+    check_date = today
+    
+    # Get all dates as a set for quick lookup
+    recorded_dates = set()
+    for entry in entries:
+        recorded_dates.add(entry.date)
+    
+    # Count current streak (consecutive days ending today or yesterday)
+    # First check if today is recorded
+    if today_str in recorded_dates:
+        current_streak = 1
+        check_date = today - timedelta(days=1)
+    else:
+        # Check if yesterday is recorded (streak can continue from yesterday)
+        yesterday_str = (today - timedelta(days=1)).strftime('%Y-%m-%d')
+        if yesterday_str in recorded_dates:
+            current_streak = 1
+            check_date = today - timedelta(days=2)
+        else:
+            current_streak = 0
+            check_date = None
+    
+    # Continue counting backwards
+    if check_date:
+        while True:
+            date_str = check_date.strftime('%Y-%m-%d')
+            if date_str in recorded_dates:
+                current_streak = current_streak + 1
+                check_date = check_date - timedelta(days=1)
+            else:
+                break
+    
+    # Calculate longest streak
+    longest_streak = 0
+    temp_streak = 0
+    
+    # Sort dates for longest streak calculation
+    sorted_dates = sorted(recorded_dates)
+    
+    for i in range(len(sorted_dates)):
+        if i == 0:
+            temp_streak = 1
+        else:
+            # Check if consecutive with previous date
+            prev_date = datetime.strptime(sorted_dates[i-1], '%Y-%m-%d').date()
+            curr_date = datetime.strptime(sorted_dates[i], '%Y-%m-%d').date()
+            diff = (curr_date - prev_date).days
+            
+            if diff == 1:
+                temp_streak = temp_streak + 1
+            else:
+                temp_streak = 1
+        
+        if temp_streak > longest_streak:
+            longest_streak = temp_streak
+    
+    return {
+        'current_streak': current_streak,
+        'longest_streak': longest_streak,
+        'total_entries': len(entries)
+    }
+
+
 def get_emotion_history_since(user_id, start_date):
     """
     Get emotion entries since a specific date.

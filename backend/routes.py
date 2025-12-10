@@ -198,6 +198,19 @@ def register_routes(app):
         return jsonify(stats)
     
     
+    @app.route('/api/emotions/streak', methods=['GET'])
+    @login_required
+    def get_emotion_streak():
+        """
+        Get the user's emotion recording streak.
+        Returns current streak, longest streak, and total entries.
+        """
+        user = current_user
+        streak_data = repository.get_emotion_streak(user.id)
+        
+        return jsonify(streak_data)
+    
+    
     # ==========================================
     # File Upload Routes
     # ==========================================
