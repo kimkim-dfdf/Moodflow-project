@@ -409,6 +409,19 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .books-tab:hover { border-color: var(--primary); background: #f8f9ff; }
 .books-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
 
+/* Popular Books Section */
+.popular-books-section { margin-bottom: 24px; }
+.popular-books-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.popular-books-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+.popular-books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.popular-book-card { display: flex; gap: 12px; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+.popular-book-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--primary); }
+.popular-book-icon { width: 40px; height: 50px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; }
+.popular-book-info { flex: 1; min-width: 0; }
+.popular-book-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.popular-book-author { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.popular-book-reviews { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #f59e0b; font-weight: 500; }
+
 /* Book Card Favorite */
 .book-card { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
 .book-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }

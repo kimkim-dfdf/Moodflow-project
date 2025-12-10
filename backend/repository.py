@@ -727,3 +727,32 @@ def delete_book_review(review_id, user_id):
     return True
 
 
+def get_popular_books(limit=10):
+    """
+    Get books sorted by number of reviews (most reviewed first).
+    Returns books with their review count.
+    """
+    books = Book.query.all()
+    tags_cache = get_all_tags_as_dict()
+    
+    books_with_counts = []
+    for book in books:
+        review_count = BookReview.query.filter_by(book_id=book.id).count()
+        book_dict = book.to_dict()
+        book_dict['tags'] = get_tag_objects_for_book(book_dict, tags_cache)
+        book_dict['review_count'] = review_count
+        books_with_counts.append(book_dict)
+    
+    for i in range(len(books_with_counts)):
+        for j in range(i + 1, len(books_with_counts)):
+            if books_with_counts[j]['review_count'] > books_with_counts[i]['review_count']:
+                temp = books_with_counts[i]
+                books_with_counts[i] = books_with_counts[j]
+                books_with_counts[j] = temp
+    
+    if limit and limit < len(books_with_counts):
+        return books_with_counts[:limit]
+    
+    return books_with_counts
+
+

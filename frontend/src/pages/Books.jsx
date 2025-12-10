@@ -75,7 +75,7 @@ function BookDetailModal(props) {
       setReviews(res.data);
       var userHasReview = false;
       for (var i = 0; i < res.data.length; i++) {
-        if (res.data[i].user_id === currentUserId) {
+        if (Number(res.data[i].user_id) === Number(currentUserId)) {
           userHasReview = true;
           break;
         }
@@ -273,7 +273,7 @@ function BookDetailModal(props) {
                           <span>{review.username}</span>
                         </div>
                         <div className="review-stars">{renderStars(review.rating, false)}</div>
-                        {review.user_id === currentUserId && (
+                        {Number(review.user_id) === Number(currentUserId) && (
                           <button 
                             className="review-delete-btn"
                             onClick={function() { handleDeleteReview(review.id); }}
@@ -376,6 +376,7 @@ function Books() {
   const [allBooks, setAllBooks] = useState([]);
   const [selectedBook, setSelectedBook] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [popularBooks, setPopularBooks] = useState([]);
   const fetchIdRef = useRef(0);
   const searchTimeoutRef = useRef(null);
 
@@ -385,6 +386,11 @@ function Books() {
     });
     api.get('/books').then(function(res) {
       setAllBooks(res.data);
+    });
+    api.get('/books/popular?limit=5').then(function(res) {
+      setPopularBooks(res.data);
+    }).catch(function() {
+      setPopularBooks([]);
     });
     api.get('/auth/me').then(function(res) {
       setCurrentUserId(res.data.id);
@@ -581,6 +587,33 @@ function Books() {
           Favorites ({favoriteIds.length})
         </button>
       </div>
+
+      {activeTab === 'all' && !searchQuery && popularBooks.length > 0 && (
+        <div className="popular-books-section">
+          <h3 className="popular-books-title">
+            <Star size={20} fill="#fbbf24" color="#fbbf24" />
+            Popular Books
+          </h3>
+          <p className="popular-books-subtitle">Most reviewed by our community</p>
+          <div className="popular-books-grid">
+            {popularBooks.map(function(book) {
+              return (
+                <div key={book.id} className="popular-book-card" onClick={function() { openBookDetail(book); }}>
+                  <div className="popular-book-icon"><BookOpen size={20} /></div>
+                  <div className="popular-book-info">
+                    <h4 className="popular-book-title">{book.title}</h4>
+                    <p className="popular-book-author">{book.author}</p>
+                    <div className="popular-book-reviews">
+                      <Star size={14} fill="#fbbf24" color="#fbbf24" />
+                      <span>{book.review_count} reviews</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {activeTab === 'all' && !searchQuery && (
         <div className="tag-filter-section">

@@ -452,6 +452,14 @@ def register_routes(app):
         return jsonify(books)
     
     
+    @app.route('/api/books/popular', methods=['GET'])
+    def get_popular_books():
+        """Get books sorted by number of reviews."""
+        limit = request.args.get('limit', 5, type=int)
+        books = repository.get_popular_books(limit)
+        return jsonify(books)
+    
+    
     @app.route('/api/books/all', methods=['GET'])
     def get_all_books():
         """Get all book recommendations."""
