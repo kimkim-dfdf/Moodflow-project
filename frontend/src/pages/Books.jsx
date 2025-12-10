@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
-import { BookOpen, X, Search, Heart } from 'lucide-react';
+import { BookOpen, X, Search, Heart, Share2 } from 'lucide-react';
 
 function BookCard(props) {
   var book = props.book;
@@ -55,6 +55,7 @@ function BookDetailModal(props) {
   var onClose = props.onClose;
   var isFavorite = props.isFavorite;
   var onToggleFavorite = props.onToggleFavorite;
+  var [shareMessage, setShareMessage] = useState('');
   
   if (!book) {
     return null;
@@ -69,6 +70,40 @@ function BookDetailModal(props) {
   function handleFavoriteClick() {
     if (onToggleFavorite) {
       onToggleFavorite(book.id);
+    }
+  }
+  
+  function handleShareClick() {
+    // Create share text with book info
+    var shareText = 'Check out this book I found on MoodFlow!\n\n';
+    shareText = shareText + book.title + ' by ' + book.author + '\n';
+    shareText = shareText + 'Genre: ' + book.genre + '\n';
+    if (book.description) {
+      shareText = shareText + '\n' + book.description;
+    }
+    
+    // Check if Web Share API is available (mobile devices)
+    if (navigator.share) {
+      navigator.share({
+        title: book.title,
+        text: shareText
+      }).catch(function(error) {
+        // User cancelled or error occurred
+        console.log('Share cancelled');
+      });
+    } else {
+      // Fallback: Copy to clipboard
+      navigator.clipboard.writeText(shareText).then(function() {
+        setShareMessage('Copied to clipboard!');
+        setTimeout(function() {
+          setShareMessage('');
+        }, 2000);
+      }).catch(function() {
+        setShareMessage('Failed to copy');
+        setTimeout(function() {
+          setShareMessage('');
+        }, 2000);
+      });
     }
   }
   
@@ -132,7 +167,17 @@ function BookDetailModal(props) {
             <Heart size={20} fill={isFavorite ? '#ef4444' : 'none'} />
             {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
           </button>
+          <button 
+            className="modal-share-btn"
+            onClick={handleShareClick}
+          >
+            <Share2 size={20} />
+            Share with Friends
+          </button>
         </div>
+        {shareMessage && (
+          <div className="share-message">{shareMessage}</div>
+        )}
       </div>
     </div>
   );
