@@ -177,7 +177,7 @@ def seed_books():
     # Define all books
     books_data = [
         # Happy books
-        {'emotion': 'Happy', 'title': 'The Alchemist', 'author': 'Paulo Coelho', 'genre': 'Fiction', 'description': 'A magical story about following your dreams', 'tags': 'hopeful,growth,new-perspective', 'cover_url': 'https://arundelbooks.cdn.bibliopolis.com/pictures/625908.jpg?width=768&height=1000&fit=bounds&auto=webp&v=1727312741'},
+        {'emotion': 'Happy', 'title': 'The Alchemist', 'author': 'Paulo Coelho', 'genre': 'Fiction', 'description': 'A magical story about following your dreams', 'tags': 'hopeful,growth,new-perspective'},
         {'emotion': 'Happy', 'title': 'Big Magic', 'author': 'Elizabeth Gilbert', 'genre': 'Self-Help', 'description': 'Creative living beyond fear', 'tags': 'growth,focus,hopeful'},
         {'emotion': 'Happy', 'title': 'The Happiness Project', 'author': 'Gretchen Rubin', 'genre': 'Self-Help', 'description': 'A year-long journey to discover happiness', 'tags': 'hopeful,growth,recharge'},
         {'emotion': 'Happy', 'title': 'Yes Please', 'author': 'Amy Poehler', 'genre': 'Memoir', 'description': 'Hilarious and inspiring stories', 'tags': 'hopeful,courage,emotional'},
@@ -202,17 +202,13 @@ def seed_books():
     
     # Add each book to database
     for book_item in books_data:
-        cover_url = None
-        if 'cover_url' in book_item:
-            cover_url = book_item['cover_url']
         book = Book(
             emotion=book_item['emotion'],
             title=book_item['title'],
             author=book_item['author'],
             genre=book_item['genre'],
             description=book_item['description'],
-            tags=book_item['tags'],
-            cover_url=cover_url
+            tags=book_item['tags']
         )
         db.session.add(book)
     
