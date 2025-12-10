@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
-import { BookOpen, X, Search, Heart, Share2 } from 'lucide-react';
+import { BookOpen, X, Search, Heart } from 'lucide-react';
 
 function BookCard(props) {
   var book = props.book;
@@ -72,35 +72,6 @@ function BookDetailModal(props) {
     }
   }
   
-  function getShareText() {
-    var shareText = 'Check out this book!\n\n';
-    shareText = shareText + 'Title: ' + book.title + '\n';
-    shareText = shareText + 'Author: ' + book.author + '\n';
-    shareText = shareText + 'Genre: ' + book.genre;
-    
-    if (book.description) {
-      shareText = shareText + '\n\nDescription: ' + book.description;
-    }
-    
-    shareText = shareText + '\n\n- Shared from MoodFlow';
-    return shareText;
-  }
-  
-  function handleWhatsAppShare() {
-    var text = getShareText();
-    var url = 'https://wa.me/?text=' + encodeURIComponent(text);
-    window.open(url, '_blank');
-  }
-  
-  function handleWeChatShare() {
-    var text = getShareText();
-    navigator.clipboard.writeText(text).then(function() {
-      alert('Book info copied! Open WeChat and paste to share with friends.');
-    }).catch(function() {
-      alert('Could not copy to clipboard');
-    });
-  }
-  
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="book-detail-modal">
@@ -160,20 +131,6 @@ function BookDetailModal(props) {
           >
             <Heart size={20} fill={isFavorite ? '#ef4444' : 'none'} />
             {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
-          </button>
-          <button 
-            className="modal-share-btn whatsapp"
-            onClick={handleWhatsAppShare}
-          >
-            <Share2 size={20} />
-            WhatsApp
-          </button>
-          <button 
-            className="modal-share-btn wechat"
-            onClick={handleWeChatShare}
-          >
-            <Share2 size={20} />
-            WeChat
           </button>
         </div>
       </div>

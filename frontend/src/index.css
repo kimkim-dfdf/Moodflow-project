@@ -436,15 +436,10 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .modal-tags h4 { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--text-light); }
 .modal-tags-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .modal-tag-pill { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; color: white; }
-.book-detail-modal .modal-footer { padding: 16px 24px 24px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.book-detail-modal .modal-footer { padding: 16px 24px 24px; display: flex; justify-content: center; }
 .modal-favorite-btn { display: flex; align-items: center; gap: 10px; padding: 12px 28px; background: var(--surface); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; color: var(--text); }
 .modal-favorite-btn:hover { border-color: #ef4444; color: #ef4444; }
 .modal-favorite-btn.active { background: #fef2f2; border-color: #ef4444; color: #ef4444; }
-.modal-share-btn { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--surface); border: 2px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text); }
-.modal-share-btn.whatsapp { border-color: #25D366; color: #25D366; }
-.modal-share-btn.whatsapp:hover { background: #25D366; color: white; }
-.modal-share-btn.wechat { border-color: #07C160; color: #07C160; }
-.modal-share-btn.wechat:hover { background: #07C160; color: white; }
 
 /* Responsive */
 @media (max-width: 1200px) {
