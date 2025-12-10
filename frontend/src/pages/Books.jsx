@@ -72,7 +72,7 @@ function BookDetailModal(props) {
     }
   }
   
-  function handleShareClick() {
+  function getShareText() {
     var shareText = 'Check out this book!\n\n';
     shareText = shareText + 'Title: ' + book.title + '\n';
     shareText = shareText + 'Author: ' + book.author + '\n';
@@ -83,20 +83,22 @@ function BookDetailModal(props) {
     }
     
     shareText = shareText + '\n\n- Shared from MoodFlow';
-    
-    if (navigator.share) {
-      navigator.share({
-        title: book.title,
-        text: shareText
-      }).catch(function() {
-      });
-    } else {
-      navigator.clipboard.writeText(shareText).then(function() {
-        alert('Book info copied to clipboard! Share it with your friends.');
-      }).catch(function() {
-        alert('Could not copy to clipboard');
-      });
-    }
+    return shareText;
+  }
+  
+  function handleWhatsAppShare() {
+    var text = getShareText();
+    var url = 'https://wa.me/?text=' + encodeURIComponent(text);
+    window.open(url, '_blank');
+  }
+  
+  function handleWeChatShare() {
+    var text = getShareText();
+    navigator.clipboard.writeText(text).then(function() {
+      alert('Book info copied! Open WeChat and paste to share with friends.');
+    }).catch(function() {
+      alert('Could not copy to clipboard');
+    });
   }
   
   return (
@@ -160,11 +162,18 @@ function BookDetailModal(props) {
             {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
           </button>
           <button 
-            className="modal-share-btn"
-            onClick={handleShareClick}
+            className="modal-share-btn whatsapp"
+            onClick={handleWhatsAppShare}
           >
             <Share2 size={20} />
-            Share with Friend
+            WhatsApp
+          </button>
+          <button 
+            className="modal-share-btn wechat"
+            onClick={handleWeChatShare}
+          >
+            <Share2 size={20} />
+            WeChat
           </button>
         </div>
       </div>
