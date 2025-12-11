@@ -564,6 +564,26 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .music-detail-page .error-state { text-align: center; padding: 48px; }
 .music-detail-page .error-state p { color: var(--text-muted); margin-bottom: 16px; }
 
+/* Music Split Layout */
+.music-page.with-detail { display: flex; gap: 0; padding: 0; }
+.music-page.with-detail .music-list-section { flex: 1; min-width: 0; padding: 24px; border-right: 1px solid var(--border); max-height: calc(100vh - 60px); overflow-y: auto; }
+.music-page.with-detail .music-full-grid { grid-template-columns: 1fr; }
+.music-page-card.selected { border-color: var(--primary); background: #f8f9ff; }
+.music-detail-panel { width: 400px; flex-shrink: 0; background: var(--surface); border-left: 1px solid var(--border); max-height: calc(100vh - 60px); overflow-y: auto; display: flex; flex-direction: column; }
+.detail-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 10; }
+.detail-panel-header h3 { font-size: 16px; font-weight: 600; margin: 0; }
+.close-panel-btn { background: none; border: none; cursor: pointer; padding: 6px; color: var(--text-muted); border-radius: 6px; }
+.close-panel-btn:hover { background: var(--secondary); color: var(--text); }
+.detail-panel-content { padding: 20px; flex: 1; }
+.detail-panel-content .music-detail-thumbnail { width: 100%; height: 180px; margin-bottom: 16px; }
+.detail-panel-content .music-detail-info { margin-bottom: 16px; }
+.detail-panel-content .music-detail-info h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+.detail-panel-content .music-detail-artist { font-size: 15px; margin-bottom: 12px; }
+.detail-panel-content .music-detail-actions { margin-bottom: 20px; }
+.detail-panel-content .music-detail-reviews { background: var(--background); border: none; padding: 16px; border-radius: 8px; }
+.detail-panel-content .music-detail-reviews h4 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+.detail-panel-content .reviews-list { max-height: 250px; }
+
 /* Responsive */
 @media (max-width: 1200px) {
   .dashboard-grid { grid-template-columns: 1fr; }
@@ -571,6 +591,11 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
   .books-full-grid { grid-template-columns: repeat(2, 1fr); }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .stats-details { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .music-page.with-detail { flex-direction: column; }
+  .music-page.with-detail .music-list-section { max-height: none; border-right: none; border-bottom: 1px solid var(--border); }
+  .music-detail-panel { width: 100%; max-height: none; border-left: none; }
 }
 @media (max-width: 768px) {
   .sidebar { display: none; }

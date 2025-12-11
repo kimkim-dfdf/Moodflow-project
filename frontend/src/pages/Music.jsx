@@ -1,22 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { Music as MusicIcon, Search, Heart, Play } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Music as MusicIcon, Search, Heart, Play, X, Star, User, Trash2 } from 'lucide-react';
 
 function getYoutubeVideoId(url) {
   if (!url) {
     return null;
   }
   var videoId = null;
-  if (url.indexOf('youtube.com/watch') >= 0) {
-    var parts = url.split('v=');
-    if (parts.length > 1) {
-      videoId = parts[1].split('&')[0];
-    }
-  } else if (url.indexOf('youtu.be/') >= 0) {
+  if (url.indexOf('youtu.be/') !== -1) {
     var parts = url.split('youtu.be/');
     if (parts.length > 1) {
-      videoId = parts[1].split('?')[0];
+      var idPart = parts[1].split('?')[0];
+      videoId = idPart.split('&')[0];
+    }
+  } else if (url.indexOf('youtube.com/watch') !== -1) {
+    var queryString = url.split('?')[1];
+    if (queryString) {
+      var params = queryString.split('&');
+      for (var i = 0; i < params.length; i++) {
+        if (params[i].indexOf('v=') === 0) {
+          videoId = params[i].substring(2);
+          break;
+        }
+      }
     }
   }
   return videoId;
@@ -25,8 +32,9 @@ function getYoutubeVideoId(url) {
 function MusicCard(props) {
   var music = props.music;
   var isFavorite = props.isFavorite || false;
+  var isSelected = props.isSelected || false;
   var onToggleFavorite = props.onToggleFavorite;
-  var onOpenDetail = props.onOpenDetail;
+  var onSelect = props.onSelect;
   var [imgError, setImgError] = useState(false);
   
   var videoId = getYoutubeVideoId(music.youtube_url);
@@ -44,13 +52,17 @@ function MusicCard(props) {
   }
   
   function handleCardClick() {
-    if (onOpenDetail) {
-      onOpenDetail(music);
+    if (onSelect) {
+      onSelect(music);
     }
   }
   
   return (
-    <div className="music-page-card" onClick={handleCardClick} style={{cursor: 'pointer'}}>
+    <div 
+      className={'music-page-card ' + (isSelected ? 'selected' : '')} 
+      onClick={handleCardClick} 
+      style={{cursor: 'pointer'}}
+    >
       <div className="music-thumbnail">
         {thumbnailUrl && !imgError ? (
           <img 
@@ -116,8 +128,243 @@ function saveMusicFavoritesToStorage(favoriteIds) {
   }
 }
 
+function MusicDetailPanel(props) {
+  var music = props.music;
+  var onClose = props.onClose;
+  var favoriteIds = props.favoriteIds;
+  var onToggleFavorite = props.onToggleFavorite;
+  
+  var { user } = useAuth();
+  var currentUserId = user ? user.id : null;
+  
+  var [thumbnailError, setThumbnailError] = useState(false);
+  var [reviews, setReviews] = useState([]);
+  var [reviewRating, setReviewRating] = useState(5);
+  var [reviewContent, setReviewContent] = useState('');
+  var [reviewError, setReviewError] = useState('');
+  var [isSubmitting, setIsSubmitting] = useState(false);
+  var [hasUserReview, setHasUserReview] = useState(false);
+  
+  useEffect(function() {
+    if (music) {
+      setThumbnailError(false);
+      loadReviews();
+    }
+  }, [music, currentUserId]);
+  
+  function loadReviews() {
+    api.get('/music/' + music.id + '/reviews').then(function(res) {
+      setReviews(res.data);
+      var userHasReview = false;
+      for (var i = 0; i < res.data.length; i++) {
+        if (Number(res.data[i].user_id) === Number(currentUserId)) {
+          userHasReview = true;
+          break;
+        }
+      }
+      setHasUserReview(userHasReview);
+    }).catch(function() {
+      setReviews([]);
+    });
+  }
+  
+  function isFavorite(musicId) {
+    for (var i = 0; i < favoriteIds.length; i++) {
+      if (favoriteIds[i] === musicId) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  function handleSubmitReview() {
+    if (!reviewContent.trim()) {
+      setReviewError('Please write a review');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setReviewError('');
+    
+    api.post('/music/' + music.id + '/reviews', {
+      rating: reviewRating,
+      content: reviewContent.trim()
+    }).then(function() {
+      setReviewContent('');
+      setReviewRating(5);
+      loadReviews();
+      setIsSubmitting(false);
+    }).catch(function(err) {
+      setReviewError(err.response?.data?.error || 'Failed to submit review');
+      setIsSubmitting(false);
+    });
+  }
+  
+  function handleDeleteReview(reviewId) {
+    api.delete('/music/reviews/' + reviewId).then(function() {
+      loadReviews();
+    }).catch(function() {
+    });
+  }
+  
+  function createStarClickHandler(starValue) {
+    return function() {
+      setReviewRating(starValue);
+    };
+  }
+  
+  function renderStars(rating, interactive) {
+    var stars = [];
+    for (var i = 1; i <= 5; i++) {
+      if (interactive) {
+        stars.push(
+          <button 
+            key={i} 
+            type="button"
+            className="star-btn"
+            onClick={createStarClickHandler(i)}
+          >
+            <Star size={20} fill={i <= reviewRating ? '#fbbf24' : 'none'} color={i <= reviewRating ? '#fbbf24' : '#d1d5db'} />
+          </button>
+        );
+      } else {
+        stars.push(
+          <Star key={i} size={16} fill={i <= rating ? '#fbbf24' : 'none'} color={i <= rating ? '#fbbf24' : '#d1d5db'} />
+        );
+      }
+    }
+    return stars;
+  }
+  
+  var thumbnailUrl = null;
+  if (music && music.youtube_url) {
+    var videoId = getYoutubeVideoId(music.youtube_url);
+    if (videoId) {
+      thumbnailUrl = 'https://img.youtube.com/vi/' + videoId + '/mqdefault.jpg';
+    }
+  }
+  
+  return (
+    <div className="music-detail-panel">
+      <div className="detail-panel-header">
+        <h3>Music Details</h3>
+        <button className="close-panel-btn" onClick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+      
+      <div className="detail-panel-content">
+        <div className="music-detail-thumbnail">
+          {thumbnailUrl && !thumbnailError ? (
+            <img 
+              src={thumbnailUrl} 
+              alt={music.title}
+              onError={function() { setThumbnailError(true); }}
+              className="music-detail-thumbnail-img"
+            />
+          ) : (
+            <div className="music-detail-icon"><MusicIcon size={48} /></div>
+          )}
+        </div>
+        
+        <div className="music-detail-info">
+          <h2>{music.title}</h2>
+          <p className="music-detail-artist">{music.artist}</p>
+          <div className="music-detail-meta">
+            <span className="music-detail-genre">{music.genre}</span>
+            {music.emotion && (
+              <span className="music-detail-emotion">Mood: {music.emotion}</span>
+            )}
+          </div>
+        </div>
+        
+        <div className="music-detail-actions">
+          <button 
+            className={'favorite-btn-large ' + (isFavorite(music.id) ? 'active' : '')}
+            onClick={function() { onToggleFavorite(music.id); }}
+          >
+            <Heart size={18} fill={isFavorite(music.id) ? '#ef4444' : 'none'} />
+            {isFavorite(music.id) ? 'Remove' : 'Favorite'}
+          </button>
+          {music.youtube_url && (
+            <a 
+              href={music.youtube_url} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="youtube-btn-large"
+            >
+              <Play size={18} />
+              YouTube
+            </a>
+          )}
+        </div>
+        
+        <div className="music-detail-reviews">
+          <h4>Reviews ({reviews.length})</h4>
+          
+          {!hasUserReview && (
+            <div className="review-form">
+              <div className="review-rating-input">
+                <span>Your Rating:</span>
+                <div className="stars-input">{renderStars(reviewRating, true)}</div>
+              </div>
+              <textarea
+                className="review-textarea"
+                placeholder="Write your review..."
+                value={reviewContent}
+                onChange={function(e) { setReviewContent(e.target.value); }}
+                rows={3}
+              />
+              {reviewError && <div className="review-error">{reviewError}</div>}
+              <button 
+                className="review-submit-btn"
+                onClick={handleSubmitReview}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Review'}
+              </button>
+            </div>
+          )}
+          
+          {hasUserReview && (
+            <div className="review-notice">You have already reviewed this music.</div>
+          )}
+          
+          <div className="reviews-list">
+            {reviews.length === 0 ? (
+              <p className="no-reviews">No reviews yet. Be the first to review!</p>
+            ) : (
+              reviews.map(function(review) {
+                return (
+                  <div key={review.id} className="review-item">
+                    <div className="review-header">
+                      <span className="review-user">
+                        <User size={14} />
+                        {review.username}
+                      </span>
+                      <div className="review-stars">{renderStars(review.rating, false)}</div>
+                      {Number(review.user_id) === Number(currentUserId) && (
+                        <button 
+                          className="review-delete-btn"
+                          onClick={function() { handleDeleteReview(review.id); }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <p className="review-content">{review.content}</p>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Music() {
-  var navigate = useNavigate();
   var [allMusic, setAllMusic] = useState([]);
   var [filteredMusic, setFilteredMusic] = useState([]);
   var [emotions, setEmotions] = useState([]);
@@ -126,10 +373,15 @@ function Music() {
   var [favoriteIds, setFavoriteIds] = useState(getMusicFavoritesFromStorage());
   var [searchQuery, setSearchQuery] = useState('');
   var [activeTab, setActiveTab] = useState('all');
+  var [selectedMusic, setSelectedMusic] = useState(null);
   var searchTimeoutRef = useRef(null);
   
-  function openMusicDetail(music) {
-    navigate('/music/' + music.id);
+  function selectMusic(music) {
+    setSelectedMusic(music);
+  }
+  
+  function closeDetailPanel() {
+    setSelectedMusic(null);
   }
 
   useEffect(function() {
@@ -192,7 +444,6 @@ function Music() {
     searchTimeoutRef.current = setTimeout(function() {
       var searchLower = query.toLowerCase();
       var results = [];
-      var sourceList = selectedEmotion ? filteredMusic : allMusic;
       
       for (var i = 0; i < allMusic.length; i++) {
         var music = allMusic[i];
@@ -295,119 +546,131 @@ function Music() {
   var displayMusic = getDisplayMusic();
 
   return (
-    <div className="music-page">
-      <header className="page-header">
-        <h1><MusicIcon size={28} /> Music Recommendations</h1>
-        <p>Discover music that matches your current mood</p>
-      </header>
+    <div className={'music-page ' + (selectedMusic ? 'with-detail' : '')}>
+      <div className="music-list-section">
+        <header className="page-header">
+          <h1><MusicIcon size={28} /> Music Recommendations</h1>
+          <p>Discover music that matches your current mood</p>
+        </header>
 
-      <div className="music-search-section">
-        <div className="search-input-wrapper">
-          <Search size={20} className="search-icon" />
-          <input
-            type="text"
-            className="music-search-input"
-            placeholder="Search by title, artist, or genre..."
-            value={searchQuery}
-            onChange={function(e) { handleSearch(e.target.value); }}
-          />
-          {searchQuery && (
-            <button className="search-clear-btn" onClick={clearSearch}>
-              <X size={18} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="music-tabs">
-        <button 
-          className={'music-tab ' + (activeTab === 'all' ? 'active' : '')}
-          onClick={function() { handleTabChange('all'); }}
-        >
-          <MusicIcon size={18} />
-          All Music
-        </button>
-        <button 
-          className={'music-tab ' + (activeTab === 'favorites' ? 'active' : '')}
-          onClick={function() { handleTabChange('favorites'); }}
-        >
-          <Heart size={18} />
-          Favorites ({favoriteIds.length})
-        </button>
-      </div>
-
-      {activeTab === 'all' && !searchQuery && (
-        <div className="emotion-filter-section">
-          <div className="emotion-filter-header">
-            <span className="emotion-filter-label">Filter by Mood</span>
-            {selectedEmotion && (
-              <button className="clear-emotion-btn" onClick={clearEmotionFilter}>Clear</button>
+        <div className="music-search-section">
+          <div className="search-input-wrapper">
+            <Search size={20} className="search-icon" />
+            <input
+              type="text"
+              className="music-search-input"
+              placeholder="Search by title, artist, or genre..."
+              value={searchQuery}
+              onChange={function(e) { handleSearch(e.target.value); }}
+            />
+            {searchQuery && (
+              <button className="search-clear-btn" onClick={clearSearch}>
+                <X size={18} />
+              </button>
             )}
           </div>
-          
-          <div className="emotion-chips-container">
-            {emotions.map(function(emotion) {
-              var isActive = selectedEmotion === emotion.name;
-              return (
-                <button 
-                  key={emotion.id} 
-                  className={'emotion-chip ' + (isActive ? 'active' : '')} 
-                  onClick={function() { handleEmotionFilter(emotion.name); }}
-                  style={isActive ? { backgroundColor: emotion.color, borderColor: emotion.color } : {}}
-                >
-                  <span>{emotion.emoji}</span>
-                  {emotion.name}
-                </button>
-              );
-            })}
-          </div>
         </div>
-      )}
 
-      {loading ? (
-        <div className="loading-state">Loading music...</div>
-      ) : (
-        <div className="music-container">
-          {displayMusic.length > 0 ? (
-            <>
-              <div className="music-result-info">
-                {searchQuery ? (
-                  displayMusic.length + ' search results for "' + searchQuery + '"'
-                ) : activeTab === 'favorites' ? (
-                  displayMusic.length + ' favorite songs'
-                ) : selectedEmotion ? (
-                  displayMusic.length + ' songs for "' + selectedEmotion + '" mood'
-                ) : (
-                  'All ' + displayMusic.length + ' songs'
-                )}
-              </div>
-              <div className="music-full-grid">
-                {displayMusic.map(function(music) {
-                  return (
-                    <MusicCard 
-                      key={music.id} 
-                      music={music} 
-                      isFavorite={isFavorite(music.id)}
-                      onToggleFavorite={toggleFavorite}
-                      onOpenDetail={openMusicDetail}
-                    />
-                  );
-                })}
-              </div>
-            </>
-          ) : (
-            <div className="empty-state">
-              <MusicIcon size={48} />
-              {searchQuery ? (
-                <p>No music found for "{searchQuery}"</p>
-              ) : activeTab === 'favorites' ? (
-                <p>No favorite songs yet. Click the heart icon to add songs to your favorites!</p>
-              ) : (
-                <p>No music found for selected mood.</p>
+        <div className="music-tabs">
+          <button 
+            className={'music-tab ' + (activeTab === 'all' ? 'active' : '')}
+            onClick={function() { handleTabChange('all'); }}
+          >
+            <MusicIcon size={18} />
+            All Music
+          </button>
+          <button 
+            className={'music-tab ' + (activeTab === 'favorites' ? 'active' : '')}
+            onClick={function() { handleTabChange('favorites'); }}
+          >
+            <Heart size={18} />
+            Favorites ({favoriteIds.length})
+          </button>
+        </div>
+
+        {activeTab === 'all' && !searchQuery && (
+          <div className="emotion-filter-section">
+            <div className="emotion-filter-header">
+              <span className="emotion-filter-label">Filter by Mood</span>
+              {selectedEmotion && (
+                <button className="clear-emotion-btn" onClick={clearEmotionFilter}>Clear</button>
               )}
             </div>
-          )}
-        </div>
+            
+            <div className="emotion-chips-container">
+              {emotions.map(function(emotion) {
+                var isActive = selectedEmotion === emotion.name;
+                return (
+                  <button 
+                    key={emotion.id} 
+                    className={'emotion-chip ' + (isActive ? 'active' : '')} 
+                    onClick={function() { handleEmotionFilter(emotion.name); }}
+                    style={isActive ? { backgroundColor: emotion.color, borderColor: emotion.color } : {}}
+                  >
+                    <span>{emotion.emoji}</span>
+                    {emotion.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="loading-state">Loading music...</div>
+        ) : (
+          <div className="music-container">
+            {displayMusic.length > 0 ? (
+              <>
+                <div className="music-result-info">
+                  {searchQuery ? (
+                    displayMusic.length + ' search results for "' + searchQuery + '"'
+                  ) : activeTab === 'favorites' ? (
+                    displayMusic.length + ' favorite songs'
+                  ) : selectedEmotion ? (
+                    displayMusic.length + ' songs for "' + selectedEmotion + '" mood'
+                  ) : (
+                    'All ' + displayMusic.length + ' songs'
+                  )}
+                </div>
+                <div className="music-full-grid">
+                  {displayMusic.map(function(music) {
+                    return (
+                      <MusicCard 
+                        key={music.id} 
+                        music={music} 
+                        isFavorite={isFavorite(music.id)}
+                        isSelected={selectedMusic && selectedMusic.id === music.id}
+                        onToggleFavorite={toggleFavorite}
+                        onSelect={selectMusic}
+                      />
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="empty-state">
+                <MusicIcon size={48} />
+                {searchQuery ? (
+                  <p>No music found for "{searchQuery}"</p>
+                ) : activeTab === 'favorites' ? (
+                  <p>No favorite songs yet. Click the heart icon to add songs to your favorites!</p>
+                ) : (
+                  <p>No music found for selected mood.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {selectedMusic && (
+        <MusicDetailPanel 
+          music={selectedMusic}
+          onClose={closeDetailPanel}
+          favoriteIds={favoriteIds}
+          onToggleFavorite={toggleFavorite}
+        />
       )}
     </div>
   );
