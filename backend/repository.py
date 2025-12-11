@@ -378,6 +378,14 @@ def get_all_music():
     return result
 
 
+def get_music_by_id(music_id):
+    """Get a single music track by ID."""
+    music = db.session.get(Music, int(music_id))
+    if music:
+        return music.to_dict()
+    return None
+
+
 def get_music_by_emotion(emotion_name, limit):
     """
     Get music recommendations for a specific emotion.

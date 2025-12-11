@@ -399,6 +399,15 @@ def register_routes(app):
         return jsonify(repository.get_all_music())
     
     
+    @app.route('/api/music/<int:music_id>', methods=['GET'])
+    def get_music_by_id(music_id):
+        """Get a single music track by ID."""
+        music = repository.get_music_by_id(music_id)
+        if not music:
+            return jsonify({'error': 'Music not found'}), 404
+        return jsonify(music)
+    
+    
     @app.route('/api/music/<int:music_id>/reviews', methods=['GET'])
     def get_music_reviews(music_id):
         """Get all reviews for a music track."""
