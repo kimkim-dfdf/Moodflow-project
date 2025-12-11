@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Music as MusicIcon, Search, Heart, Play, X, Star, User, Trash2 } from 'lucide-react';
+import { Music as MusicIcon, Search, Heart, Play, X, Star, User, Trash2, ArrowLeft } from 'lucide-react';
 
 function getYoutubeVideoId(url) {
   if (!url) {
@@ -32,7 +32,6 @@ function getYoutubeVideoId(url) {
 function MusicCard(props) {
   var music = props.music;
   var isFavorite = props.isFavorite || false;
-  var isSelected = props.isSelected || false;
   var onToggleFavorite = props.onToggleFavorite;
   var onSelect = props.onSelect;
   var [imgError, setImgError] = useState(false);
@@ -59,7 +58,7 @@ function MusicCard(props) {
   
   return (
     <div 
-      className={'music-page-card ' + (isSelected ? 'selected' : '')} 
+      className="music-page-card"
       onClick={handleCardClick} 
       style={{cursor: 'pointer'}}
     >
@@ -128,9 +127,9 @@ function saveMusicFavoritesToStorage(favoriteIds) {
   }
 }
 
-function MusicDetailPanel(props) {
+function MusicDetailView(props) {
   var music = props.music;
-  var onClose = props.onClose;
+  var onBack = props.onBack;
   var favoriteIds = props.favoriteIds;
   var onToggleFavorite = props.onToggleFavorite;
   
@@ -148,6 +147,9 @@ function MusicDetailPanel(props) {
   useEffect(function() {
     if (music) {
       setThumbnailError(false);
+      setReviewContent('');
+      setReviewRating(5);
+      setReviewError('');
       loadReviews();
     }
   }, [music, currentUserId]);
@@ -245,15 +247,13 @@ function MusicDetailPanel(props) {
   }
   
   return (
-    <div className="music-detail-panel">
-      <div className="detail-panel-header">
-        <h3>Music Details</h3>
-        <button className="close-panel-btn" onClick={onClose}>
-          <X size={20} />
-        </button>
-      </div>
+    <div className="music-detail-inline">
+      <button className="back-to-list-btn" onClick={onBack}>
+        <ArrowLeft size={18} />
+        Back to list
+      </button>
       
-      <div className="detail-panel-content">
+      <div className="music-detail-header">
         <div className="music-detail-thumbnail">
           {thumbnailUrl && !thumbnailError ? (
             <img 
@@ -266,7 +266,6 @@ function MusicDetailPanel(props) {
             <div className="music-detail-icon"><MusicIcon size={48} /></div>
           )}
         </div>
-        
         <div className="music-detail-info">
           <h2>{music.title}</h2>
           <p className="music-detail-artist">{music.artist}</p>
@@ -277,87 +276,87 @@ function MusicDetailPanel(props) {
             )}
           </div>
         </div>
-        
-        <div className="music-detail-actions">
-          <button 
-            className={'favorite-btn-large ' + (isFavorite(music.id) ? 'active' : '')}
-            onClick={function() { onToggleFavorite(music.id); }}
+      </div>
+      
+      <div className="music-detail-actions">
+        <button 
+          className={'favorite-btn-large ' + (isFavorite(music.id) ? 'active' : '')}
+          onClick={function() { onToggleFavorite(music.id); }}
+        >
+          <Heart size={18} fill={isFavorite(music.id) ? '#ef4444' : 'none'} />
+          {isFavorite(music.id) ? 'Remove from Favorites' : 'Add to Favorites'}
+        </button>
+        {music.youtube_url && (
+          <a 
+            href={music.youtube_url} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="youtube-btn-large"
           >
-            <Heart size={18} fill={isFavorite(music.id) ? '#ef4444' : 'none'} />
-            {isFavorite(music.id) ? 'Remove' : 'Favorite'}
-          </button>
-          {music.youtube_url && (
-            <a 
-              href={music.youtube_url} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="youtube-btn-large"
-            >
-              <Play size={18} />
-              YouTube
-            </a>
-          )}
-        </div>
+            <Play size={18} />
+            Watch on YouTube
+          </a>
+        )}
+      </div>
+      
+      <div className="music-detail-reviews">
+        <h4>Reviews ({reviews.length})</h4>
         
-        <div className="music-detail-reviews">
-          <h4>Reviews ({reviews.length})</h4>
-          
-          {!hasUserReview && (
-            <div className="review-form">
-              <div className="review-rating-input">
-                <span>Your Rating:</span>
-                <div className="stars-input">{renderStars(reviewRating, true)}</div>
-              </div>
-              <textarea
-                className="review-textarea"
-                placeholder="Write your review..."
-                value={reviewContent}
-                onChange={function(e) { setReviewContent(e.target.value); }}
-                rows={3}
-              />
-              {reviewError && <div className="review-error">{reviewError}</div>}
-              <button 
-                className="review-submit-btn"
-                onClick={handleSubmitReview}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Submitting...' : 'Submit Review'}
-              </button>
+        {!hasUserReview && (
+          <div className="review-form">
+            <div className="review-rating-input">
+              <span>Your Rating:</span>
+              <div className="stars-input">{renderStars(reviewRating, true)}</div>
             </div>
-          )}
-          
-          {hasUserReview && (
-            <div className="review-notice">You have already reviewed this music.</div>
-          )}
-          
-          <div className="reviews-list">
-            {reviews.length === 0 ? (
-              <p className="no-reviews">No reviews yet. Be the first to review!</p>
-            ) : (
-              reviews.map(function(review) {
-                return (
-                  <div key={review.id} className="review-item">
-                    <div className="review-header">
-                      <span className="review-user">
-                        <User size={14} />
-                        {review.username}
-                      </span>
-                      <div className="review-stars">{renderStars(review.rating, false)}</div>
-                      {Number(review.user_id) === Number(currentUserId) && (
-                        <button 
-                          className="review-delete-btn"
-                          onClick={function() { handleDeleteReview(review.id); }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </div>
-                    <p className="review-content">{review.content}</p>
-                  </div>
-                );
-              })
-            )}
+            <textarea
+              className="review-textarea"
+              placeholder="Write your review..."
+              value={reviewContent}
+              onChange={function(e) { setReviewContent(e.target.value); }}
+              rows={3}
+            />
+            {reviewError && <div className="review-error">{reviewError}</div>}
+            <button 
+              className="review-submit-btn"
+              onClick={handleSubmitReview}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Review'}
+            </button>
           </div>
+        )}
+        
+        {hasUserReview && (
+          <div className="review-notice">You have already reviewed this music.</div>
+        )}
+        
+        <div className="reviews-list">
+          {reviews.length === 0 ? (
+            <p className="no-reviews">No reviews yet. Be the first to review!</p>
+          ) : (
+            reviews.map(function(review) {
+              return (
+                <div key={review.id} className="review-item">
+                  <div className="review-header">
+                    <span className="review-user">
+                      <User size={14} />
+                      {review.username}
+                    </span>
+                    <div className="review-stars">{renderStars(review.rating, false)}</div>
+                    {Number(review.user_id) === Number(currentUserId) && (
+                      <button 
+                        className="review-delete-btn"
+                        onClick={function() { handleDeleteReview(review.id); }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                  <p className="review-content">{review.content}</p>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>
@@ -380,7 +379,7 @@ function Music() {
     setSelectedMusic(music);
   }
   
-  function closeDetailPanel() {
+  function backToList() {
     setSelectedMusic(null);
   }
 
@@ -504,6 +503,7 @@ function Music() {
     setSearchQuery('');
     setSelectedEmotion('');
     setFilteredMusic(allMusic);
+    setSelectedMusic(null);
   }
 
   function getFavoriteMusic() {
@@ -546,77 +546,84 @@ function Music() {
   var displayMusic = getDisplayMusic();
 
   return (
-    <div className={'music-page ' + (selectedMusic ? 'with-detail' : '')}>
-      <div className="music-list-section">
-        <header className="page-header">
-          <h1><MusicIcon size={28} /> Music Recommendations</h1>
-          <p>Discover music that matches your current mood</p>
-        </header>
+    <div className="music-page">
+      <header className="page-header">
+        <h1><MusicIcon size={28} /> Music Recommendations</h1>
+        <p>Discover music that matches your current mood</p>
+      </header>
 
-        <div className="music-search-section">
-          <div className="search-input-wrapper">
-            <Search size={20} className="search-icon" />
-            <input
-              type="text"
-              className="music-search-input"
-              placeholder="Search by title, artist, or genre..."
-              value={searchQuery}
-              onChange={function(e) { handleSearch(e.target.value); }}
-            />
-            {searchQuery && (
-              <button className="search-clear-btn" onClick={clearSearch}>
-                <X size={18} />
-              </button>
+      <div className="music-search-section">
+        <div className="search-input-wrapper">
+          <Search size={20} className="search-icon" />
+          <input
+            type="text"
+            className="music-search-input"
+            placeholder="Search by title, artist, or genre..."
+            value={searchQuery}
+            onChange={function(e) { handleSearch(e.target.value); }}
+          />
+          {searchQuery && (
+            <button className="search-clear-btn" onClick={clearSearch}>
+              <X size={18} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="music-tabs">
+        <button 
+          className={'music-tab ' + (activeTab === 'all' ? 'active' : '')}
+          onClick={function() { handleTabChange('all'); }}
+        >
+          <MusicIcon size={18} />
+          All Music
+        </button>
+        <button 
+          className={'music-tab ' + (activeTab === 'favorites' ? 'active' : '')}
+          onClick={function() { handleTabChange('favorites'); }}
+        >
+          <Heart size={18} />
+          Favorites ({favoriteIds.length})
+        </button>
+      </div>
+
+      {activeTab === 'all' && !searchQuery && !selectedMusic && (
+        <div className="emotion-filter-section">
+          <div className="emotion-filter-header">
+            <span className="emotion-filter-label">Filter by Mood</span>
+            {selectedEmotion && (
+              <button className="clear-emotion-btn" onClick={clearEmotionFilter}>Clear</button>
             )}
           </div>
-        </div>
-
-        <div className="music-tabs">
-          <button 
-            className={'music-tab ' + (activeTab === 'all' ? 'active' : '')}
-            onClick={function() { handleTabChange('all'); }}
-          >
-            <MusicIcon size={18} />
-            All Music
-          </button>
-          <button 
-            className={'music-tab ' + (activeTab === 'favorites' ? 'active' : '')}
-            onClick={function() { handleTabChange('favorites'); }}
-          >
-            <Heart size={18} />
-            Favorites ({favoriteIds.length})
-          </button>
-        </div>
-
-        {activeTab === 'all' && !searchQuery && (
-          <div className="emotion-filter-section">
-            <div className="emotion-filter-header">
-              <span className="emotion-filter-label">Filter by Mood</span>
-              {selectedEmotion && (
-                <button className="clear-emotion-btn" onClick={clearEmotionFilter}>Clear</button>
-              )}
-            </div>
-            
-            <div className="emotion-chips-container">
-              {emotions.map(function(emotion) {
-                var isActive = selectedEmotion === emotion.name;
-                return (
-                  <button 
-                    key={emotion.id} 
-                    className={'emotion-chip ' + (isActive ? 'active' : '')} 
-                    onClick={function() { handleEmotionFilter(emotion.name); }}
-                    style={isActive ? { backgroundColor: emotion.color, borderColor: emotion.color } : {}}
-                  >
-                    <span>{emotion.emoji}</span>
-                    {emotion.name}
-                  </button>
-                );
-              })}
-            </div>
+          
+          <div className="emotion-chips-container">
+            {emotions.map(function(emotion) {
+              var isActive = selectedEmotion === emotion.name;
+              return (
+                <button 
+                  key={emotion.id} 
+                  className={'emotion-chip ' + (isActive ? 'active' : '')} 
+                  onClick={function() { handleEmotionFilter(emotion.name); }}
+                  style={isActive ? { backgroundColor: emotion.color, borderColor: emotion.color } : {}}
+                >
+                  <span>{emotion.emoji}</span>
+                  {emotion.name}
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
+      )}
 
-        {loading ? (
+      {selectedMusic ? (
+        <MusicDetailView 
+          music={selectedMusic}
+          onBack={backToList}
+          favoriteIds={favoriteIds}
+          onToggleFavorite={toggleFavorite}
+        />
+      ) : (
+        loading ? (
           <div className="loading-state">Loading music...</div>
         ) : (
           <div className="music-container">
@@ -640,7 +647,6 @@ function Music() {
                         key={music.id} 
                         music={music} 
                         isFavorite={isFavorite(music.id)}
-                        isSelected={selectedMusic && selectedMusic.id === music.id}
                         onToggleFavorite={toggleFavorite}
                         onSelect={selectMusic}
                       />
@@ -661,16 +667,7 @@ function Music() {
               </div>
             )}
           </div>
-        )}
-      </div>
-      
-      {selectedMusic && (
-        <MusicDetailPanel 
-          music={selectedMusic}
-          onClose={closeDetailPanel}
-          favoriteIds={favoriteIds}
-          onToggleFavorite={toggleFavorite}
-        />
+        )
       )}
     </div>
   );
