@@ -282,30 +282,29 @@ function MusicDetailView(props) {
         )}
       </div>
       
-      <div className="music-listening-tags">
-        <h4><Tag size={16} /> Listening Tags</h4>
-        <p className="listening-tags-hint">Click tags to describe when you listen to this music</p>
-        <div className="listening-tags-list">
-          {listeningTags.map(function(tag) {
-            return (
-              <button 
-                key={tag.id}
-                className={'listening-tag-btn ' + (tag.user_tagged ? 'active' : '')}
-                onClick={function() { handleTagClick(tag); }}
-              >
-                {tag.name}
-                {tag.count > 0 && <span className="tag-count">{tag.count}</span>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      
       <div className="music-detail-reviews">
         <h4>Reviews ({reviews.length})</h4>
         
         {!hasUserReview && (
           <div className="review-form">
+            <div className="music-listening-tags">
+              <h4><Tag size={16} /> Listening Tags</h4>
+              <p className="listening-tags-hint">Click tags to describe when you listen to this music</p>
+              <div className="listening-tags-list">
+                {listeningTags.map(function(tag) {
+                  return (
+                    <button 
+                      key={tag.id}
+                      className={'listening-tag-btn ' + (tag.user_tagged ? 'active' : '')}
+                      onClick={function() { handleTagClick(tag); }}
+                    >
+                      {tag.name}
+                      {tag.count > 0 && <span className="tag-count">{tag.count}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <textarea
               className="review-textarea"
               placeholder="Write your review..."
