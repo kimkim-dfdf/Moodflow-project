@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
-import { BookOpen, X, Search, Heart, Share2, Star, Trash2, User } from 'lucide-react';
+import { BookOpen, X, Search, Heart, Share2, Star, Trash2, User, ShoppingCart, CreditCard, Check } from 'lucide-react';
 
 function BookCard(props) {
   var book = props.book;
@@ -8,12 +8,20 @@ function BookCard(props) {
   var isFavorite = props.isFavorite || false;
   var onToggleFavorite = props.onToggleFavorite;
   var onOpenDetail = props.onOpenDetail;
+  var onAddToCart = props.onAddToCart;
   var [imgError, setImgError] = useState(false);
   
   function handleFavoriteClick(e) {
     e.stopPropagation();
     if (onToggleFavorite) {
       onToggleFavorite(book.id);
+    }
+  }
+  
+  function handleCartClick(e) {
+    e.stopPropagation();
+    if (onAddToCart) {
+      onAddToCart(book);
     }
   }
   
@@ -54,6 +62,12 @@ function BookCard(props) {
         </div>
         <p className="book-author">{book.author}</p>
         <span className="book-genre">{book.genre}</span>
+        <div className="book-price-row">
+          <span className="book-price">${book.price.toFixed(2)}</span>
+          <button className="add-to-cart-btn" onClick={handleCartClick} title="Add to Cart">
+            <ShoppingCart size={16} />
+          </button>
+        </div>
         {showTags && book.tags && book.tags.length > 0 && (
           <div className="book-tags">
             {book.tags.map(function(tag) {
@@ -71,6 +85,7 @@ function BookDetailModal(props) {
   var onClose = props.onClose;
   var isFavorite = props.isFavorite;
   var onToggleFavorite = props.onToggleFavorite;
+  var onAddToCart = props.onAddToCart;
   var currentUserId = props.currentUserId;
   var [shareMessage, setShareMessage] = useState('');
   var [reviews, setReviews] = useState([]);
@@ -80,6 +95,7 @@ function BookDetailModal(props) {
   var [reviewError, setReviewError] = useState('');
   var [hasUserReview, setHasUserReview] = useState(false);
   var [modalImgError, setModalImgError] = useState(false);
+  var [addedToCart, setAddedToCart] = useState(false);
   
   useEffect(function() {
     if (book) {
@@ -116,6 +132,16 @@ function BookDetailModal(props) {
   function handleFavoriteClick() {
     if (onToggleFavorite) {
       onToggleFavorite(book.id);
+    }
+  }
+  
+  function handleAddToCart() {
+    if (onAddToCart) {
+      onAddToCart(book);
+      setAddedToCart(true);
+      setTimeout(function() {
+        setAddedToCart(false);
+      }, 2000);
     }
   }
   
@@ -244,6 +270,7 @@ function BookDetailModal(props) {
           <div className="modal-title-section">
             <h2>{book.title}</h2>
             <p className="modal-author">{book.author}</p>
+            <p className="modal-price">${book.price.toFixed(2)}</p>
           </div>
         </div>
         
@@ -356,16 +383,300 @@ function BookDetailModal(props) {
             {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
           </button>
           <button 
+            className={'modal-cart-btn ' + (addedToCart ? 'added' : '')}
+            onClick={handleAddToCart}
+          >
+            {addedToCart ? (
+              <>
+                <Check size={20} />
+                Added to Cart!
+              </>
+            ) : (
+              <>
+                <ShoppingCart size={20} />
+                Add to Cart - ${book.price.toFixed(2)}
+              </>
+            )}
+          </button>
+          <button 
             className="modal-share-btn"
             onClick={handleShareClick}
           >
             <Share2 size={20} />
-            Share with Friends
+            Share
           </button>
         </div>
         {shareMessage && (
           <div className="share-message">{shareMessage}</div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function CheckoutModal(props) {
+  var onClose = props.onClose;
+  var cartItems = props.cartItems;
+  var total = props.total;
+  var onCheckoutSuccess = props.onCheckoutSuccess;
+  
+  var [cardNumber, setCardNumber] = useState('');
+  var [cardName, setCardName] = useState('');
+  var [expiry, setExpiry] = useState('');
+  var [cvv, setCvv] = useState('');
+  var [isProcessing, setIsProcessing] = useState(false);
+  var [error, setError] = useState('');
+  var [success, setSuccess] = useState(false);
+  
+  function handleOverlayClick(e) {
+    if (e.target.className === 'modal-overlay') {
+      onClose();
+    }
+  }
+  
+  function formatCardNumber(value) {
+    var cleaned = value.replace(/\D/g, '');
+    var formatted = '';
+    for (var i = 0; i < cleaned.length && i < 16; i++) {
+      if (i > 0 && i % 4 === 0) {
+        formatted = formatted + ' ';
+      }
+      formatted = formatted + cleaned[i];
+    }
+    return formatted;
+  }
+  
+  function formatExpiry(value) {
+    var cleaned = value.replace(/\D/g, '');
+    if (cleaned.length >= 2) {
+      return cleaned.substring(0, 2) + '/' + cleaned.substring(2, 4);
+    }
+    return cleaned;
+  }
+  
+  function handleCardNumberChange(e) {
+    setCardNumber(formatCardNumber(e.target.value));
+  }
+  
+  function handleExpiryChange(e) {
+    setExpiry(formatExpiry(e.target.value));
+  }
+  
+  function handleCvvChange(e) {
+    var cleaned = e.target.value.replace(/\D/g, '');
+    if (cleaned.length <= 4) {
+      setCvv(cleaned);
+    }
+  }
+  
+  function handleSubmit(e) {
+    e.preventDefault();
+    setError('');
+    
+    var cleanCardNumber = cardNumber.replace(/\s/g, '');
+    if (cleanCardNumber.length < 13) {
+      setError('Please enter a valid card number');
+      return;
+    }
+    if (!cardName.trim()) {
+      setError('Please enter the cardholder name');
+      return;
+    }
+    if (expiry.length < 5) {
+      setError('Please enter a valid expiry date');
+      return;
+    }
+    if (cvv.length < 3) {
+      setError('Please enter a valid CVV');
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    api.post('/checkout', {
+      card_number: cleanCardNumber,
+      card_name: cardName,
+      expiry: expiry,
+      cvv: cvv
+    }).then(function(res) {
+      setIsProcessing(false);
+      setSuccess(true);
+      setTimeout(function() {
+        onCheckoutSuccess();
+      }, 2000);
+    }).catch(function(err) {
+      setIsProcessing(false);
+      var message = 'Checkout failed. Please try again.';
+      if (err.response && err.response.data && err.response.data.error) {
+        message = err.response.data.error;
+      }
+      setError(message);
+    });
+  }
+  
+  if (success) {
+    return (
+      <div className="modal-overlay" onClick={handleOverlayClick}>
+        <div className="checkout-modal success-modal">
+          <div className="success-content">
+            <div className="success-icon">
+              <Check size={48} />
+            </div>
+            <h2>Purchase Complete!</h2>
+            <p>Thank you for your order.</p>
+            <p className="success-total">Total: ${total.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="modal-overlay" onClick={handleOverlayClick}>
+      <div className="checkout-modal">
+        <button className="modal-close-btn" onClick={onClose}>
+          <X size={24} />
+        </button>
+        
+        <div className="checkout-header">
+          <CreditCard size={28} />
+          <h2>Checkout</h2>
+        </div>
+        
+        <div className="checkout-summary">
+          <h3>Order Summary</h3>
+          <div className="checkout-items">
+            {cartItems.map(function(item) {
+              return (
+                <div key={item.id} className="checkout-item">
+                  <span className="checkout-item-title">{item.title}</span>
+                  <span className="checkout-item-qty">x{item.quantity}</span>
+                  <span className="checkout-item-price">${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="checkout-total">
+            <span>Total</span>
+            <span>${total.toFixed(2)}</span>
+          </div>
+        </div>
+        
+        <form className="checkout-form" onSubmit={handleSubmit}>
+          <h3>Payment Details</h3>
+          <p className="checkout-note">This is a simulated payment for demo purposes.</p>
+          
+          <div className="form-group">
+            <label>Card Number</label>
+            <input
+              type="text"
+              placeholder="1234 5678 9012 3456"
+              value={cardNumber}
+              onChange={handleCardNumberChange}
+              className="card-input"
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Cardholder Name</label>
+            <input
+              type="text"
+              placeholder="John Doe"
+              value={cardName}
+              onChange={function(e) { setCardName(e.target.value); }}
+              className="card-input"
+            />
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group half">
+              <label>Expiry Date</label>
+              <input
+                type="text"
+                placeholder="MM/YY"
+                value={expiry}
+                onChange={handleExpiryChange}
+                className="card-input"
+              />
+            </div>
+            <div className="form-group half">
+              <label>CVV</label>
+              <input
+                type="text"
+                placeholder="123"
+                value={cvv}
+                onChange={handleCvvChange}
+                className="card-input"
+              />
+            </div>
+          </div>
+          
+          {error && <div className="checkout-error">{error}</div>}
+          
+          <button 
+            type="submit" 
+            className="checkout-submit-btn"
+            disabled={isProcessing}
+          >
+            {isProcessing ? 'Processing...' : 'Pay $' + total.toFixed(2)}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function CartView(props) {
+  var cartItems = props.cartItems;
+  var onRemoveItem = props.onRemoveItem;
+  var onCheckout = props.onCheckout;
+  var total = props.total;
+  
+  if (cartItems.length === 0) {
+    return (
+      <div className="empty-state">
+        <ShoppingCart size={48} />
+        <p>Your cart is empty</p>
+        <p className="empty-hint">Add books to your cart to purchase them</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="cart-view">
+      <div className="cart-items">
+        {cartItems.map(function(item) {
+          return (
+            <div key={item.id} className="cart-item">
+              <div className="cart-item-info">
+                <h4 className="cart-item-title">{item.title}</h4>
+                <p className="cart-item-author">{item.author}</p>
+                <p className="cart-item-qty">Quantity: {item.quantity}</p>
+              </div>
+              <div className="cart-item-right">
+                <span className="cart-item-price">${(item.price * item.quantity).toFixed(2)}</span>
+                <button 
+                  className="cart-remove-btn"
+                  onClick={function() { onRemoveItem(item.id); }}
+                  title="Remove from cart"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      <div className="cart-summary">
+        <div className="cart-total-row">
+          <span>Total ({cartItems.length} items)</span>
+          <span className="cart-total-amount">${total.toFixed(2)}</span>
+        </div>
+        <button className="checkout-btn" onClick={onCheckout}>
+          <CreditCard size={20} />
+          Proceed to Checkout
+        </button>
       </div>
     </div>
   );
@@ -403,6 +714,9 @@ function Books() {
   const [selectedBook, setSelectedBook] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [popularBooks, setPopularBooks] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [cartMessage, setCartMessage] = useState('');
   const fetchIdRef = useRef(0);
   const searchTimeoutRef = useRef(null);
 
@@ -423,8 +737,57 @@ function Books() {
     }).catch(function() {
       setCurrentUserId(null);
     });
+    loadCart();
     fetchBooks([]);
   }, []);
+
+  function loadCart() {
+    api.get('/cart').then(function(res) {
+      setCartItems(res.data);
+    }).catch(function() {
+      setCartItems([]);
+    });
+  }
+
+  function addToCart(book) {
+    api.post('/cart', { book_id: book.id }).then(function(res) {
+      loadCart();
+      setCartMessage('Added to cart!');
+      setTimeout(function() {
+        setCartMessage('');
+      }, 2000);
+    }).catch(function(err) {
+      console.error('Failed to add to cart:', err);
+    });
+  }
+
+  function removeFromCart(itemId) {
+    api.delete('/cart/' + itemId).then(function() {
+      loadCart();
+    }).catch(function(err) {
+      console.error('Failed to remove from cart:', err);
+    });
+  }
+
+  function getCartTotal() {
+    var total = 0;
+    for (var i = 0; i < cartItems.length; i++) {
+      var price = cartItems[i].price;
+      var qty = cartItems[i].quantity || 1;
+      total = total + (price * qty);
+    }
+    return total;
+  }
+
+  function handleCheckout() {
+    setShowCheckout(true);
+  }
+
+  function handleCheckoutSuccess() {
+    setShowCheckout(false);
+    setCartItems([]);
+    setActiveTab('all');
+  }
 
   function fetchBooks(tagList) {
     var fetchId = ++fetchIdRef.current;
@@ -571,6 +934,11 @@ function Books() {
   }
 
   var displayBooks = getDisplayBooks();
+  var cartTotal = getCartTotal();
+  var cartCount = 0;
+  for (var i = 0; i < cartItems.length; i++) {
+    cartCount = cartCount + (cartItems[i].quantity || 1);
+  }
 
   return (
     <div className="books-page">
@@ -578,6 +946,10 @@ function Books() {
         <h1><BookOpen size={28} /> Book Recommendations</h1>
         <p>Discover books that match your current mood</p>
       </header>
+
+      {cartMessage && (
+        <div className="cart-message">{cartMessage}</div>
+      )}
 
       <div className="books-search-section">
         <div className="search-input-wrapper">
@@ -612,119 +984,138 @@ function Books() {
           <Heart size={18} />
           Favorites ({favoriteIds.length})
         </button>
+        <button 
+          className={'books-tab ' + (activeTab === 'cart' ? 'active' : '')}
+          onClick={function() { handleTabChange('cart'); }}
+        >
+          <ShoppingCart size={18} />
+          Cart ({cartCount})
+        </button>
       </div>
 
-      {activeTab === 'all' && !searchQuery && popularBooks.length > 0 && (
-        <div className="popular-books-section">
-          <h3 className="popular-books-title">
-            <Star size={20} fill="#fbbf24" color="#fbbf24" />
-            Popular Books
-          </h3>
-          <p className="popular-books-subtitle">Most reviewed by our community</p>
-          <div className="popular-books-grid">
-            {popularBooks.map(function(book) {
-              return (
-                <div key={book.id} className="popular-book-card" onClick={function() { openBookDetail(book); }}>
-                  <div className="popular-book-icon"><BookOpen size={20} /></div>
-                  <div className="popular-book-info">
-                    <h4 className="popular-book-title">{book.title}</h4>
-                    <p className="popular-book-author">{book.author}</p>
-                    <div className="popular-book-reviews">
-                      <Star size={14} fill="#fbbf24" color="#fbbf24" />
-                      <span>{book.review_count} reviews</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'all' && !searchQuery && (
-        <div className="tag-filter-section">
-          <div className="tag-filter-header">
-            <span className="tag-filter-label">Filter by Mood Tags</span>
-            {selectedTags.length > 0 && (
-              <button className="clear-tags-btn" onClick={clearAllTags}>Clear All</button>
-            )}
-          </div>
-          
-          <div className="tag-chips-container">
-            {tags.map(function(tag) {
-              var isActive = selectedTags.indexOf(tag.slug) >= 0;
-              return (
-                <button key={tag.id} className={'tag-chip ' + (isActive ? 'active' : '')} onClick={function() { toggleTag(tag.slug); }}>
-                  {tag.name}
-                  <span className="tag-count">{tag.book_count}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {selectedTags.length > 0 && (
-            <div className="selected-tags-display">
-              <span>Selected:</span>
-              <div className="selected-tags-list">
-                {getSelectedTagNames().map(function(name, idx) {
+      {activeTab === 'cart' ? (
+        <CartView 
+          cartItems={cartItems}
+          onRemoveItem={removeFromCart}
+          onCheckout={handleCheckout}
+          total={cartTotal}
+        />
+      ) : (
+        <>
+          {activeTab === 'all' && !searchQuery && popularBooks.length > 0 && (
+            <div className="popular-books-section">
+              <h3 className="popular-books-title">
+                <Star size={20} fill="#fbbf24" color="#fbbf24" />
+                Popular Books
+              </h3>
+              <p className="popular-books-subtitle">Most reviewed by our community</p>
+              <div className="popular-books-grid">
+                {popularBooks.map(function(book) {
                   return (
-                    <span key={idx} className="selected-tag-pill">
-                      {name}
-                      <X size={14} onClick={function() { toggleTag(selectedTags[idx]); }} className="remove-tag-icon" />
-                    </span>
+                    <div key={book.id} className="popular-book-card" onClick={function() { openBookDetail(book); }}>
+                      <div className="popular-book-icon"><BookOpen size={20} /></div>
+                      <div className="popular-book-info">
+                        <h4 className="popular-book-title">{book.title}</h4>
+                        <p className="popular-book-author">{book.author}</p>
+                        <div className="popular-book-reviews">
+                          <Star size={14} fill="#fbbf24" color="#fbbf24" />
+                          <span>{book.review_count} reviews</span>
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
             </div>
           )}
-        </div>
-      )}
 
-      {loading || isSearching ? (
-        <div className="loading-state">Loading books...</div>
-      ) : (
-        <div className="books-container">
-          {displayBooks.length > 0 ? (
-            <>
-              <div className="books-result-info">
-                {searchQuery ? (
-                  displayBooks.length + ' search results for "' + searchQuery + '"'
-                ) : activeTab === 'favorites' ? (
-                  displayBooks.length + ' favorite books'
-                ) : selectedTags.length > 0 ? (
-                  displayBooks.length + ' books found'
-                ) : (
-                  'All ' + displayBooks.length + ' books'
+          {activeTab === 'all' && !searchQuery && (
+            <div className="tag-filter-section">
+              <div className="tag-filter-header">
+                <span className="tag-filter-label">Filter by Mood Tags</span>
+                {selectedTags.length > 0 && (
+                  <button className="clear-tags-btn" onClick={clearAllTags}>Clear All</button>
                 )}
               </div>
-              <div className="books-full-grid">
-                {displayBooks.map(function(book) {
+              
+              <div className="tag-chips-container">
+                {tags.map(function(tag) {
+                  var isActive = selectedTags.indexOf(tag.slug) >= 0;
                   return (
-                    <BookCard 
-                      key={book.id} 
-                      book={book} 
-                      showTags={true}
-                      isFavorite={isFavorite(book.id)}
-                      onToggleFavorite={toggleFavorite}
-                      onOpenDetail={openBookDetail}
-                    />
+                    <button key={tag.id} className={'tag-chip ' + (isActive ? 'active' : '')} onClick={function() { toggleTag(tag.slug); }}>
+                      {tag.name}
+                      <span className="tag-count">{tag.book_count}</span>
+                    </button>
                   );
                 })}
               </div>
-            </>
-          ) : (
-            <div className="empty-state">
-              <BookOpen size={48} />
-              {searchQuery ? (
-                <p>No books found for "{searchQuery}"</p>
-              ) : activeTab === 'favorites' ? (
-                <p>No favorite books yet. Click the heart icon to add books to your favorites!</p>
-              ) : (
-                <p>No books found for selected tags.</p>
+
+              {selectedTags.length > 0 && (
+                <div className="selected-tags-display">
+                  <span>Selected:</span>
+                  <div className="selected-tags-list">
+                    {getSelectedTagNames().map(function(name, idx) {
+                      return (
+                        <span key={idx} className="selected-tag-pill">
+                          {name}
+                          <X size={14} onClick={function() { toggleTag(selectedTags[idx]); }} className="remove-tag-icon" />
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
           )}
-        </div>
+
+          {loading || isSearching ? (
+            <div className="loading-state">Loading books...</div>
+          ) : (
+            <div className="books-container">
+              {displayBooks.length > 0 ? (
+                <>
+                  <div className="books-result-info">
+                    {searchQuery ? (
+                      displayBooks.length + ' search results for "' + searchQuery + '"'
+                    ) : activeTab === 'favorites' ? (
+                      displayBooks.length + ' favorite books'
+                    ) : selectedTags.length > 0 ? (
+                      displayBooks.length + ' books found'
+                    ) : (
+                      'All ' + displayBooks.length + ' books'
+                    )}
+                  </div>
+                  <div className="books-full-grid">
+                    {displayBooks.map(function(book) {
+                      return (
+                        <BookCard 
+                          key={book.id} 
+                          book={book} 
+                          showTags={true}
+                          isFavorite={isFavorite(book.id)}
+                          onToggleFavorite={toggleFavorite}
+                          onOpenDetail={openBookDetail}
+                          onAddToCart={addToCart}
+                        />
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div className="empty-state">
+                  <BookOpen size={48} />
+                  {searchQuery ? (
+                    <p>No books found for "{searchQuery}"</p>
+                  ) : activeTab === 'favorites' ? (
+                    <p>No favorite books yet. Click the heart icon to add books to your favorites!</p>
+                  ) : (
+                    <p>No books found for selected tags.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {selectedBook && (
@@ -733,7 +1124,17 @@ function Books() {
           onClose={closeBookDetail}
           isFavorite={isFavorite(selectedBook.id)}
           onToggleFavorite={toggleFavorite}
+          onAddToCart={addToCart}
           currentUserId={currentUserId}
+        />
+      )}
+
+      {showCheckout && (
+        <CheckoutModal
+          cartItems={cartItems}
+          total={cartTotal}
+          onClose={function() { setShowCheckout(false); }}
+          onCheckoutSuccess={handleCheckoutSuccess}
         />
       )}
     </div>

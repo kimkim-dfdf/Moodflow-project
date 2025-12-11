@@ -175,33 +175,33 @@ def seed_books():
         print("Books already exist, skipping...")
         return
     
-    # Define all books
+    # Define all books with prices
     books_data = [
         # Happy books
-        {'emotion': 'Happy', 'title': 'The Alchemist', 'author': 'Paulo Coelho', 'genre': 'Fiction', 'description': 'A magical story about following your dreams', 'tags': 'hopeful,growth,new-perspective'},
-        {'emotion': 'Happy', 'title': 'Big Magic', 'author': 'Elizabeth Gilbert', 'genre': 'Self-Help', 'description': 'Creative living beyond fear', 'tags': 'growth,focus,hopeful'},
-        {'emotion': 'Happy', 'title': 'The Happiness Project', 'author': 'Gretchen Rubin', 'genre': 'Self-Help', 'description': 'A year-long journey to discover happiness', 'tags': 'hopeful,growth,recharge'},
-        {'emotion': 'Happy', 'title': 'Yes Please', 'author': 'Amy Poehler', 'genre': 'Memoir', 'description': 'Hilarious and inspiring stories', 'tags': 'hopeful,courage,emotional'},
+        {'emotion': 'Happy', 'title': 'The Alchemist', 'author': 'Paulo Coelho', 'genre': 'Fiction', 'description': 'A magical story about following your dreams', 'tags': 'hopeful,growth,new-perspective', 'price': 12.99},
+        {'emotion': 'Happy', 'title': 'Big Magic', 'author': 'Elizabeth Gilbert', 'genre': 'Self-Help', 'description': 'Creative living beyond fear', 'tags': 'growth,focus,hopeful', 'price': 14.99},
+        {'emotion': 'Happy', 'title': 'The Happiness Project', 'author': 'Gretchen Rubin', 'genre': 'Self-Help', 'description': 'A year-long journey to discover happiness', 'tags': 'hopeful,growth,recharge', 'price': 16.99},
+        {'emotion': 'Happy', 'title': 'Yes Please', 'author': 'Amy Poehler', 'genre': 'Memoir', 'description': 'Hilarious and inspiring stories', 'tags': 'hopeful,courage,emotional', 'price': 11.99},
         
         # Sad books
-        {'emotion': 'Sad', 'title': 'When Breath Becomes Air', 'author': 'Paul Kalanithi', 'genre': 'Memoir', 'description': 'A profound reflection on life and death', 'tags': 'emotional,comforting,growth'},
-        {'emotion': 'Sad', 'title': 'The Year of Magical Thinking', 'author': 'Joan Didion', 'genre': 'Memoir', 'description': 'Processing grief and loss', 'tags': 'comforting,emotional,peaceful'},
-        {'emotion': 'Sad', 'title': 'Tiny Beautiful Things', 'author': 'Cheryl Strayed', 'genre': 'Self-Help', 'description': 'Advice on life and love', 'tags': 'comforting,emotional,peaceful'},
-        {'emotion': 'Sad', 'title': 'Norwegian Wood', 'author': 'Haruki Murakami', 'genre': 'Fiction', 'description': 'A story of love and melancholy', 'tags': 'emotional,escapism,peaceful'},
+        {'emotion': 'Sad', 'title': 'When Breath Becomes Air', 'author': 'Paul Kalanithi', 'genre': 'Memoir', 'description': 'A profound reflection on life and death', 'tags': 'emotional,comforting,growth', 'price': 13.99},
+        {'emotion': 'Sad', 'title': 'The Year of Magical Thinking', 'author': 'Joan Didion', 'genre': 'Memoir', 'description': 'Processing grief and loss', 'tags': 'comforting,emotional,peaceful', 'price': 15.99},
+        {'emotion': 'Sad', 'title': 'Tiny Beautiful Things', 'author': 'Cheryl Strayed', 'genre': 'Self-Help', 'description': 'Advice on life and love', 'tags': 'comforting,emotional,peaceful', 'price': 18.99},
+        {'emotion': 'Sad', 'title': 'Norwegian Wood', 'author': 'Haruki Murakami', 'genre': 'Fiction', 'description': 'A story of love and melancholy', 'tags': 'emotional,escapism,peaceful', 'price': 10.99},
         
         # Tired books
-        {'emotion': 'Tired', 'title': 'The Little Prince', 'author': 'Antoine de Saint-Exupery', 'genre': 'Fiction', 'description': 'A gentle tale with deep meaning', 'tags': 'hopeful,escapism,new-perspective'},
-        {'emotion': 'Tired', 'title': 'Winnie-the-Pooh', 'author': 'A.A. Milne', 'genre': 'Fiction', 'description': 'Comforting adventures in the Hundred Acre Wood', 'tags': 'comforting,recharge,peaceful'},
-        {'emotion': 'Tired', 'title': 'The House in the Cerulean Sea', 'author': 'TJ Klune', 'genre': 'Fantasy', 'description': 'A cozy, heartwarming fantasy', 'tags': 'escapism,comforting,peaceful'},
-        {'emotion': 'Tired', 'title': 'Hygge: The Danish Art of Living', 'author': 'Meik Wiking', 'genre': 'Lifestyle', 'description': 'Finding comfort in simple pleasures', 'tags': 'recharge,peaceful,comforting'},
+        {'emotion': 'Tired', 'title': 'The Little Prince', 'author': 'Antoine de Saint-Exupery', 'genre': 'Fiction', 'description': 'A gentle tale with deep meaning', 'tags': 'hopeful,escapism,new-perspective', 'price': 17.99},
+        {'emotion': 'Tired', 'title': 'Winnie-the-Pooh', 'author': 'A.A. Milne', 'genre': 'Fiction', 'description': 'Comforting adventures in the Hundred Acre Wood', 'tags': 'comforting,recharge,peaceful', 'price': 14.49},
+        {'emotion': 'Tired', 'title': 'The House in the Cerulean Sea', 'author': 'TJ Klune', 'genre': 'Fantasy', 'description': 'A cozy, heartwarming fantasy', 'tags': 'escapism,comforting,peaceful', 'price': 19.99},
+        {'emotion': 'Tired', 'title': 'Hygge: The Danish Art of Living', 'author': 'Meik Wiking', 'genre': 'Lifestyle', 'description': 'Finding comfort in simple pleasures', 'tags': 'recharge,peaceful,comforting', 'price': 12.49},
         
         # Angry books
-        {'emotion': 'Angry', 'title': 'The Art of War', 'author': 'Sun Tzu', 'genre': 'Philosophy', 'description': 'Ancient wisdom on strategy', 'tags': 'courage,focus,growth'},
-        {'emotion': 'Angry', 'title': 'Rage', 'author': 'Bob Woodward', 'genre': 'Non-Fiction', 'description': 'Understanding power and politics', 'tags': 'emotional,courage,comforting'},
-        {'emotion': 'Angry', 'title': 'Anger: Wisdom for Cooling the Flames', 'author': 'Thich Nhat Hanh', 'genre': 'Self-Help', 'description': 'Buddhist approach to managing anger', 'tags': 'peaceful,new-perspective,growth'}
+        {'emotion': 'Angry', 'title': 'The Art of War', 'author': 'Sun Tzu', 'genre': 'Philosophy', 'description': 'Ancient wisdom on strategy', 'tags': 'courage,focus,growth', 'price': 13.49},
+        {'emotion': 'Angry', 'title': 'Rage', 'author': 'Bob Woodward', 'genre': 'Non-Fiction', 'description': 'Understanding power and politics', 'tags': 'emotional,courage,comforting', 'price': 15.49},
+        {'emotion': 'Angry', 'title': 'Anger: Wisdom for Cooling the Flames', 'author': 'Thich Nhat Hanh', 'genre': 'Self-Help', 'description': 'Buddhist approach to managing anger', 'tags': 'peaceful,new-perspective,growth', 'price': 16.49}
     ]
     
-    # Add each book to database
+    # Add each book to database with price
     for book_item in books_data:
         book = Book(
             emotion=book_item['emotion'],
@@ -209,7 +209,8 @@ def seed_books():
             author=book_item['author'],
             genre=book_item['genre'],
             description=book_item['description'],
-            tags=book_item['tags']
+            tags=book_item['tags'],
+            price=book_item['price']
         )
         db.session.add(book)
     

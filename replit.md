@@ -61,9 +61,10 @@ backend/
 ### 4. Books
 - Tag-based filtering with 10 emotion tags
 - AND logic for multi-tag filtering
-- 15 curated books with 3 tags each
+- 15 curated books with 3 tags each and prices
 - Popular Books section (top 5 most reviewed)
 - Book reviews with ratings
+- Shopping cart with simulated checkout (mock payment for school project)
 
 ### 5. Music
 - Dedicated music page with full music library
@@ -128,6 +129,14 @@ Only 4 fixed accounts can log in (no registration):
 - `GET /api/user/profile` - Get profile
 - `PUT /api/user/profile` - Update profile
 - `GET /api/dashboard/summary` - Get dashboard summary
+
+### Cart
+- `GET /api/cart` - Get user's cart items
+- `POST /api/cart` - Add book to cart
+- `DELETE /api/cart/:id` - Remove item from cart
+- `DELETE /api/cart/clear` - Clear entire cart
+- `POST /api/checkout` - Process checkout (simulated payment)
+- `GET /api/orders` - Get user's order history
 
 ### File Upload
 - `POST /api/upload/photo` - Upload photo
