@@ -294,3 +294,34 @@ class BookReview(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
         return result
+
+
+# ==============================================
+# Music Review Model
+# ==============================================
+
+class MusicReview(db.Model):
+    """
+    MusicReview table for storing user music reviews.
+    Each review belongs to a user and a music track.
+    """
+    __tablename__ = 'music_reviews'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    music_id = db.Column(db.Integer, nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert review to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'music_id': self.music_id,
+            'rating': self.rating,
+            'content': self.content,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+        return result

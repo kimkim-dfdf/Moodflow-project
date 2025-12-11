@@ -399,6 +399,53 @@ def register_routes(app):
         return jsonify(repository.get_all_music())
     
     
+    @app.route('/api/music/<int:music_id>/reviews', methods=['GET'])
+    def get_music_reviews(music_id):
+        """Get all reviews for a music track."""
+        reviews = repository.get_reviews_for_music(music_id)
+        return jsonify(reviews)
+    
+    
+    @app.route('/api/music/<int:music_id>/reviews', methods=['POST'])
+    @login_required
+    def create_music_review(music_id):
+        """Create a new review for a music track."""
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        rating = data.get('rating')
+        content = data.get('content')
+        
+        if not rating or not content:
+            return jsonify({'error': 'Rating and content are required'}), 400
+        
+        if not isinstance(rating, int) or rating < 1 or rating > 5:
+            return jsonify({'error': 'Rating must be an integer between 1 and 5'}), 400
+        
+        review = repository.create_music_review(
+            user_id=current_user.id,
+            music_id=music_id,
+            rating=rating,
+            content=content
+        )
+        
+        if review is None:
+            return jsonify({'error': 'You have already reviewed this music'}), 400
+        
+        return jsonify(review), 201
+    
+    
+    @app.route('/api/music/reviews/<int:review_id>', methods=['DELETE'])
+    @login_required
+    def delete_music_review(review_id):
+        """Delete a music review."""
+        success = repository.delete_music_review(review_id, current_user.id)
+        if not success:
+            return jsonify({'error': 'Review not found or not authorized'}), 404
+        return jsonify({'success': True})
+    
+    
     # ==========================================
     # Book Routes
     # ==========================================

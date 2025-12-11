@@ -756,3 +756,71 @@ def get_popular_books(limit=10):
     return books_with_counts
 
 
+# ==============================================
+# Music Review Functions
+# ==============================================
+
+def get_reviews_for_music(music_id):
+    """
+    Get all reviews for a specific music track.
+    Returns reviews with user information.
+    """
+    from models import MusicReview
+    reviews = MusicReview.query.filter_by(music_id=music_id).order_by(MusicReview.created_at.desc()).all()
+    
+    result = []
+    for review in reviews:
+        review_dict = review.to_dict()
+        user = db.session.get(User, review.user_id)
+        if user:
+            review_dict['username'] = user.username
+        else:
+            review_dict['username'] = 'Unknown'
+        result.append(review_dict)
+    
+    return result
+
+
+def create_music_review(user_id, music_id, rating, content):
+    """
+    Create a new music review.
+    Each user can only have one review per music track.
+    """
+    from models import MusicReview
+    existing = MusicReview.query.filter_by(user_id=user_id, music_id=music_id).first()
+    if existing:
+        return None
+    
+    review = MusicReview()
+    review.user_id = user_id
+    review.music_id = music_id
+    review.rating = rating
+    review.content = content
+    review.created_at = datetime.utcnow()
+    
+    db.session.add(review)
+    db.session.commit()
+    
+    result = review.to_dict()
+    user = db.session.get(User, user_id)
+    if user:
+        result['username'] = user.username
+    
+    return result
+
+
+def delete_music_review(review_id, user_id):
+    """
+    Delete a music review.
+    Only the review owner can delete it.
+    """
+    from models import MusicReview
+    review = MusicReview.query.filter_by(id=review_id, user_id=user_id).first()
+    if review is None:
+        return False
+    
+    db.session.delete(review)
+    db.session.commit()
+    return True
+
+

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
-import { Music as MusicIcon, X, Search, Heart, ExternalLink, Play } from 'lucide-react';
+import { Music as MusicIcon, X, Search, Heart, ExternalLink, Play, Star, Trash2, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 function getYoutubeVideoId(url) {
   if (!url) {
@@ -25,6 +26,7 @@ function MusicCard(props) {
   var music = props.music;
   var isFavorite = props.isFavorite || false;
   var onToggleFavorite = props.onToggleFavorite;
+  var onOpenDetail = props.onOpenDetail;
   var [imgError, setImgError] = useState(false);
   
   var videoId = getYoutubeVideoId(music.youtube_url);
@@ -41,8 +43,14 @@ function MusicCard(props) {
     setImgError(true);
   }
   
+  function handleCardClick() {
+    if (onOpenDetail) {
+      onOpenDetail(music);
+    }
+  }
+  
   return (
-    <div className="music-page-card">
+    <div className="music-page-card" onClick={handleCardClick} style={{cursor: 'pointer'}}>
       <div className="music-thumbnail">
         {thumbnailUrl && !imgError ? (
           <img 
@@ -90,6 +98,245 @@ function MusicCard(props) {
   );
 }
 
+function MusicDetailModal(props) {
+  var music = props.music;
+  var onClose = props.onClose;
+  var isFavorite = props.isFavorite;
+  var onToggleFavorite = props.onToggleFavorite;
+  var currentUserId = props.currentUserId;
+  var [reviews, setReviews] = useState([]);
+  var [reviewRating, setReviewRating] = useState(5);
+  var [reviewContent, setReviewContent] = useState('');
+  var [isSubmitting, setIsSubmitting] = useState(false);
+  var [reviewError, setReviewError] = useState('');
+  var [hasUserReview, setHasUserReview] = useState(false);
+  var [thumbnailError, setThumbnailError] = useState(false);
+  
+  var videoId = getYoutubeVideoId(music ? music.youtube_url : null);
+  var thumbnailUrl = videoId ? 'https://img.youtube.com/vi/' + videoId + '/hqdefault.jpg' : null;
+  
+  useEffect(function() {
+    if (music) {
+      loadReviews();
+    }
+  }, [music]);
+  
+  function loadReviews() {
+    api.get('/music/' + music.id + '/reviews').then(function(res) {
+      setReviews(res.data);
+      var userHasReview = false;
+      for (var i = 0; i < res.data.length; i++) {
+        if (Number(res.data[i].user_id) === Number(currentUserId)) {
+          userHasReview = true;
+          break;
+        }
+      }
+      setHasUserReview(userHasReview);
+    }).catch(function() {
+      setReviews([]);
+    });
+  }
+  
+  if (!music) {
+    return null;
+  }
+  
+  function handleOverlayClick(e) {
+    if (e.target.className === 'modal-overlay') {
+      onClose();
+    }
+  }
+  
+  function handleFavoriteClick() {
+    if (onToggleFavorite) {
+      onToggleFavorite(music.id);
+    }
+  }
+  
+  function handleSubmitReview() {
+    if (!reviewContent.trim()) {
+      setReviewError('Please write a review');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setReviewError('');
+    
+    api.post('/music/' + music.id + '/reviews', {
+      rating: reviewRating,
+      content: reviewContent.trim()
+    }).then(function() {
+      setReviewContent('');
+      setReviewRating(5);
+      loadReviews();
+      setIsSubmitting(false);
+    }).catch(function(err) {
+      setReviewError(err.response?.data?.error || 'Failed to submit review');
+      setIsSubmitting(false);
+    });
+  }
+  
+  function handleDeleteReview(reviewId) {
+    api.delete('/music/reviews/' + reviewId).then(function() {
+      loadReviews();
+    }).catch(function() {
+    });
+  }
+  
+  function createStarClickHandler(starValue) {
+    return function() {
+      setReviewRating(starValue);
+    };
+  }
+  
+  function renderStars(rating, interactive) {
+    var stars = [];
+    for (var i = 1; i <= 5; i++) {
+      if (interactive) {
+        stars.push(
+          <button 
+            key={i} 
+            type="button"
+            className="star-btn"
+            onClick={createStarClickHandler(i)}
+          >
+            <Star size={20} fill={i <= reviewRating ? '#fbbf24' : 'none'} color={i <= reviewRating ? '#fbbf24' : '#d1d5db'} />
+          </button>
+        );
+      } else {
+        stars.push(
+          <Star key={i} size={16} fill={i <= rating ? '#fbbf24' : 'none'} color={i <= rating ? '#fbbf24' : '#d1d5db'} />
+        );
+      }
+    }
+    return stars;
+  }
+  
+  return (
+    <div className="modal-overlay" onClick={handleOverlayClick}>
+      <div className="music-detail-modal">
+        <button className="modal-close-btn" onClick={onClose}>
+          <X size={24} />
+        </button>
+        
+        <div className="modal-header">
+          <div className="music-modal-thumbnail">
+            {thumbnailUrl && !thumbnailError ? (
+              <img 
+                src={thumbnailUrl} 
+                alt={music.title}
+                onError={function() { setThumbnailError(true); }}
+                className="music-modal-thumbnail-img"
+              />
+            ) : (
+              <div className="music-modal-icon"><MusicIcon size={48} /></div>
+            )}
+          </div>
+          <div className="modal-title-section">
+            <h2>{music.title}</h2>
+            <p className="modal-author">{music.artist}</p>
+          </div>
+        </div>
+        
+        <div className="modal-body">
+          <div className="modal-meta">
+            <span className="modal-genre">{music.genre}</span>
+            {music.emotion && (
+              <span className="modal-emotion">Mood: {music.emotion}</span>
+            )}
+          </div>
+          
+          <div className="modal-actions">
+            <button 
+              className={'favorite-btn-large ' + (isFavorite ? 'active' : '')}
+              onClick={handleFavoriteClick}
+            >
+              <Heart size={20} fill={isFavorite ? '#ef4444' : 'none'} />
+              {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+            </button>
+            {music.youtube_url && (
+              <a 
+                href={music.youtube_url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="youtube-btn-large"
+              >
+                <Play size={20} />
+                Watch on YouTube
+              </a>
+            )}
+          </div>
+          
+          <div className="modal-reviews">
+            <h4>Reviews ({reviews.length})</h4>
+            
+            {!hasUserReview && (
+              <div className="review-form">
+                <div className="review-rating-input">
+                  <span>Your Rating:</span>
+                  <div className="stars-input">{renderStars(reviewRating, true)}</div>
+                </div>
+                <textarea
+                  className="review-textarea"
+                  placeholder="Write your review..."
+                  value={reviewContent}
+                  onChange={function(e) { setReviewContent(e.target.value); }}
+                  rows={3}
+                />
+                {reviewError && <div className="review-error">{reviewError}</div>}
+                <button 
+                  className="review-submit-btn"
+                  onClick={handleSubmitReview}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </div>
+            )}
+            
+            {hasUserReview && (
+              <div className="review-notice">You have already reviewed this music.</div>
+            )}
+            
+            <div className="reviews-list">
+              {reviews.length === 0 ? (
+                <p className="no-reviews">No reviews yet. Be the first to review!</p>
+              ) : (
+                reviews.map(function(review) {
+                  return (
+                    <div key={review.id} className="review-item">
+                      <div className="review-header">
+                        <span className="review-user">
+                          <User size={16} />
+                          {review.username}
+                        </span>
+                        <div className="review-stars">{renderStars(review.rating, false)}</div>
+                        {Number(review.user_id) === Number(currentUserId) && (
+                          <button 
+                            className="review-delete-btn"
+                            onClick={function() { handleDeleteReview(review.id); }}
+                            title="Delete review"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                      <p className="review-content">{review.content}</p>
+                      <span className="review-date">
+                        {new Date(review.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function getMusicFavoritesFromStorage() {
   try {
     var stored = localStorage.getItem('music_favorites');
@@ -109,6 +356,7 @@ function saveMusicFavoritesToStorage(favoriteIds) {
 }
 
 function Music() {
+  var { user } = useAuth();
   var [allMusic, setAllMusic] = useState([]);
   var [filteredMusic, setFilteredMusic] = useState([]);
   var [emotions, setEmotions] = useState([]);
@@ -117,7 +365,16 @@ function Music() {
   var [favoriteIds, setFavoriteIds] = useState(getMusicFavoritesFromStorage());
   var [searchQuery, setSearchQuery] = useState('');
   var [activeTab, setActiveTab] = useState('all');
+  var [selectedMusic, setSelectedMusic] = useState(null);
   var searchTimeoutRef = useRef(null);
+  
+  function openMusicDetail(music) {
+    setSelectedMusic(music);
+  }
+  
+  function closeMusicDetail() {
+    setSelectedMusic(null);
+  }
 
   useEffect(function() {
     api.get('/music/all').then(function(res) {
@@ -376,6 +633,7 @@ function Music() {
                       music={music} 
                       isFavorite={isFavorite(music.id)}
                       onToggleFavorite={toggleFavorite}
+                      onOpenDetail={openMusicDetail}
                     />
                   );
                 })}
@@ -395,6 +653,14 @@ function Music() {
           )}
         </div>
       )}
+      
+      <MusicDetailModal 
+        music={selectedMusic}
+        onClose={closeMusicDetail}
+        isFavorite={selectedMusic ? isFavorite(selectedMusic.id) : false}
+        onToggleFavorite={toggleFavorite}
+        currentUserId={user ? user.id : null}
+      />
     </div>
   );
 }
