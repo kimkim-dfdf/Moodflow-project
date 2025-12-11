@@ -582,6 +582,17 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .music-detail-inline .music-detail-reviews { background: var(--surface); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
 .music-detail-inline .music-detail-reviews h4 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
 
+/* Music Listening Tags */
+.music-listening-tags { background: var(--surface); border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 20px; }
+.music-listening-tags h4 { font-size: 15px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.listening-tags-hint { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+.listening-tags-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.listening-tag-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); font-size: 13px; cursor: pointer; color: var(--text); transition: all 0.2s; }
+.listening-tag-btn:hover { border-color: var(--primary); background: #f8f9ff; }
+.listening-tag-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.listening-tag-btn .tag-count { background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 4px; }
+.listening-tag-btn.active .tag-count { background: rgba(255,255,255,0.2); }
+
 /* Responsive */
 @media (max-width: 1200px) {
   .dashboard-grid { grid-template-columns: 1fr; }

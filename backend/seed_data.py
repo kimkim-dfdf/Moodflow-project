@@ -6,7 +6,7 @@
 # Called automatically when the app starts.
 # ==============================================
 
-from models import db, Emotion, Music, BookTag, Book, Task, EmotionHistory
+from models import db, Emotion, Music, BookTag, Book, Task, EmotionHistory, MusicListeningTag
 
 
 def seed_all_static_data():
@@ -22,6 +22,7 @@ def seed_all_static_data():
     seed_books()
     seed_tasks()
     seed_emotion_history()
+    seed_music_listening_tags()
     
     print("Static data seeding complete.")
 
@@ -302,3 +303,38 @@ def seed_emotion_history():
     
     db.session.commit()
     print("Seeded 8 emotion history records.")
+
+
+def seed_music_listening_tags():
+    """
+    Seed the music listening tags into the database.
+    These are predefined tags users can apply to music.
+    """
+    
+    # Check if tags already exist
+    existing_count = MusicListeningTag.query.count()
+    if existing_count > 0:
+        print("Music listening tags already exist, skipping...")
+        return
+    
+    # Define listening mood tags
+    tags_data = [
+        {'name': 'Studying', 'emoji': '📚'},
+        {'name': 'Working Out', 'emoji': '💪'},
+        {'name': 'Relaxing', 'emoji': '😌'},
+        {'name': 'Driving', 'emoji': '🚗'},
+        {'name': 'Before Sleep', 'emoji': '🌙'},
+        {'name': 'Morning', 'emoji': '☀️'},
+        {'name': 'Focus', 'emoji': '🎯'},
+        {'name': 'Party', 'emoji': '🎉'},
+    ]
+    
+    # Add each tag to database
+    for tag_data in tags_data:
+        tag = MusicListeningTag()
+        tag.name = tag_data['name']
+        tag.emoji = tag_data['emoji']
+        db.session.add(tag)
+    
+    db.session.commit()
+    print("Seeded 8 music listening tags.")

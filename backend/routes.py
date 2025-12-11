@@ -418,24 +418,19 @@ def register_routes(app):
     @app.route('/api/music/<int:music_id>/reviews', methods=['POST'])
     @login_required
     def create_music_review(music_id):
-        """Create a new review for a music track."""
+        """Create a new review for a music track (no rating)."""
         data = request.get_json()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
-        rating = data.get('rating')
         content = data.get('content')
         
-        if not rating or not content:
-            return jsonify({'error': 'Rating and content are required'}), 400
-        
-        if not isinstance(rating, int) or rating < 1 or rating > 5:
-            return jsonify({'error': 'Rating must be an integer between 1 and 5'}), 400
+        if not content:
+            return jsonify({'error': 'Content is required'}), 400
         
         review = repository.create_music_review(
             user_id=current_user.id,
             music_id=music_id,
-            rating=rating,
             content=content
         )
         
@@ -452,6 +447,55 @@ def register_routes(app):
         success = repository.delete_music_review(review_id, current_user.id)
         if not success:
             return jsonify({'error': 'Review not found or not authorized'}), 404
+        return jsonify({'success': True})
+    
+    
+    # ==========================================
+    # Music Listening Tag Routes
+    # ==========================================
+    
+    @app.route('/api/music/listening-tags', methods=['GET'])
+    def get_listening_tags():
+        """Get all available listening tags."""
+        tags = repository.get_all_listening_tags()
+        return jsonify(tags)
+    
+    
+    @app.route('/api/music/<int:music_id>/tags', methods=['GET'])
+    def get_music_tags(music_id):
+        """Get all tags for a music track with counts and user's tags."""
+        tags = repository.get_music_tags(music_id)
+        
+        user_tag_ids = []
+        if current_user.is_authenticated:
+            user_tag_ids = repository.get_user_music_tags(current_user.id, music_id)
+        
+        for tag in tags:
+            if tag['id'] in user_tag_ids:
+                tag['user_tagged'] = True
+            else:
+                tag['user_tagged'] = False
+        
+        return jsonify(tags)
+    
+    
+    @app.route('/api/music/<int:music_id>/tags/<int:tag_id>', methods=['POST'])
+    @login_required
+    def add_music_tag(music_id, tag_id):
+        """Add a listening tag to a music track."""
+        success = repository.add_user_music_tag(current_user.id, music_id, tag_id)
+        if not success:
+            return jsonify({'error': 'Tag already added'}), 400
+        return jsonify({'success': True}), 201
+    
+    
+    @app.route('/api/music/<int:music_id>/tags/<int:tag_id>', methods=['DELETE'])
+    @login_required
+    def remove_music_tag(music_id, tag_id):
+        """Remove a listening tag from a music track."""
+        success = repository.remove_user_music_tag(current_user.id, music_id, tag_id)
+        if not success:
+            return jsonify({'error': 'Tag not found'}), 404
         return jsonify({'success': True})
     
     

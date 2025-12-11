@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Music as MusicIcon, Search, Heart, Play, X, Star, User, Trash2 } from 'lucide-react';
+import { Music as MusicIcon, Search, Heart, Play, X, User, Trash2, Tag } from 'lucide-react';
 
 function getYoutubeVideoId(url) {
   if (!url) {
@@ -129,7 +129,6 @@ function saveMusicFavoritesToStorage(favoriteIds) {
 
 function MusicDetailView(props) {
   var music = props.music;
-  var onBack = props.onBack;
   var favoriteIds = props.favoriteIds;
   var onToggleFavorite = props.onToggleFavorite;
   
@@ -138,19 +137,19 @@ function MusicDetailView(props) {
   
   var [thumbnailError, setThumbnailError] = useState(false);
   var [reviews, setReviews] = useState([]);
-  var [reviewRating, setReviewRating] = useState(5);
   var [reviewContent, setReviewContent] = useState('');
   var [reviewError, setReviewError] = useState('');
   var [isSubmitting, setIsSubmitting] = useState(false);
   var [hasUserReview, setHasUserReview] = useState(false);
+  var [listeningTags, setListeningTags] = useState([]);
   
   useEffect(function() {
     if (music) {
       setThumbnailError(false);
       setReviewContent('');
-      setReviewRating(5);
       setReviewError('');
       loadReviews();
+      loadTags();
     }
   }, [music, currentUserId]);
   
@@ -170,6 +169,14 @@ function MusicDetailView(props) {
     });
   }
   
+  function loadTags() {
+    api.get('/music/' + music.id + '/tags').then(function(res) {
+      setListeningTags(res.data);
+    }).catch(function() {
+      setListeningTags([]);
+    });
+  }
+  
   function isFavorite(musicId) {
     for (var i = 0; i < favoriteIds.length; i++) {
       if (favoriteIds[i] === musicId) {
@@ -177,6 +184,18 @@ function MusicDetailView(props) {
       }
     }
     return false;
+  }
+  
+  function handleTagClick(tag) {
+    if (tag.user_tagged) {
+      api.delete('/music/' + music.id + '/tags/' + tag.id).then(function() {
+        loadTags();
+      }).catch(function() {});
+    } else {
+      api.post('/music/' + music.id + '/tags/' + tag.id).then(function() {
+        loadTags();
+      }).catch(function() {});
+    }
   }
   
   function handleSubmitReview() {
@@ -189,11 +208,9 @@ function MusicDetailView(props) {
     setReviewError('');
     
     api.post('/music/' + music.id + '/reviews', {
-      rating: reviewRating,
       content: reviewContent.trim()
     }).then(function() {
       setReviewContent('');
-      setReviewRating(5);
       loadReviews();
       setIsSubmitting(false);
     }).catch(function(err) {
@@ -207,35 +224,6 @@ function MusicDetailView(props) {
       loadReviews();
     }).catch(function() {
     });
-  }
-  
-  function createStarClickHandler(starValue) {
-    return function() {
-      setReviewRating(starValue);
-    };
-  }
-  
-  function renderStars(rating, interactive) {
-    var stars = [];
-    for (var i = 1; i <= 5; i++) {
-      if (interactive) {
-        stars.push(
-          <button 
-            key={i} 
-            type="button"
-            className="star-btn"
-            onClick={createStarClickHandler(i)}
-          >
-            <Star size={20} fill={i <= reviewRating ? '#fbbf24' : 'none'} color={i <= reviewRating ? '#fbbf24' : '#d1d5db'} />
-          </button>
-        );
-      } else {
-        stars.push(
-          <Star key={i} size={16} fill={i <= rating ? '#fbbf24' : 'none'} color={i <= rating ? '#fbbf24' : '#d1d5db'} />
-        );
-      }
-    }
-    return stars;
   }
   
   var thumbnailUrl = null;
@@ -294,15 +282,31 @@ function MusicDetailView(props) {
         )}
       </div>
       
+      <div className="music-listening-tags">
+        <h4><Tag size={16} /> Listening Tags</h4>
+        <p className="listening-tags-hint">Click tags to describe when you listen to this music</p>
+        <div className="listening-tags-list">
+          {listeningTags.map(function(tag) {
+            return (
+              <button 
+                key={tag.id}
+                className={'listening-tag-btn ' + (tag.user_tagged ? 'active' : '')}
+                onClick={function() { handleTagClick(tag); }}
+              >
+                <span>{tag.emoji}</span>
+                {tag.name}
+                {tag.count > 0 && <span className="tag-count">{tag.count}</span>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      
       <div className="music-detail-reviews">
         <h4>Reviews ({reviews.length})</h4>
         
         {!hasUserReview && (
           <div className="review-form">
-            <div className="review-rating-input">
-              <span>Your Rating:</span>
-              <div className="stars-input">{renderStars(reviewRating, true)}</div>
-            </div>
             <textarea
               className="review-textarea"
               placeholder="Write your review..."
@@ -337,7 +341,6 @@ function MusicDetailView(props) {
                       <User size={14} />
                       {review.username}
                     </span>
-                    <div className="review-stars">{renderStars(review.rating, false)}</div>
                     {Number(review.user_id) === Number(currentUserId) && (
                       <button 
                         className="review-delete-btn"

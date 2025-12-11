@@ -789,9 +789,9 @@ def get_reviews_for_music(music_id):
     return result
 
 
-def create_music_review(user_id, music_id, rating, content):
+def create_music_review(user_id, music_id, content):
     """
-    Create a new music review.
+    Create a new music review (no rating).
     Each user can only have one review per music track.
     """
     from models import MusicReview
@@ -802,7 +802,6 @@ def create_music_review(user_id, music_id, rating, content):
     review = MusicReview()
     review.user_id = user_id
     review.music_id = music_id
-    review.rating = rating
     review.content = content
     review.created_at = datetime.utcnow()
     
@@ -828,6 +827,102 @@ def delete_music_review(review_id, user_id):
         return False
     
     db.session.delete(review)
+    db.session.commit()
+    return True
+
+
+# ==============================================
+# Music Listening Tag Functions
+# ==============================================
+
+def get_all_listening_tags():
+    """
+    Get all available listening tags.
+    """
+    from models import MusicListeningTag
+    tags = MusicListeningTag.query.all()
+    result = []
+    for tag in tags:
+        result.append(tag.to_dict())
+    return result
+
+
+def get_music_tags(music_id):
+    """
+    Get all tags for a specific music track with counts.
+    Returns list of tags with count of users who tagged it.
+    """
+    from models import MusicListeningTag, UserMusicTag
+    
+    all_tags = MusicListeningTag.query.all()
+    result = []
+    
+    for tag in all_tags:
+        count = UserMusicTag.query.filter_by(music_id=music_id, tag_id=tag.id).count()
+        tag_dict = tag.to_dict()
+        tag_dict['count'] = count
+        result.append(tag_dict)
+    
+    return result
+
+
+def get_user_music_tags(user_id, music_id):
+    """
+    Get tags that a specific user has applied to a music track.
+    Returns list of tag IDs.
+    """
+    from models import UserMusicTag
+    
+    user_tags = UserMusicTag.query.filter_by(user_id=user_id, music_id=music_id).all()
+    result = []
+    for ut in user_tags:
+        result.append(ut.tag_id)
+    return result
+
+
+def add_user_music_tag(user_id, music_id, tag_id):
+    """
+    Add a listening tag to a music track for a user.
+    Returns True if added, False if already exists.
+    """
+    from models import UserMusicTag
+    
+    existing = UserMusicTag.query.filter_by(
+        user_id=user_id,
+        music_id=music_id,
+        tag_id=tag_id
+    ).first()
+    
+    if existing:
+        return False
+    
+    new_tag = UserMusicTag()
+    new_tag.user_id = user_id
+    new_tag.music_id = music_id
+    new_tag.tag_id = tag_id
+    
+    db.session.add(new_tag)
+    db.session.commit()
+    return True
+
+
+def remove_user_music_tag(user_id, music_id, tag_id):
+    """
+    Remove a listening tag from a music track for a user.
+    Returns True if removed, False if not found.
+    """
+    from models import UserMusicTag
+    
+    existing = UserMusicTag.query.filter_by(
+        user_id=user_id,
+        music_id=music_id,
+        tag_id=tag_id
+    ).first()
+    
+    if existing is None:
+        return False
+    
+    db.session.delete(existing)
     db.session.commit()
     return True
 

@@ -304,13 +304,14 @@ class MusicReview(db.Model):
     """
     MusicReview table for storing user music reviews.
     Each review belongs to a user and a music track.
+    No rating - just text content.
     """
     __tablename__ = 'music_reviews'
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, nullable=False)
     music_id = db.Column(db.Integer, nullable=False)
-    rating = db.Column(db.Integer, nullable=False)
+    rating = db.Column(db.Integer, nullable=True)
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -322,6 +323,60 @@ class MusicReview(db.Model):
             'music_id': self.music_id,
             'rating': self.rating,
             'content': self.content,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+        return result
+
+
+# ==============================================
+# Music Listening Tag Model
+# ==============================================
+
+class MusicListeningTag(db.Model):
+    """
+    MusicListeningTag table for storing predefined listening mood tags.
+    Examples: "Good for studying", "Workout", "Relaxing", etc.
+    """
+    __tablename__ = 'music_listening_tags'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    emoji = db.Column(db.String(10), nullable=False)
+    
+    def to_dict(self):
+        """Convert tag to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'name': self.name,
+            'emoji': self.emoji
+        }
+        return result
+
+
+# ==============================================
+# User Music Tag Model
+# ==============================================
+
+class UserMusicTag(db.Model):
+    """
+    UserMusicTag table for storing user-music-tag associations.
+    Links users to music with specific listening tags.
+    """
+    __tablename__ = 'user_music_tags'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    music_id = db.Column(db.Integer, nullable=False)
+    tag_id = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'music_id': self.music_id,
+            'tag_id': self.tag_id,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
         return result
