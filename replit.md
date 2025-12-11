@@ -157,6 +157,7 @@ This project uses **student-friendly** code patterns:
   - Removed unused API routes (/api/books/all, /api/orders)
   - Removed unused repository functions (get_user_orders, get_user_review_for_book)
   - Removed unused MusicDetail page (no navigation links to it)
+  - Removed unused database columns (UserMusicTag.created_at, CartItem.created_at)
   - All prices now come from database, removed hardcoded fallbacks
 
 - December 8, 2025: Code cleanup

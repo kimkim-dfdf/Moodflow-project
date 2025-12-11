@@ -367,7 +367,6 @@ class UserMusicTag(db.Model):
     user_id = db.Column(db.Integer, nullable=False)
     music_id = db.Column(db.Integer, nullable=False)
     tag_id = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def to_dict(self):
         """Convert to dictionary for API responses."""
@@ -375,8 +374,7 @@ class UserMusicTag(db.Model):
             'id': self.id,
             'user_id': self.user_id,
             'music_id': self.music_id,
-            'tag_id': self.tag_id,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'tag_id': self.tag_id
         }
         return result
 
@@ -395,7 +393,6 @@ class CartItem(db.Model):
     user_id = db.Column(db.Integer, nullable=False)
     book_id = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, default=1)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def to_dict(self):
         """Convert to dictionary for API responses."""
@@ -403,8 +400,7 @@ class CartItem(db.Model):
             'id': self.id,
             'user_id': self.user_id,
             'book_id': self.book_id,
-            'quantity': self.quantity,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'quantity': self.quantity
         }
         return result
 
