@@ -560,12 +560,6 @@ def register_routes(app):
         return jsonify(books)
     
     
-    @app.route('/api/books/all', methods=['GET'])
-    def get_all_books():
-        """Get all book recommendations."""
-        return jsonify(repository.get_all_books())
-    
-    
     @app.route('/api/books/search', methods=['GET'])
     def search_books():
         """Search books by title or author."""
@@ -998,9 +992,3 @@ def register_routes(app):
         })
     
     
-    @app.route('/api/orders', methods=['GET'])
-    @login_required
-    def get_orders():
-        """Get user's order history."""
-        orders = repository.get_user_orders(current_user.id)
-        return jsonify(orders)

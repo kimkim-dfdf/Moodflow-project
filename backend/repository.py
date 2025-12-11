@@ -1048,28 +1048,3 @@ def create_order(user_id, cart_items, total_amount, card_last_four):
     return order.to_dict()
 
 
-def get_user_orders(user_id):
-    """
-    Get all orders for a user.
-    """
-    from models import Order, OrderItem, Book
-    
-    orders = Order.query.filter_by(user_id=user_id).order_by(Order.created_at.desc()).all()
-    
-    result = []
-    for order in orders:
-        order_dict = order.to_dict()
-        
-        items = OrderItem.query.filter_by(order_id=order.id).all()
-        order_items = []
-        for item in items:
-            item_dict = item.to_dict()
-            book = db.session.get(Book, item.book_id)
-            if book:
-                item_dict['book'] = book.to_dict()
-            order_items.append(item_dict)
-        
-        order_dict['items'] = order_items
-        result.append(order_dict)
-    
-    return result
