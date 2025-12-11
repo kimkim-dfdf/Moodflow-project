@@ -8,6 +8,7 @@ import Tasks from './pages/Tasks';
 import Calendar from './pages/Calendar';
 import Books from './pages/Books';
 import Music from './pages/Music';
+import Challenge from './pages/Challenge';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import './index.css';
@@ -69,6 +70,7 @@ function App() {
             <Route path="calendar" element={<Calendar />} />
             <Route path="books" element={<Books />} />
             <Route path="music" element={<Music />} />
+            <Route path="challenge" element={<Challenge />} />
             <Route path="profile" element={<Profile />} />
             <Route path="admin" element={<Admin />} />
           </Route>
