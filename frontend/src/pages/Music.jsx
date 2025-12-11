@@ -2,10 +2,33 @@ import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
 import { Music as MusicIcon, X, Search, Heart, ExternalLink, Play } from 'lucide-react';
 
+function getYoutubeVideoId(url) {
+  if (!url) {
+    return null;
+  }
+  var videoId = null;
+  if (url.indexOf('youtube.com/watch') >= 0) {
+    var parts = url.split('v=');
+    if (parts.length > 1) {
+      videoId = parts[1].split('&')[0];
+    }
+  } else if (url.indexOf('youtu.be/') >= 0) {
+    var parts = url.split('youtu.be/');
+    if (parts.length > 1) {
+      videoId = parts[1].split('?')[0];
+    }
+  }
+  return videoId;
+}
+
 function MusicCard(props) {
   var music = props.music;
   var isFavorite = props.isFavorite || false;
   var onToggleFavorite = props.onToggleFavorite;
+  var [imgError, setImgError] = useState(false);
+  
+  var videoId = getYoutubeVideoId(music.youtube_url);
+  var thumbnailUrl = videoId ? 'https://img.youtube.com/vi/' + videoId + '/mqdefault.jpg' : null;
   
   function handleFavoriteClick(e) {
     e.stopPropagation();
@@ -14,9 +37,24 @@ function MusicCard(props) {
     }
   }
   
+  function handleImgError() {
+    setImgError(true);
+  }
+  
   return (
     <div className="music-page-card">
-      <div className="music-page-icon"><MusicIcon size={24} /></div>
+      <div className="music-thumbnail">
+        {thumbnailUrl && !imgError ? (
+          <img 
+            src={thumbnailUrl} 
+            alt={music.title}
+            onError={handleImgError}
+            className="music-thumbnail-img"
+          />
+        ) : (
+          <div className="music-page-icon"><MusicIcon size={24} /></div>
+        )}
+      </div>
       <div className="music-page-info">
         <div className="music-title-row">
           <h4 className="music-page-title">{music.title}</h4>

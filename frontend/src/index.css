@@ -516,6 +516,9 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .music-page-card { display: flex; align-items: center; gap: 16px; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; transition: all 0.2s; }
 .music-page-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--primary); }
 .music-page-icon { width: 56px; height: 56px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; }
+.music-thumbnail { width: 80px; height: 60px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: #e5e7eb; display: flex; align-items: center; justify-content: center; }
+.music-thumbnail .music-page-icon { width: 100%; height: 100%; border-radius: 0; }
+.music-thumbnail-img { width: 100%; height: 100%; object-fit: cover; }
 .music-page-info { flex: 1; min-width: 0; }
 .music-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .music-page-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
