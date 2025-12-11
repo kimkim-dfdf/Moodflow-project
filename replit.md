@@ -153,6 +153,14 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
+- December 11, 2025: Backend code refactoring
+  - repository.py: 1078줄 → 788줄로 축소 (27% 감소)
+  - routes.py: 1005줄 → 717줄로 축소 (29% 감소)
+  - Added `to_dict_list()` helper function to reduce repetition
+  - Added `get_json_or_error()` helper for request validation
+  - Added Korean comments for educational purposes
+  - Maintained student-friendly code patterns (no lambdas, no list comprehensions)
+
 - December 11, 2025: Admin page enhancements
   - Added Orders tab to view all user purchase history
   - Added price field to Book add/edit modal
