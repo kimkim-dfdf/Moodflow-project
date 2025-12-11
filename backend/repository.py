@@ -936,3 +936,140 @@ def remove_user_music_tag(user_id, music_id, tag_id):
     return True
 
 
+# ==============================================
+# Cart Functions
+# ==============================================
+
+def get_cart_items(user_id):
+    """
+    Get all cart items for a user with book details.
+    """
+    from models import CartItem, Book
+    
+    cart_items = CartItem.query.filter_by(user_id=user_id).all()
+    
+    result = []
+    for item in cart_items:
+        item_dict = item.to_dict()
+        book = db.session.get(Book, item.book_id)
+        if book:
+            item_dict['book'] = book.to_dict()
+            item_dict['title'] = book.title
+            item_dict['author'] = book.author
+            item_dict['price'] = book.price if hasattr(book, 'price') else 15.99
+        result.append(item_dict)
+    
+    return result
+
+
+def add_to_cart(user_id, book_id):
+    """
+    Add a book to user's cart.
+    If already in cart, increase quantity.
+    """
+    from models import CartItem, Book
+    
+    existing = CartItem.query.filter_by(user_id=user_id, book_id=book_id).first()
+    
+    if existing:
+        existing.quantity = existing.quantity + 1
+        db.session.commit()
+        item_dict = existing.to_dict()
+    else:
+        new_item = CartItem()
+        new_item.user_id = user_id
+        new_item.book_id = book_id
+        new_item.quantity = 1
+        db.session.add(new_item)
+        db.session.commit()
+        item_dict = new_item.to_dict()
+    
+    book = db.session.get(Book, book_id)
+    if book:
+        item_dict['book'] = book.to_dict()
+        item_dict['title'] = book.title
+        item_dict['author'] = book.author
+        item_dict['price'] = book.price if hasattr(book, 'price') else 15.99
+    
+    return item_dict
+
+
+def remove_from_cart(user_id, item_id):
+    """
+    Remove an item from user's cart.
+    """
+    from models import CartItem
+    
+    item = CartItem.query.filter_by(id=item_id, user_id=user_id).first()
+    
+    if item is None:
+        return False
+    
+    db.session.delete(item)
+    db.session.commit()
+    return True
+
+
+def clear_cart(user_id):
+    """
+    Clear all items from user's cart.
+    """
+    from models import CartItem
+    
+    CartItem.query.filter_by(user_id=user_id).delete()
+    db.session.commit()
+
+
+def create_order(user_id, cart_items, total_amount, card_last_four):
+    """
+    Create a new order from cart items.
+    """
+    from models import Order, OrderItem
+    
+    order = Order()
+    order.user_id = user_id
+    order.total_amount = total_amount
+    order.status = 'completed'
+    order.card_last_four = card_last_four
+    
+    db.session.add(order)
+    db.session.commit()
+    
+    for item in cart_items:
+        order_item = OrderItem()
+        order_item.order_id = order.id
+        order_item.book_id = item['book_id']
+        order_item.quantity = item.get('quantity', 1)
+        order_item.price = item.get('price', 15.99)
+        db.session.add(order_item)
+    
+    db.session.commit()
+    
+    return order.to_dict()
+
+
+def get_user_orders(user_id):
+    """
+    Get all orders for a user.
+    """
+    from models import Order, OrderItem, Book
+    
+    orders = Order.query.filter_by(user_id=user_id).order_by(Order.created_at.desc()).all()
+    
+    result = []
+    for order in orders:
+        order_dict = order.to_dict()
+        
+        items = OrderItem.query.filter_by(order_id=order.id).all()
+        order_items = []
+        for item in items:
+            item_dict = item.to_dict()
+            book = db.session.get(Book, item.book_id)
+            if book:
+                item_dict['book'] = book.to_dict()
+            order_items.append(item_dict)
+        
+        order_dict['items'] = order_items
+        result.append(order_dict)
+    
+    return result

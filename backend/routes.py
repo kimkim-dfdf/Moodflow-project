@@ -912,3 +912,95 @@ def register_routes(app):
             'today_tasks': today_tasks,
             'weekly_mood_stats': emotion_stats
         })
+    
+    
+    # ==========================================
+    # Cart Routes
+    # ==========================================
+    
+    @app.route('/api/cart', methods=['GET'])
+    @login_required
+    def get_cart():
+        """Get current user's cart items."""
+        cart_items = repository.get_cart_items(current_user.id)
+        return jsonify(cart_items)
+    
+    
+    @app.route('/api/cart', methods=['POST'])
+    @login_required
+    def add_to_cart():
+        """Add a book to cart."""
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        book_id = data.get('book_id')
+        if not book_id:
+            return jsonify({'error': 'Book ID is required'}), 400
+        
+        cart_item = repository.add_to_cart(current_user.id, book_id)
+        return jsonify(cart_item), 201
+    
+    
+    @app.route('/api/cart/<int:item_id>', methods=['DELETE'])
+    @login_required
+    def remove_from_cart(item_id):
+        """Remove an item from cart."""
+        success = repository.remove_from_cart(current_user.id, item_id)
+        if not success:
+            return jsonify({'error': 'Item not found'}), 404
+        return jsonify({'success': True})
+    
+    
+    @app.route('/api/cart/clear', methods=['DELETE'])
+    @login_required
+    def clear_cart():
+        """Clear all items from cart."""
+        repository.clear_cart(current_user.id)
+        return jsonify({'success': True})
+    
+    
+    @app.route('/api/checkout', methods=['POST'])
+    @login_required
+    def checkout():
+        """Process checkout with simulated payment."""
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        card_number = data.get('card_number', '')
+        if len(card_number) < 4:
+            return jsonify({'error': 'Invalid card number'}), 400
+        
+        cart_items = repository.get_cart_items(current_user.id)
+        if len(cart_items) == 0:
+            return jsonify({'error': 'Cart is empty'}), 400
+        
+        total = 0
+        for item in cart_items:
+            total = total + (item.get('price', 0) * item.get('quantity', 1))
+        
+        card_last_four = card_number[-4:]
+        
+        order = repository.create_order(
+            user_id=current_user.id,
+            cart_items=cart_items,
+            total_amount=total,
+            card_last_four=card_last_four
+        )
+        
+        repository.clear_cart(current_user.id)
+        
+        return jsonify({
+            'success': True,
+            'order': order,
+            'message': 'Purchase completed!'
+        })
+    
+    
+    @app.route('/api/orders', methods=['GET'])
+    @login_required
+    def get_orders():
+        """Get user's order history."""
+        orders = repository.get_user_orders(current_user.id)
+        return jsonify(orders)

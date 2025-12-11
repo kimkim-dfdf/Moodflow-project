@@ -241,8 +241,9 @@ class Book(db.Model):
     genre = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
     tags = db.Column(db.String(500), nullable=False)
+    price = db.Column(db.Float, default=15.99)
     
-    def __init__(self, emotion=None, title=None, author=None, genre=None, description=None, tags=None):
+    def __init__(self, emotion=None, title=None, author=None, genre=None, description=None, tags=None, price=15.99):
         """Initialize a Book object."""
         self.emotion = emotion
         self.title = title
@@ -250,6 +251,7 @@ class Book(db.Model):
         self.genre = genre
         self.description = description
         self.tags = tags
+        self.price = price
     
     def to_dict(self):
         """Convert book to dictionary for API responses."""
@@ -260,7 +262,8 @@ class Book(db.Model):
             'author': self.author,
             'genre': self.genre,
             'description': self.description,
-            'tags': self.tags.split(',') if self.tags else []
+            'tags': self.tags.split(',') if self.tags else [],
+            'price': self.price if self.price else 15.99
         }
         return result
 
@@ -374,5 +377,91 @@ class UserMusicTag(db.Model):
             'music_id': self.music_id,
             'tag_id': self.tag_id,
             'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+        return result
+
+
+# ==============================================
+# Cart Item Model
+# ==============================================
+
+class CartItem(db.Model):
+    """
+    CartItem table for storing books in user's shopping cart.
+    """
+    __tablename__ = 'cart_items'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    book_id = db.Column(db.Integer, nullable=False)
+    quantity = db.Column(db.Integer, default=1)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'book_id': self.book_id,
+            'quantity': self.quantity,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+        return result
+
+
+# ==============================================
+# Order Model
+# ==============================================
+
+class Order(db.Model):
+    """
+    Order table for storing completed purchases.
+    """
+    __tablename__ = 'orders'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    total_amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(20), default='completed')
+    card_last_four = db.Column(db.String(4), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'total_amount': self.total_amount,
+            'status': self.status,
+            'card_last_four': self.card_last_four,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+        return result
+
+
+# ==============================================
+# Order Item Model
+# ==============================================
+
+class OrderItem(db.Model):
+    """
+    OrderItem table for storing items in an order.
+    """
+    __tablename__ = 'order_items'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, nullable=False)
+    book_id = db.Column(db.Integer, nullable=False)
+    quantity = db.Column(db.Integer, default=1)
+    price = db.Column(db.Float, nullable=False)
+    
+    def to_dict(self):
+        """Convert to dictionary for API responses."""
+        result = {
+            'id': self.id,
+            'order_id': self.order_id,
+            'book_id': self.book_id,
+            'quantity': self.quantity,
+            'price': self.price
         }
         return result
