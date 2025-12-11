@@ -813,8 +813,9 @@ def register_routes(app):
         genre = data.get('genre', '')
         description = data.get('description', '')
         tags = data.get('tags', [])
+        price = data.get('price', 15.99)
         
-        result = repository.create_book(emotion, title, author, genre, description, tags)
+        result = repository.create_book(emotion, title, author, genre, description, tags, price)
         return jsonify(result), 201
     
     
@@ -836,8 +837,9 @@ def register_routes(app):
         genre = data.get('genre', '')
         description = data.get('description', '')
         tags = data.get('tags', [])
+        price = data.get('price', 15.99)
         
-        result = repository.update_book(book_id, emotion, title, author, genre, description, tags)
+        result = repository.update_book(book_id, emotion, title, author, genre, description, tags, price)
         
         if result is None:
             return jsonify({'error': 'Book not found'}), 404
@@ -862,6 +864,14 @@ def register_routes(app):
     def get_all_tags_admin():
         """Get all book tags for admin."""
         return jsonify(repository.get_all_book_tags())
+    
+    
+    @app.route('/api/admin/orders', methods=['GET'])
+    @admin_required
+    def get_all_orders_admin():
+        """Get all orders for admin with user and book details."""
+        orders = repository.get_all_orders_admin()
+        return jsonify(orders)
     
     
     # ==========================================

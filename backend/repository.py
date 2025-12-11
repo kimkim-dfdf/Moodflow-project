@@ -551,7 +551,7 @@ def delete_music(music_id):
 # Admin Book CRUD Operations
 # ==============================================
 
-def create_book(emotion, title, author, genre, description, tags):
+def create_book(emotion, title, author, genre, description, tags, price=15.99):
     """
     Create a new book entry.
     tags should be a list of tag slugs.
@@ -565,7 +565,8 @@ def create_book(emotion, title, author, genre, description, tags):
         author=author,
         genre=genre,
         description=description,
-        tags=tags_str
+        tags=tags_str,
+        price=price
     )
     db.session.add(new_book)
     db.session.commit()
@@ -575,7 +576,7 @@ def create_book(emotion, title, author, genre, description, tags):
     return result
 
 
-def update_book(book_id, emotion, title, author, genre, description, tags):
+def update_book(book_id, emotion, title, author, genre, description, tags, price=15.99):
     """
     Update an existing book entry.
     tags should be a list of tag slugs.
@@ -594,6 +595,7 @@ def update_book(book_id, emotion, title, author, genre, description, tags):
     book.genre = genre
     book.description = description
     book.tags = tags_str
+    book.price = price
     db.session.commit()
     
     result = book.to_dict()
@@ -1035,5 +1037,41 @@ def create_order(user_id, cart_items, total_amount, card_last_four):
     db.session.commit()
     
     return order.to_dict()
+
+
+def get_all_orders_admin():
+    """
+    Get all orders with user and book details for admin.
+    Returns list of orders with items and user info.
+    """
+    from models import Order, OrderItem, User, Book
+    
+    orders = Order.query.order_by(Order.created_at.desc()).all()
+    
+    result = []
+    for order in orders:
+        order_dict = order.to_dict()
+        
+        user = db.session.get(User, order.user_id)
+        if user:
+            order_dict['user'] = {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email
+            }
+        
+        items = OrderItem.query.filter_by(order_id=order.id).all()
+        order_dict['items'] = []
+        for item in items:
+            item_dict = item.to_dict()
+            book = db.session.get(Book, item.book_id)
+            if book:
+                item_dict['book_title'] = book.title
+                item_dict['book_author'] = book.author
+            order_dict['items'].append(item_dict)
+        
+        result.append(order_dict)
+    
+    return result
 
 

@@ -153,6 +153,12 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
+- December 11, 2025: Admin page enhancements
+  - Added Orders tab to view all user purchase history
+  - Added price field to Book add/edit modal
+  - Books table now shows price column
+  - New admin API endpoint: GET /api/admin/orders
+
 - December 11, 2025: Frontend CSS cleanup
   - Removed unused CSS classes from index.css (~22 lines removed)
   - Removed .music-detail-modal, .music-modal-* classes (unused modal styles)
