@@ -1,8 +1,8 @@
 # ==============================================
-# MoodFlow - API Routes (Simplified)
+# MoodFlow - API Routes 
 # ==============================================
 # This file contains all API endpoints
-# All routes are registered with the Flask app
+# All routes register with the Flask app
 # ==============================================
 
 from flask import request, jsonify, send_from_directory
