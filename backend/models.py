@@ -304,24 +304,34 @@ class MusicReview(db.Model):
     """
     MusicReview table for storing user music reviews.
     Each review belongs to a user and a music track.
+    Users select an emotion tag instead of star rating.
     """
     __tablename__ = 'music_reviews'
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, nullable=False)
     music_id = db.Column(db.Integer, nullable=False)
-    rating = db.Column(db.Integer, nullable=False)
+    emotion = db.Column(db.String(50), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    similar_music_ids = db.Column(db.String(100), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def to_dict(self):
         """Convert review to dictionary for API responses."""
+        similar_ids = []
+        if self.similar_music_ids:
+            parts = self.similar_music_ids.split(',')
+            for part in parts:
+                if part.strip():
+                    similar_ids.append(int(part.strip()))
+        
         result = {
             'id': self.id,
             'user_id': self.user_id,
             'music_id': self.music_id,
-            'rating': self.rating,
+            'emotion': self.emotion,
             'content': self.content,
+            'similar_music_ids': similar_ids,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
         return result

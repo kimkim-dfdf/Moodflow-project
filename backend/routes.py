@@ -423,20 +423,26 @@ def register_routes(app):
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
-        rating = data.get('rating')
+        emotion = data.get('emotion')
         content = data.get('content')
+        similar_music_ids = data.get('similar_music_ids', [])
         
-        if not rating or not content:
-            return jsonify({'error': 'Rating and content are required'}), 400
+        if not emotion or not content:
+            return jsonify({'error': 'Emotion and content are required'}), 400
         
-        if not isinstance(rating, int) or rating < 1 or rating > 5:
-            return jsonify({'error': 'Rating must be an integer between 1 and 5'}), 400
+        valid_emotions = ['Happy', 'Sad', 'Tired', 'Angry', 'Stressed', 'Neutral']
+        if emotion not in valid_emotions:
+            return jsonify({'error': 'Invalid emotion tag'}), 400
+        
+        if len(similar_music_ids) > 3:
+            return jsonify({'error': 'Maximum 3 similar music selections allowed'}), 400
         
         review = repository.create_music_review(
             user_id=current_user.id,
             music_id=music_id,
-            rating=rating,
-            content=content
+            emotion=emotion,
+            content=content,
+            similar_music_ids=similar_music_ids
         )
         
         if review is None:
