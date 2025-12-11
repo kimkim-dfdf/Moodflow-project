@@ -172,6 +172,20 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .mood-stats h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
 .dominant-mood { margin-top: 12px; font-size: 14px; color: var(--text-light); }
 .dominant-mood strong { color: var(--text); }
+
+/* Mood Booster */
+.mood-booster h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.booster-subtitle { font-size: 13px; color: var(--text-light); margin-bottom: 16px; }
+.challenge-list { display: flex; flex-direction: column; gap: 10px; }
+.challenge-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--background); border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+.challenge-item:hover { background: #f0f4ff; border-color: var(--primary); }
+.challenge-item.completed { background: #ecfdf5; border-color: #10b981; }
+.challenge-icon { font-size: 20px; flex-shrink: 0; }
+.challenge-text { flex: 1; font-size: 13px; color: var(--text); line-height: 1.4; }
+.challenge-item.completed .challenge-text { color: #059669; text-decoration: line-through; }
+.challenge-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #d1d5db; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+.challenge-check.checked { background: #10b981; border-color: #10b981; color: white; }
+.challenge-progress { margin-top: 14px; text-align: center; font-size: 13px; color: var(--text-light); font-weight: 500; }
 .empty-state { text-align: center; padding: 24px; color: var(--text-light); font-size: 14px; }
 
 /* Tasks Page */

@@ -7,7 +7,7 @@ import TaskCard from '../components/TaskCard';
 import MiniCalendar from '../components/MiniCalendar';
 import api from '../api/axios';
 import { format, isToday } from 'date-fns';
-import { Music, CheckCircle2, Calendar, ExternalLink } from 'lucide-react';
+import { Music, CheckCircle2, Calendar, ExternalLink, Zap, Check } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 function Dashboard() {
@@ -22,6 +22,71 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [addedTasks, setAddedTasks] = useState(new Set());
   const [calendarKey, setCalendarKey] = useState(0);
+  const [completedChallenges, setCompletedChallenges] = useState(function() {
+    var saved = localStorage.getItem('completedChallenges_' + format(new Date(), 'yyyy-MM-dd'));
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return [];
+  });
+
+  var challengesByEmotion = {
+    Happy: [
+      { id: 1, text: 'Share your happiness with someone today', icon: '😊' },
+      { id: 2, text: 'Write down 3 things you are grateful for', icon: '📝' },
+      { id: 3, text: 'Take a photo of something beautiful', icon: '📷' }
+    ],
+    Sad: [
+      { id: 1, text: 'Take a 10-minute walk outside', icon: '🚶' },
+      { id: 2, text: 'Listen to your favorite uplifting song', icon: '🎵' },
+      { id: 3, text: 'Call or text a friend', icon: '📱' }
+    ],
+    Tired: [
+      { id: 1, text: 'Take a 15-minute power nap', icon: '😴' },
+      { id: 2, text: 'Drink a glass of water', icon: '💧' },
+      { id: 3, text: 'Do 5 minutes of stretching', icon: '🧘' }
+    ],
+    Angry: [
+      { id: 1, text: 'Take 10 deep breaths slowly', icon: '🌬️' },
+      { id: 2, text: 'Write down what is bothering you', icon: '📝' },
+      { id: 3, text: 'Go for a quick walk to cool down', icon: '🚶' }
+    ],
+    Stressed: [
+      { id: 1, text: 'Do a 5-minute meditation', icon: '🧘' },
+      { id: 2, text: 'Make a to-do list to organize thoughts', icon: '📋' },
+      { id: 3, text: 'Take a break and have some tea', icon: '🍵' }
+    ],
+    Neutral: [
+      { id: 1, text: 'Try something new today', icon: '✨' },
+      { id: 2, text: 'Read a few pages of a book', icon: '📖' },
+      { id: 3, text: 'Plan something fun for the weekend', icon: '🎉' }
+    ]
+  };
+
+  function toggleChallenge(challengeId) {
+    var newCompleted;
+    var index = completedChallenges.indexOf(challengeId);
+    if (index >= 0) {
+      newCompleted = [];
+      for (var i = 0; i < completedChallenges.length; i++) {
+        if (completedChallenges[i] !== challengeId) {
+          newCompleted.push(completedChallenges[i]);
+        }
+      }
+    } else {
+      newCompleted = completedChallenges.slice();
+      newCompleted.push(challengeId);
+    }
+    setCompletedChallenges(newCompleted);
+    localStorage.setItem('completedChallenges_' + format(new Date(), 'yyyy-MM-dd'), JSON.stringify(newCompleted));
+  }
+
+  function getCurrentChallenges() {
+    if (selectedEmotion && challengesByEmotion[selectedEmotion.name]) {
+      return challengesByEmotion[selectedEmotion.name];
+    }
+    return challengesByEmotion.Neutral;
+  }
 
   useEffect(function() {
     fetchData();
@@ -269,6 +334,32 @@ function Dashboard() {
             ) : (
               <p>No mood data yet</p>
             )}
+          </section>
+
+          <section className="card mood-booster">
+            <h3><Zap size={18} /> Mood Booster</h3>
+            <p className="booster-subtitle">Complete challenges to boost your mood!</p>
+            <div className="challenge-list">
+              {getCurrentChallenges().map(function(challenge) {
+                var isCompleted = completedChallenges.indexOf(challenge.id) >= 0;
+                return (
+                  <div 
+                    key={challenge.id} 
+                    className={'challenge-item ' + (isCompleted ? 'completed' : '')}
+                    onClick={function() { toggleChallenge(challenge.id); }}
+                  >
+                    <span className="challenge-icon">{challenge.icon}</span>
+                    <span className="challenge-text">{challenge.text}</span>
+                    <div className={'challenge-check ' + (isCompleted ? 'checked' : '')}>
+                      {isCompleted && <Check size={14} />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="challenge-progress">
+              <span>{completedChallenges.length} / {getCurrentChallenges().length} completed</span>
+            </div>
           </section>
         </aside>
       </div>

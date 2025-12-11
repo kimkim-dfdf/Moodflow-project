@@ -45,6 +45,7 @@ backend/
 - Music recommendations with YouTube links
 - Mini calendar with emotion tracking
 - Weekly mood statistics chart
+- Mood Booster Challenges (emotion-based daily challenges)
 
 ### 2. Tasks
 - AI-based task suggestions (no manual input)
