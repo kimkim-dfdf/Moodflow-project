@@ -341,14 +341,12 @@ class MusicListeningTag(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
-    emoji = db.Column(db.String(10), nullable=False)
     
     def to_dict(self):
         """Convert tag to dictionary for API responses."""
         result = {
             'id': self.id,
-            'name': self.name,
-            'emoji': self.emoji
+            'name': self.name
         }
         return result
 

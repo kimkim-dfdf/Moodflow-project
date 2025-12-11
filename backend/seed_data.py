@@ -319,21 +319,20 @@ def seed_music_listening_tags():
     
     # Define listening mood tags
     tags_data = [
-        {'name': 'Studying', 'emoji': '📚'},
-        {'name': 'Working Out', 'emoji': '💪'},
-        {'name': 'Relaxing', 'emoji': '😌'},
-        {'name': 'Driving', 'emoji': '🚗'},
-        {'name': 'Before Sleep', 'emoji': '🌙'},
-        {'name': 'Morning', 'emoji': '☀️'},
-        {'name': 'Focus', 'emoji': '🎯'},
-        {'name': 'Party', 'emoji': '🎉'},
+        {'name': 'Studying'},
+        {'name': 'Working Out'},
+        {'name': 'Relaxing'},
+        {'name': 'Driving'},
+        {'name': 'Before Sleep'},
+        {'name': 'Morning'},
+        {'name': 'Focus'},
+        {'name': 'Party'},
     ]
     
     # Add each tag to database
     for tag_data in tags_data:
         tag = MusicListeningTag()
         tag.name = tag_data['name']
-        tag.emoji = tag_data['emoji']
         db.session.add(tag)
     
     db.session.commit()

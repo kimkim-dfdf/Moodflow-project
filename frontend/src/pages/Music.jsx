@@ -293,7 +293,6 @@ function MusicDetailView(props) {
                 className={'listening-tag-btn ' + (tag.user_tagged ? 'active' : '')}
                 onClick={function() { handleTagClick(tag); }}
               >
-                <span>{tag.emoji}</span>
                 {tag.name}
                 {tag.count > 0 && <span className="tag-count">{tag.count}</span>}
               </button>
