@@ -1,8 +1,8 @@
 # ==============================================
-# MoodFlow - API Routes 
+# MoodFlow - API Routes (학생용 간단 버전)
 # ==============================================
-# This file contains all API endpoints
-# All routes register with the Flask app
+# 모든 API 엔드포인트를 정의하는 파일
+# Flask 앱에 라우트 등록
 # ==============================================
 
 from flask import request, jsonify, send_from_directory
@@ -18,7 +18,7 @@ import recommendation_engine
 
 
 # ==============================================
-# Configuration
+# Configuration (설정)
 # ==============================================
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
@@ -26,31 +26,19 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 
 # ==============================================
-# Helper Functions
+# Helper Functions (헬퍼 함수)
 # ==============================================
 
 def allowed_file(filename):
-    """
-    Check if a file extension is allowed for upload.
-    Returns True if allowed, False otherwise.
-    """
-    if not filename:
+    """파일 확장자가 허용되는지 확인"""
+    if not filename or '.' not in filename:
         return False
-    
-    if '.' not in filename:
-        return False
-    
-    parts = filename.rsplit('.', 1)
-    extension = parts[1].lower()
-    
-    if extension in ALLOWED_EXTENSIONS:
-        return True
-    
-    return False
+    extension = filename.rsplit('.', 1)[1].lower()
+    return extension in ALLOWED_EXTENSIONS
 
 
 def admin_required(f):
-    """Decorator to require admin access."""
+    """관리자 권한 필요 데코레이터"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
@@ -61,55 +49,47 @@ def admin_required(f):
     return decorated_function
 
 
+def get_json_or_error():
+    """요청에서 JSON 데이터 가져오기 (없으면 에러)"""
+    data = request.get_json()
+    if not data:
+        return None
+    return data
+
+
 # ==============================================
-# Route Registration
+# Route Registration (라우트 등록)
 # ==============================================
 
 def register_routes(app):
-    """
-    Register all API routes with the Flask app.
-    This function is called from app.py during initialization.
-    """
+    """모든 API 라우트를 Flask 앱에 등록"""
     
     # ==========================================
-    # Authentication Routes
+    # Auth Routes (인증)
     # ==========================================
     
     @app.route('/api/auth/login', methods=['POST'])
     def login():
-        """Log in with a demo account."""
-        data = request.get_json()
-        
+        """로그인"""
+        data = get_json_or_error()
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
-        if not data.get('email'):
-            return jsonify({'error': 'Email is required'}), 400
-        
-        if not data.get('password'):
-            return jsonify({'error': 'Password is required'}), 400
+        if not data.get('email') or not data.get('password'):
+            return jsonify({'error': 'Email and password required'}), 400
         
         user = repository.get_user_by_email(data['email'])
-        
-        if not user:
-            return jsonify({'error': 'Invalid email or password'}), 401
-        
-        password_correct = repository.check_user_password(user, data['password'])
-        if not password_correct:
+        if not user or not repository.check_user_password(user, data['password']):
             return jsonify({'error': 'Invalid email or password'}), 401
         
         login_user(user)
-        
-        return jsonify({
-            'message': 'Login successful',
-            'user': repository.user_to_dict(user)
-        })
+        return jsonify({'message': 'Login successful', 'user': repository.user_to_dict(user)})
     
     
     @app.route('/api/auth/logout', methods=['POST'])
     @login_required
     def logout():
-        """Log out the current user."""
+        """로그아웃"""
         logout_user()
         return jsonify({'message': 'Logged out successfully'})
     
@@ -117,105 +97,72 @@ def register_routes(app):
     @app.route('/api/auth/me', methods=['GET'])
     @login_required
     def get_current_user_route():
-        """Get the currently logged in user's information."""
+        """현재 로그인한 사용자 정보"""
         return jsonify({'user': current_user.to_dict()})
     
     
     # ==========================================
-    # Emotion Routes
+    # Emotion Routes (감정)
     # ==========================================
     
     @app.route('/api/emotions', methods=['GET'])
     def get_emotions():
-        """Get list of all available emotions."""
+        """모든 감정 목록"""
         return jsonify(repository.get_all_emotions())
     
     
     @app.route('/api/emotions/record', methods=['POST'])
     @login_required
     def record_emotion():
-        """Record an emotion for a specific date."""
-        data = request.get_json()
-        user = current_user
+        """감정 기록"""
+        data = get_json_or_error()
+        if not data or not data.get('emotion_id'):
+            return jsonify({'error': 'Emotion ID required'}), 400
         
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        if not data.get('emotion_id'):
-            return jsonify({'error': 'Emotion ID is required'}), 400
-        
-        if data.get('date'):
-            date = data['date']
-        else:
-            date = datetime.now().strftime('%Y-%m-%d')
-        
+        date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
         entry = repository.create_emotion_entry(
-            user.id,
-            data['emotion_id'],
-            date,
-            data.get('notes'),
-            data.get('photo_url')
+            current_user.id, data['emotion_id'], date,
+            data.get('notes'), data.get('photo_url')
         )
         
-        emotion = repository.get_emotion_by_id(entry['emotion_id'])
-        entry_dict = dict(entry)
-        entry_dict['emotion'] = emotion
-        
-        return jsonify({
-            'message': 'Emotion recorded',
-            'entry': entry_dict
-        })
+        entry['emotion'] = repository.get_emotion_by_id(entry['emotion_id'])
+        return jsonify({'message': 'Emotion recorded', 'entry': entry})
     
     
     @app.route('/api/emotions/diary/<date_str>', methods=['GET'])
     @login_required
     def get_diary_entry(date_str):
-        """Get the emotion diary entry for a specific date."""
-        user = current_user
-        entry = repository.get_emotion_entry_by_date(user.id, date_str)
-        
+        """특정 날짜의 감정 기록"""
+        entry = repository.get_emotion_entry_by_date(current_user.id, date_str)
         if entry:
-            emotion = repository.get_emotion_by_id(entry['emotion_id'])
-            entry_dict = dict(entry)
-            entry_dict['emotion'] = emotion
-            return jsonify(entry_dict)
-        
+            entry['emotion'] = repository.get_emotion_by_id(entry['emotion_id'])
+            return jsonify(entry)
         return jsonify(None)
     
     
     @app.route('/api/emotions/statistics', methods=['GET'])
     @login_required
     def get_emotion_statistics():
-        """Get emotion statistics for the current user."""
-        user = current_user
+        """감정 통계"""
         days = request.args.get('days', 30, type=int)
-        
-        stats = recommendation_engine.get_emotion_statistics_from_repo(
-            user.id,
-            days
-        )
-        
+        stats = recommendation_engine.get_emotion_statistics_from_repo(current_user.id, days)
         return jsonify(stats)
     
     
     # ==========================================
-    # File Upload Routes
+    # File Upload Routes (파일 업로드)
     # ==========================================
     
     @app.route('/api/upload/photo', methods=['POST'])
     @login_required
     def upload_photo():
-        """Upload a photo for an emotion diary entry."""
+        """사진 업로드"""
         if 'photo' not in request.files:
             return jsonify({'error': 'No photo provided'}), 400
         
         file = request.files['photo']
-        
-        if not file.filename:
-            return jsonify({'error': 'No file selected'}), 400
-        
-        if not allowed_file(file.filename):
-            return jsonify({'error': 'Invalid file type'}), 400
+        if not file.filename or not allowed_file(file.filename):
+            return jsonify({'error': 'Invalid file'}), 400
         
         filename = secure_filename(file.filename)
         unique_filename = uuid.uuid4().hex + '_' + filename
@@ -223,185 +170,114 @@ def register_routes(app):
         if not os.path.exists(UPLOAD_FOLDER):
             os.makedirs(UPLOAD_FOLDER)
         
-        file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
-        file.save(file_path)
-        
-        photo_url = '/api/uploads/' + unique_filename
-        
-        return jsonify({
-            'photo_url': photo_url,
-            'filename': unique_filename
-        })
+        file.save(os.path.join(UPLOAD_FOLDER, unique_filename))
+        return jsonify({'photo_url': '/api/uploads/' + unique_filename, 'filename': unique_filename})
     
     
     @app.route('/api/uploads/<filename>')
     def serve_upload(filename):
-        """Serve an uploaded file."""
+        """업로드된 파일 제공"""
         return send_from_directory(UPLOAD_FOLDER, filename)
     
     
     # ==========================================
-    # Task Routes
+    # Task Routes (할일)
     # ==========================================
     
     @app.route('/api/tasks', methods=['GET'])
     @login_required
     def get_tasks():
-        """Get all tasks for the current user."""
-        user = current_user
-        date_str = request.args.get('date')
-        
-        tasks = repository.get_tasks_by_user(user.id, date_str)
-        
-        return jsonify(tasks)
+        """할일 목록"""
+        return jsonify(repository.get_tasks_by_user(current_user.id, request.args.get('date')))
     
     
     @app.route('/api/tasks', methods=['POST'])
     @login_required
     def create_task():
-        """Create a new task."""
-        user = current_user
-        data = request.get_json()
+        """할일 생성"""
+        data = get_json_or_error()
+        if not data or not data.get('title'):
+            return jsonify({'error': 'Title required'}), 400
         
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+        task_date = data.get('task_date', datetime.now().strftime('%Y-%m-%d'))
         
-        if not data.get('title'):
-            return jsonify({'error': 'Title is required'}), 400
-        
-        if data.get('task_date'):
-            task_date = data['task_date']
-        else:
-            task_date = datetime.now().strftime('%Y-%m-%d')
-        
-        existing = repository.get_existing_task(
-            user.id,
-            data['title'],
-            task_date
-        )
-        
+        existing = repository.get_existing_task(current_user.id, data['title'], task_date)
         if existing:
-            return jsonify({
-                'error': 'Task already exists',
-                'task': existing
-            }), 409
-        
-        category = data.get('category', 'Personal')
-        priority = data.get('priority', 'Medium')
+            return jsonify({'error': 'Task already exists', 'task': existing}), 409
         
         task = repository.create_task(
-            user.id,
-            data['title'],
-            category,
-            priority,
-            task_date,
-            data.get('recommended_for_emotion')
+            current_user.id, data['title'],
+            data.get('category', 'Personal'), data.get('priority', 'Medium'),
+            task_date, data.get('recommended_for_emotion')
         )
-        
         return jsonify(task), 201
     
     
     @app.route('/api/tasks/<int:task_id>', methods=['PUT'])
     @login_required
     def update_task(task_id):
-        """Update a task."""
-        user = current_user
-        
-        task = repository.get_task_by_id(task_id, user.id)
+        """할일 수정"""
+        task = repository.get_task_by_id(task_id, current_user.id)
         if not task:
             return jsonify({'error': 'Task not found'}), 404
         
         data = request.get_json()
-        
         if 'is_completed' in data:
-            task = repository.update_task(
-                task_id,
-                user.id,
-                data['is_completed']
-            )
-        
+            task = repository.update_task(task_id, current_user.id, data['is_completed'])
         return jsonify(task)
     
     
     @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
     @login_required
     def delete_task(task_id):
-        """Delete a task."""
-        user = current_user
-        
-        success = repository.delete_task(task_id, user.id)
-        
-        if not success:
+        """할일 삭제"""
+        if not repository.delete_task(task_id, current_user.id):
             return jsonify({'error': 'Task not found'}), 404
-        
         return jsonify({'message': 'Task deleted'})
     
     
     @app.route('/api/tasks/recommended', methods=['GET'])
     @login_required
     def get_recommended_tasks():
-        """Get recommended tasks based on current emotion."""
-        user = current_user
-        
-        emotion = request.args.get('emotion')
-        if not emotion:
-            emotion = 'Neutral'
-        
+        """추천 할일"""
+        emotion = request.args.get('emotion', 'Neutral')
         limit = request.args.get('limit', 5, type=int)
-        date_str = request.args.get('date')
-        
         recommendations = recommendation_engine.get_recommended_tasks_from_repo(
-            user.id,
-            emotion,
-            limit,
-            date_str
+            current_user.id, emotion, limit, request.args.get('date')
         )
-        
         return jsonify(recommendations)
     
     
     @app.route('/api/tasks/suggestions', methods=['GET'])
     @login_required
     def get_task_suggestions():
-        """Get AI-suggested tasks based on current emotion."""
-        emotion = request.args.get('emotion')
-        if not emotion:
-            emotion = 'Neutral'
-        
+        """AI 추천 할일"""
+        emotion = request.args.get('emotion', 'Neutral')
         limit = request.args.get('limit', 3, type=int)
-        
-        suggestions = recommendation_engine.get_suggested_tasks(emotion, limit)
-        
-        return jsonify(suggestions)
+        return jsonify(recommendation_engine.get_suggested_tasks(emotion, limit))
     
     
     # ==========================================
-    # Music Routes
+    # Music Routes (음악)
     # ==========================================
     
     @app.route('/api/music/recommendations', methods=['GET'])
     def get_music_recommendations():
-        """Get music recommendations based on emotion."""
-        emotion = request.args.get('emotion')
-        if not emotion:
-            emotion = 'Neutral'
-        
+        """감정에 맞는 음악 추천"""
+        emotion = request.args.get('emotion', 'Neutral')
         limit = request.args.get('limit', 4, type=int)
-        
-        music_list = repository.get_music_by_emotion(emotion, limit)
-        
-        return jsonify(music_list)
+        return jsonify(repository.get_music_by_emotion(emotion, limit))
     
     
     @app.route('/api/music/all', methods=['GET'])
     def get_all_music():
-        """Get all music recommendations."""
+        """모든 음악"""
         return jsonify(repository.get_all_music())
     
     
     @app.route('/api/music/<int:music_id>', methods=['GET'])
     def get_music_by_id(music_id):
-        """Get a single music track by ID."""
+        """음악 상세 정보"""
         music = repository.get_music_by_id(music_id)
         if not music:
             return jsonify({'error': 'Music not found'}), 404
@@ -410,81 +286,57 @@ def register_routes(app):
     
     @app.route('/api/music/<int:music_id>/reviews', methods=['GET'])
     def get_music_reviews(music_id):
-        """Get all reviews for a music track."""
-        reviews = repository.get_reviews_for_music(music_id)
-        return jsonify(reviews)
+        """음악 리뷰 목록"""
+        return jsonify(repository.get_reviews_for_music(music_id))
     
     
     @app.route('/api/music/<int:music_id>/reviews', methods=['POST'])
     @login_required
     def create_music_review(music_id):
-        """Create a new review for a music track (no rating)."""
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
+        """음악 리뷰 작성"""
+        data = get_json_or_error()
+        if not data or not data.get('content'):
+            return jsonify({'error': 'Content required'}), 400
         
-        content = data.get('content')
-        
-        if not content:
-            return jsonify({'error': 'Content is required'}), 400
-        
-        review = repository.create_music_review(
-            user_id=current_user.id,
-            music_id=music_id,
-            content=content
-        )
-        
+        review = repository.create_music_review(current_user.id, music_id, data['content'])
         if review is None:
-            return jsonify({'error': 'You have already reviewed this music'}), 400
-        
+            return jsonify({'error': 'Already reviewed'}), 400
         return jsonify(review), 201
     
     
     @app.route('/api/music/reviews/<int:review_id>', methods=['DELETE'])
     @login_required
     def delete_music_review(review_id):
-        """Delete a music review."""
-        success = repository.delete_music_review(review_id, current_user.id)
-        if not success:
-            return jsonify({'error': 'Review not found or not authorized'}), 404
+        """음악 리뷰 삭제"""
+        if not repository.delete_music_review(review_id, current_user.id):
+            return jsonify({'error': 'Not found'}), 404
         return jsonify({'success': True})
     
     
-    # ==========================================
-    # Music Listening Tag Routes
-    # ==========================================
-    
     @app.route('/api/music/listening-tags', methods=['GET'])
     def get_listening_tags():
-        """Get all available listening tags."""
-        tags = repository.get_all_listening_tags()
-        return jsonify(tags)
+        """리스닝 태그 목록"""
+        return jsonify(repository.get_all_listening_tags())
     
     
     @app.route('/api/music/<int:music_id>/tags', methods=['GET'])
     def get_music_tags(music_id):
-        """Get all tags for a music track with counts and user's tags."""
+        """음악의 태그"""
         tags = repository.get_music_tags(music_id)
-        
         user_tag_ids = []
         if current_user.is_authenticated:
             user_tag_ids = repository.get_user_music_tags(current_user.id, music_id)
         
         for tag in tags:
-            if tag['id'] in user_tag_ids:
-                tag['user_tagged'] = True
-            else:
-                tag['user_tagged'] = False
-        
+            tag['user_tagged'] = tag['id'] in user_tag_ids
         return jsonify(tags)
     
     
     @app.route('/api/music/<int:music_id>/tags/<int:tag_id>', methods=['POST'])
     @login_required
     def add_music_tag(music_id, tag_id):
-        """Add a listening tag to a music track."""
-        success = repository.add_user_music_tag(current_user.id, music_id, tag_id)
-        if not success:
+        """음악에 태그 추가"""
+        if not repository.add_user_music_tag(current_user.id, music_id, tag_id):
             return jsonify({'error': 'Tag already added'}), 400
         return jsonify({'success': True}), 201
     
@@ -492,27 +344,25 @@ def register_routes(app):
     @app.route('/api/music/<int:music_id>/tags/<int:tag_id>', methods=['DELETE'])
     @login_required
     def remove_music_tag(music_id, tag_id):
-        """Remove a listening tag from a music track."""
-        success = repository.remove_user_music_tag(current_user.id, music_id, tag_id)
-        if not success:
+        """음악에서 태그 제거"""
+        if not repository.remove_user_music_tag(current_user.id, music_id, tag_id):
             return jsonify({'error': 'Tag not found'}), 404
         return jsonify({'success': True})
     
     
     # ==========================================
-    # Book Routes
+    # Book Routes (책)
     # ==========================================
     
     @app.route('/api/books/tags', methods=['GET'])
     def get_book_tags():
-        """Get all book tags with their book counts."""
+        """책 태그 목록 (책 수 포함)"""
         tags = repository.get_all_book_tags()
         all_books = repository.get_all_books()
         
         result = []
         for tag in tags:
             tag_copy = dict(tag)
-            
             count = 0
             for book in all_books:
                 book_tag_slugs = []
@@ -521,462 +371,336 @@ def register_routes(app):
                         book_tag_slugs.append(t.get('slug', ''))
                     else:
                         book_tag_slugs.append(t)
-                
                 if tag['slug'] in book_tag_slugs:
                     count = count + 1
-            
             tag_copy['book_count'] = count
             result.append(tag_copy)
         
+        # 이름순 정렬 (버블 정렬)
         for i in range(len(result)):
             for j in range(i + 1, len(result)):
                 if result[j]['name'] < result[i]['name']:
                     temp = result[i]
                     result[i] = result[j]
                     result[j] = temp
-        
         return jsonify(result)
     
     
     @app.route('/api/books', methods=['GET'])
     def get_books_by_tags():
-        """Get books filtered by tags (AND logic)."""
+        """태그로 책 필터링"""
         tag_slugs = request.args.getlist('tags')
         if not tag_slugs:
             tag_slugs = request.args.getlist('tags[]')
-        
         limit = request.args.get('limit', 24, type=int)
-        
-        books = repository.get_books_by_tags(tag_slugs, limit)
-        
-        return jsonify(books)
+        return jsonify(repository.get_books_by_tags(tag_slugs, limit))
     
     
     @app.route('/api/books/popular', methods=['GET'])
     def get_popular_books():
-        """Get books sorted by number of reviews."""
+        """인기 책"""
         limit = request.args.get('limit', 5, type=int)
-        books = repository.get_popular_books(limit)
-        return jsonify(books)
+        return jsonify(repository.get_popular_books(limit))
     
     
     @app.route('/api/books/search', methods=['GET'])
     def search_books():
-        """Search books by title or author."""
+        """책 검색"""
         query = request.args.get('q', '')
         limit = request.args.get('limit', 24, type=int)
-        
         if not query:
             return jsonify([])
         
         query_lower = query.lower()
-        
         all_books = repository.get_all_books()
         result = []
         for book in all_books:
-            title_lower = book['title'].lower()
-            author_lower = book['author'].lower()
-            
-            title_match = query_lower in title_lower
-            author_match = query_lower in author_lower
-            
-            if title_match or author_match:
+            if query_lower in book['title'].lower() or query_lower in book['author'].lower():
                 result.append(book)
         
         if len(result) > limit:
             result = result[:limit]
-        
         return jsonify(result)
     
     
     # ==========================================
-    # Book Review Routes
+    # Book Review Routes (책 리뷰)
     # ==========================================
     
     @app.route('/api/books/<int:book_id>/reviews', methods=['GET'])
     def get_book_reviews(book_id):
-        """Get all reviews for a specific book."""
-        reviews = repository.get_reviews_for_book(book_id)
-        return jsonify(reviews)
+        """책 리뷰 목록"""
+        return jsonify(repository.get_reviews_for_book(book_id))
     
     
     @app.route('/api/books/<int:book_id>/reviews', methods=['POST'])
     @login_required
     def create_review(book_id):
-        """Create a new review for a book."""
+        """책 리뷰 작성"""
         data = request.get_json()
-        
         rating = data.get('rating')
         content = data.get('content', '')
         
-        if rating is None:
-            return jsonify({'error': 'Rating is required'}), 400
-        
-        if rating < 1 or rating > 5:
-            return jsonify({'error': 'Rating must be between 1 and 5'}), 400
-        
+        if rating is None or rating < 1 or rating > 5:
+            return jsonify({'error': 'Rating 1-5 required'}), 400
         if not content.strip():
-            return jsonify({'error': 'Review content is required'}), 400
+            return jsonify({'error': 'Content required'}), 400
         
-        review = repository.create_book_review(
-            user_id=current_user.id,
-            book_id=book_id,
-            rating=rating,
-            content=content.strip()
-        )
-        
+        review = repository.create_book_review(current_user.id, book_id, rating, content.strip())
         if review is None:
-            return jsonify({'error': 'You have already reviewed this book'}), 400
-        
+            return jsonify({'error': 'Already reviewed'}), 400
         return jsonify(review), 201
     
     
     @app.route('/api/books/reviews/<int:review_id>', methods=['PUT'])
     @login_required
     def update_review(review_id):
-        """Update an existing review."""
+        """책 리뷰 수정"""
         data = request.get_json()
-        
         rating = data.get('rating')
         content = data.get('content', '')
         
-        if rating is None:
-            return jsonify({'error': 'Rating is required'}), 400
+        if rating is None or rating < 1 or rating > 5:
+            return jsonify({'error': 'Rating 1-5 required'}), 400
         
-        if rating < 1 or rating > 5:
-            return jsonify({'error': 'Rating must be between 1 and 5'}), 400
-        
-        review = repository.update_book_review(
-            review_id=review_id,
-            user_id=current_user.id,
-            rating=rating,
-            content=content.strip()
-        )
-        
+        review = repository.update_book_review(review_id, current_user.id, rating, content.strip())
         if review is None:
-            return jsonify({'error': 'Review not found or not authorized'}), 404
-        
+            return jsonify({'error': 'Not found'}), 404
         return jsonify(review)
     
     
     @app.route('/api/books/reviews/<int:review_id>', methods=['DELETE'])
     @login_required
     def delete_review(review_id):
-        """Delete a review."""
-        success = repository.delete_book_review(review_id, current_user.id)
-        
-        if not success:
-            return jsonify({'error': 'Review not found or not authorized'}), 404
-        
-        return jsonify({'message': 'Review deleted successfully'})
+        """책 리뷰 삭제"""
+        if not repository.delete_book_review(review_id, current_user.id):
+            return jsonify({'error': 'Not found'}), 404
+        return jsonify({'message': 'Review deleted'})
     
     
     # ==========================================
-    # Profile Routes
+    # Profile Routes (프로필)
     # ==========================================
     
     @app.route('/api/user/profile', methods=['PUT'])
     @login_required
     def update_profile():
-        """Update the current user's profile."""
-        user = current_user
+        """프로필 수정"""
         data = request.get_json()
-        
         if 'username' in data:
             existing = repository.get_user_by_username(data['username'])
-            if existing and existing.id != user.id:
-                return jsonify({'error': 'Username already taken'}), 400
-            
-            user = repository.update_user(user.id, data['username'])
-        
-        return jsonify(repository.user_to_dict(user))
+            if existing and existing.id != current_user.id:
+                return jsonify({'error': 'Username taken'}), 400
+            user = repository.update_user(current_user.id, data['username'])
+            return jsonify(repository.user_to_dict(user))
+        return jsonify(current_user.to_dict())
     
     
     # ==========================================
-    # Admin Routes
+    # Admin Routes (관리자)
     # ==========================================
     
     @app.route('/api/admin/stats', methods=['GET'])
     @admin_required
     def get_admin_stats():
-        """Get overall statistics for admin dashboard."""
-        user_stats = repository.get_all_users_stats()
-        emotion_stats = repository.get_overall_emotion_stats()
-        task_stats = repository.get_overall_task_stats()
-        
-        emotion_details = []
-        for emotion_id, count in emotion_stats.items():
-            emotion = repository.get_emotion_by_id(int(emotion_id))
-            if emotion:
-                emotion_details.append({
-                    'emotion': emotion,
-                    'count': count
-                })
-        
+        """관리자 통계"""
         return jsonify({
-            'users': user_stats,
-            'emotions': emotion_details,
-            'tasks': task_stats,
-            'total_users': len(user_stats)
+            'total_users': len(repository.get_all_users_stats()),
+            'users': repository.get_all_users_stats(),
+            'emotion_stats': repository.get_overall_emotion_stats(),
+            'task_stats': repository.get_overall_task_stats()
         })
     
     
     @app.route('/api/admin/music', methods=['GET'])
     @admin_required
     def get_all_music_admin():
-        """Get all music for admin."""
+        """관리자 - 모든 음악"""
         return jsonify(repository.get_all_music())
     
     
     @app.route('/api/admin/music', methods=['POST'])
     @admin_required
     def create_music_admin():
-        """Create a new music entry."""
-        data = request.get_json()
+        """관리자 - 음악 추가"""
+        data = get_json_or_error()
+        if not data or not data.get('title'):
+            return jsonify({'error': 'Title required'}), 400
         
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        title = data.get('title', '')
-        if not title:
-            return jsonify({'error': 'Title is required'}), 400
-        
-        emotion = data.get('emotion', 'Happy')
-        artist = data.get('artist', '')
-        genre = data.get('genre', '')
-        youtube_url = data.get('youtube_url', '')
-        
-        result = repository.create_music(emotion, title, artist, genre, youtube_url)
+        result = repository.create_music(
+            data.get('emotion', 'Happy'), data['title'],
+            data.get('artist', ''), data.get('genre', ''), data.get('youtube_url', '')
+        )
         return jsonify(result), 201
     
     
     @app.route('/api/admin/music/<int:music_id>', methods=['PUT'])
     @admin_required
     def update_music_admin(music_id):
-        """Update an existing music entry."""
-        data = request.get_json()
+        """관리자 - 음악 수정"""
+        data = get_json_or_error()
+        if not data or not data.get('title'):
+            return jsonify({'error': 'Title required'}), 400
         
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        title = data.get('title', '')
-        if not title:
-            return jsonify({'error': 'Title is required'}), 400
-        
-        emotion = data.get('emotion', 'Happy')
-        artist = data.get('artist', '')
-        genre = data.get('genre', '')
-        youtube_url = data.get('youtube_url', '')
-        
-        result = repository.update_music(music_id, emotion, title, artist, genre, youtube_url)
-        
+        result = repository.update_music(
+            music_id, data.get('emotion', 'Happy'), data['title'],
+            data.get('artist', ''), data.get('genre', ''), data.get('youtube_url', '')
+        )
         if result is None:
-            return jsonify({'error': 'Music not found'}), 404
-        
+            return jsonify({'error': 'Not found'}), 404
         return jsonify(result)
     
     
     @app.route('/api/admin/music/<int:music_id>', methods=['DELETE'])
     @admin_required
     def delete_music_admin(music_id):
-        """Delete a music entry."""
-        success = repository.delete_music(music_id)
-        
-        if not success:
-            return jsonify({'error': 'Music not found'}), 404
-        
-        return jsonify({'message': 'Music deleted successfully'})
+        """관리자 - 음악 삭제"""
+        if not repository.delete_music(music_id):
+            return jsonify({'error': 'Not found'}), 404
+        return jsonify({'message': 'Deleted'})
     
     
     @app.route('/api/admin/books', methods=['GET'])
     @admin_required
     def get_all_books_admin():
-        """Get all books for admin."""
+        """관리자 - 모든 책"""
         return jsonify(repository.get_all_books())
     
     
     @app.route('/api/admin/books', methods=['POST'])
     @admin_required
     def create_book_admin():
-        """Create a new book entry."""
-        data = request.get_json()
+        """관리자 - 책 추가"""
+        data = get_json_or_error()
+        if not data or not data.get('title'):
+            return jsonify({'error': 'Title required'}), 400
         
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        title = data.get('title', '')
-        if not title:
-            return jsonify({'error': 'Title is required'}), 400
-        
-        emotion = data.get('emotion', 'Happy')
-        author = data.get('author', '')
-        genre = data.get('genre', '')
-        description = data.get('description', '')
-        tags = data.get('tags', [])
-        price = data.get('price', 15.99)
-        
-        result = repository.create_book(emotion, title, author, genre, description, tags, price)
+        result = repository.create_book(
+            data.get('emotion', 'Happy'), data['title'], data.get('author', ''),
+            data.get('genre', ''), data.get('description', ''),
+            data.get('tags', []), data.get('price', 15.99)
+        )
         return jsonify(result), 201
     
     
     @app.route('/api/admin/books/<int:book_id>', methods=['PUT'])
     @admin_required
     def update_book_admin(book_id):
-        """Update an existing book entry."""
-        data = request.get_json()
+        """관리자 - 책 수정"""
+        data = get_json_or_error()
+        if not data or not data.get('title'):
+            return jsonify({'error': 'Title required'}), 400
         
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        title = data.get('title', '')
-        if not title:
-            return jsonify({'error': 'Title is required'}), 400
-        
-        emotion = data.get('emotion', 'Happy')
-        author = data.get('author', '')
-        genre = data.get('genre', '')
-        description = data.get('description', '')
-        tags = data.get('tags', [])
-        price = data.get('price', 15.99)
-        
-        result = repository.update_book(book_id, emotion, title, author, genre, description, tags, price)
-        
+        result = repository.update_book(
+            book_id, data.get('emotion', 'Happy'), data['title'], data.get('author', ''),
+            data.get('genre', ''), data.get('description', ''),
+            data.get('tags', []), data.get('price', 15.99)
+        )
         if result is None:
-            return jsonify({'error': 'Book not found'}), 404
-        
+            return jsonify({'error': 'Not found'}), 404
         return jsonify(result)
     
     
     @app.route('/api/admin/books/<int:book_id>', methods=['DELETE'])
     @admin_required
     def delete_book_admin(book_id):
-        """Delete a book entry."""
-        success = repository.delete_book(book_id)
-        
-        if not success:
-            return jsonify({'error': 'Book not found'}), 404
-        
-        return jsonify({'message': 'Book deleted successfully'})
+        """관리자 - 책 삭제"""
+        if not repository.delete_book(book_id):
+            return jsonify({'error': 'Not found'}), 404
+        return jsonify({'message': 'Deleted'})
     
     
     @app.route('/api/admin/tags', methods=['GET'])
     @admin_required
     def get_all_tags_admin():
-        """Get all book tags for admin."""
+        """관리자 - 모든 태그"""
         return jsonify(repository.get_all_book_tags())
     
     
     @app.route('/api/admin/orders', methods=['GET'])
     @admin_required
     def get_all_orders_admin():
-        """Get all orders for admin with user and book details."""
-        orders = repository.get_all_orders_admin()
-        return jsonify(orders)
+        """관리자 - 모든 주문"""
+        return jsonify(repository.get_all_orders_admin())
     
     
     # ==========================================
-    # Dashboard Routes
+    # Dashboard Routes (대시보드)
     # ==========================================
     
     @app.route('/api/dashboard/summary', methods=['GET'])
     @login_required
     def get_dashboard_summary():
-        """Get a summary of data for the dashboard."""
-        user = current_user
+        """대시보드 요약"""
         today = datetime.now().strftime('%Y-%m-%d')
-        
-        today_emotion = repository.get_emotion_entry_by_date(user.id, today)
-        
-        task_counts = repository.count_tasks(user.id)
-        total_tasks = task_counts['total']
-        completed_tasks = task_counts['completed']
-        pending_tasks = total_tasks - completed_tasks
-        
-        today_tasks = repository.get_today_due_tasks(user.id, today)
-        
-        emotion_stats = recommendation_engine.get_emotion_statistics_from_repo(
-            user.id,
-            7
-        )
+        today_emotion = repository.get_emotion_entry_by_date(current_user.id, today)
+        task_counts = repository.count_tasks(current_user.id)
+        today_tasks = repository.get_today_due_tasks(current_user.id, today)
+        emotion_stats = recommendation_engine.get_emotion_statistics_from_repo(current_user.id, 7)
         
         today_emotion_dict = None
         if today_emotion:
-            emotion = repository.get_emotion_by_id(today_emotion['emotion_id'])
             today_emotion_dict = dict(today_emotion)
-            today_emotion_dict['emotion'] = emotion
+            today_emotion_dict['emotion'] = repository.get_emotion_by_id(today_emotion['emotion_id'])
         
         return jsonify({
-            'user': repository.user_to_dict(user),
+            'user': repository.user_to_dict(current_user),
             'today_emotion': today_emotion_dict,
             'task_summary': {
-                'total': total_tasks,
-                'completed': completed_tasks,
-                'pending': pending_tasks
+                'total': task_counts['total'],
+                'completed': task_counts['completed'],
+                'pending': task_counts['total'] - task_counts['completed'],
+                'today_count': len(today_tasks)
             },
-            'today_tasks': today_tasks,
-            'weekly_mood_stats': emotion_stats
+            'emotion_stats': emotion_stats
         })
     
     
     # ==========================================
-    # Cart Routes
+    # Cart Routes (장바구니)
     # ==========================================
     
     @app.route('/api/cart', methods=['GET'])
     @login_required
     def get_cart():
-        """Get current user's cart items."""
-        cart_items = repository.get_cart_items(current_user.id)
-        return jsonify(cart_items)
+        """장바구니 목록"""
+        return jsonify(repository.get_cart_items(current_user.id))
     
     
     @app.route('/api/cart', methods=['POST'])
     @login_required
     def add_to_cart():
-        """Add a book to cart."""
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        book_id = data.get('book_id')
-        if not book_id:
-            return jsonify({'error': 'Book ID is required'}), 400
-        
-        cart_item = repository.add_to_cart(current_user.id, book_id)
-        return jsonify(cart_item), 201
+        """장바구니에 추가"""
+        data = get_json_or_error()
+        if not data or not data.get('book_id'):
+            return jsonify({'error': 'Book ID required'}), 400
+        return jsonify(repository.add_to_cart(current_user.id, data['book_id'])), 201
     
     
     @app.route('/api/cart/<int:item_id>', methods=['DELETE'])
     @login_required
     def remove_from_cart(item_id):
-        """Remove an item from cart."""
-        success = repository.remove_from_cart(current_user.id, item_id)
-        if not success:
-            return jsonify({'error': 'Item not found'}), 404
-        return jsonify({'success': True})
+        """장바구니에서 제거"""
+        if not repository.remove_from_cart(current_user.id, item_id):
+            return jsonify({'error': 'Not found'}), 404
+        return jsonify({'message': 'Removed'})
     
     
     @app.route('/api/cart/clear', methods=['DELETE'])
     @login_required
     def clear_cart():
-        """Clear all items from cart."""
+        """장바구니 비우기"""
         repository.clear_cart(current_user.id)
-        return jsonify({'success': True})
+        return jsonify({'message': 'Cart cleared'})
     
     
     @app.route('/api/checkout', methods=['POST'])
     @login_required
     def checkout():
-        """Process checkout with simulated payment."""
+        """결제 처리 (시뮬레이션)"""
         data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        card_number = data.get('card_number', '')
-        if len(card_number) < 4:
-            return jsonify({'error': 'Invalid card number'}), 400
-        
         cart_items = repository.get_cart_items(current_user.id)
+        
         if len(cart_items) == 0:
             return jsonify({'error': 'Cart is empty'}), 400
         
@@ -984,21 +708,10 @@ def register_routes(app):
         for item in cart_items:
             total = total + (item.get('price', 0) * item.get('quantity', 1))
         
-        card_last_four = card_number[-4:]
-        
         order = repository.create_order(
-            user_id=current_user.id,
-            cart_items=cart_items,
-            total_amount=total,
-            card_last_four=card_last_four
+            current_user.id, cart_items, total,
+            data.get('card_last_four', '0000')
         )
-        
         repository.clear_cart(current_user.id)
         
-        return jsonify({
-            'success': True,
-            'order': order,
-            'message': 'Purchase completed!'
-        })
-    
-    
+        return jsonify({'message': 'Order completed', 'order': order, 'total': total})
