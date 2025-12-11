@@ -73,7 +73,15 @@ backend/
 - Favorites with localStorage persistence
 - YouTube links for each song
 
-### 6. Profile
+### 6. Community Challenges
+- Create and share challenges with other users
+- Join challenges created by others
+- Mark challenges as completed
+- Track participation and completion stats
+- Emoji selection for challenge icons
+- Creator can delete their own challenges
+
+### 7. Profile
 - User settings management
 
 ## Recommendation Algorithm
@@ -134,6 +142,13 @@ Only 4 fixed accounts can log in (no registration):
 - `POST /api/upload/photo` - Upload photo
 - `GET /api/uploads/<filename>` - Serve uploaded file
 
+### Community Challenges
+- `GET /api/challenges` - List all challenges with stats
+- `POST /api/challenges` - Create a new challenge
+- `POST /api/challenges/:id/join` - Join a challenge
+- `POST /api/challenges/:id/complete` - Mark challenge as completed
+- `DELETE /api/challenges/:id` - Delete a challenge (creator only)
+
 ## Code Style Guidelines
 
 This project uses **student-friendly** code patterns:
@@ -145,6 +160,14 @@ This project uses **student-friendly** code patterns:
 - Comprehensive comments
 
 ## Recent Changes
+
+- December 11, 2025: Community Challenges feature
+  - Added CommunityChallenge and ChallengeParticipant database models
+  - Created backend API endpoints for challenge CRUD operations
+  - Built Challenge page with create, join, complete, and delete functionality
+  - Added navigation link with Target icon
+  - Users can create challenges with emoji, title, and description
+  - Track participant count and completion stats per challenge
 
 - December 8, 2025: Code cleanup
   - Removed unused legacy functions from repository.py (640 lines now)

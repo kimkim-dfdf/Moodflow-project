@@ -7,7 +7,7 @@
 # ==============================================
 
 from datetime import datetime
-from models import db, User, Task, EmotionHistory, Emotion, Music, BookTag, Book, BookReview
+from models import db, User, Task, EmotionHistory, Emotion, Music, BookTag, Book, BookReview, CommunityChallenge, ChallengeParticipant
 
 
 # ==============================================
@@ -765,8 +765,6 @@ def get_all_challenges_with_stats(current_user_id):
     Get all community challenges with participant stats.
     Includes count of participants and completions.
     """
-    from models import CommunityChallenge, ChallengeParticipant
-    
     challenges = CommunityChallenge.query.order_by(CommunityChallenge.created_at.desc()).all()
     
     result = []
@@ -806,8 +804,6 @@ def create_challenge(creator_id, title, description, emoji):
     """
     Create a new community challenge.
     """
-    from models import CommunityChallenge
-    
     challenge = CommunityChallenge()
     challenge.creator_id = creator_id
     challenge.title = title
@@ -825,8 +821,6 @@ def join_challenge(challenge_id, user_id):
     Join a community challenge.
     Returns None if already joined.
     """
-    from models import CommunityChallenge, ChallengeParticipant
-    
     challenge = CommunityChallenge.query.filter_by(id=challenge_id).first()
     if challenge is None:
         return None
@@ -855,9 +849,6 @@ def complete_challenge(challenge_id, user_id):
     Mark a challenge as completed for a user.
     Returns None if not joined or already completed.
     """
-    from models import ChallengeParticipant
-    from datetime import datetime
-    
     participant = ChallengeParticipant.query.filter_by(
         challenge_id=challenge_id,
         user_id=user_id
@@ -880,8 +871,6 @@ def delete_challenge(challenge_id, user_id):
     """
     Delete a challenge. Only creator can delete.
     """
-    from models import CommunityChallenge, ChallengeParticipant
-    
     challenge = CommunityChallenge.query.filter_by(id=challenge_id).first()
     
     if challenge is None:
