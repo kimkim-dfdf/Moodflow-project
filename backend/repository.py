@@ -771,9 +771,9 @@ def get_popular_books(limit=10):
 def get_reviews_for_music(music_id):
     """
     Get all reviews for a specific music track.
-    Returns reviews with user information.
+    Returns reviews with user information and their listening tags.
     """
-    from models import MusicReview
+    from models import MusicReview, UserMusicTag, MusicListeningTag
     reviews = MusicReview.query.filter_by(music_id=music_id).order_by(MusicReview.created_at.desc()).all()
     
     result = []
@@ -784,6 +784,15 @@ def get_reviews_for_music(music_id):
             review_dict['username'] = user.username
         else:
             review_dict['username'] = 'Unknown'
+        
+        user_tags = UserMusicTag.query.filter_by(user_id=review.user_id, music_id=music_id).all()
+        tag_names = []
+        for user_tag in user_tags:
+            tag = db.session.get(MusicListeningTag, user_tag.tag_id)
+            if tag:
+                tag_names.append(tag.name)
+        review_dict['listening_tags'] = tag_names
+        
         result.append(review_dict)
     
     return result

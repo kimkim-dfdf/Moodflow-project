@@ -349,6 +349,13 @@ function MusicDetailView(props) {
                       </button>
                     )}
                   </div>
+                  {review.listening_tags && review.listening_tags.length > 0 && (
+                    <div className="review-tags">
+                      {review.listening_tags.map(function(tagName, idx) {
+                        return <span key={idx} className="review-tag">{tagName}</span>;
+                      })}
+                    </div>
+                  )}
                   <p className="review-content">{review.content}</p>
                 </div>
               );
