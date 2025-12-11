@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Music as MusicIcon, Search, Heart, Play, X, Star, User, Trash2, ArrowLeft } from 'lucide-react';
+import { Music as MusicIcon, Search, Heart, Play, X, Star, User, Trash2 } from 'lucide-react';
 
 function getYoutubeVideoId(url) {
   if (!url) {
@@ -248,11 +248,6 @@ function MusicDetailView(props) {
   
   return (
     <div className="music-detail-inline">
-      <button className="back-to-list-btn" onClick={onBack}>
-        <ArrowLeft size={18} />
-        Back to list
-      </button>
-      
       <div className="music-detail-header">
         <div className="music-detail-thumbnail">
           {thumbnailUrl && !thumbnailError ? (
