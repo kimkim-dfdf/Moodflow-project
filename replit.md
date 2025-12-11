@@ -153,6 +153,12 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
+- December 11, 2025: Frontend CSS cleanup
+  - Removed unused CSS classes from index.css (~22 lines removed)
+  - Removed .music-detail-modal, .music-modal-* classes (unused modal styles)
+  - Removed .music-detail-page and related selectors (MusicDetail page removed)
+  - Kept .music-detail-inline styles (still used by Music.jsx)
+
 - December 11, 2025: Code cleanup
   - Removed unused API routes (/api/books/all, /api/orders)
   - Removed unused repository functions (get_user_orders, get_user_review_for_book)
