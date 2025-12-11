@@ -812,3 +812,77 @@ def register_routes(app):
             'today_tasks': today_tasks,
             'weekly_mood_stats': emotion_stats
         })
+    
+    
+    # ==========================================
+    # Community Challenge Routes
+    # ==========================================
+    
+    @app.route('/api/challenges', methods=['GET'])
+    @login_required
+    def get_all_challenges():
+        """Get all community challenges with participation info."""
+        challenges = repository.get_all_challenges_with_stats(current_user.id)
+        return jsonify(challenges)
+    
+    
+    @app.route('/api/challenges', methods=['POST'])
+    @login_required
+    def create_challenge():
+        """Create a new community challenge."""
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        title = data.get('title')
+        if not title:
+            return jsonify({'error': 'Title is required'}), 400
+        
+        description = data.get('description', '')
+        emoji = data.get('emoji', '🎯')
+        
+        challenge = repository.create_challenge(
+            creator_id=current_user.id,
+            title=title,
+            description=description,
+            emoji=emoji
+        )
+        
+        return jsonify(challenge), 201
+    
+    
+    @app.route('/api/challenges/<int:challenge_id>/join', methods=['POST'])
+    @login_required
+    def join_challenge(challenge_id):
+        """Join a community challenge."""
+        result = repository.join_challenge(challenge_id, current_user.id)
+        
+        if result is None:
+            return jsonify({'error': 'Already joined or challenge not found'}), 400
+        
+        return jsonify(result)
+    
+    
+    @app.route('/api/challenges/<int:challenge_id>/complete', methods=['POST'])
+    @login_required
+    def complete_challenge(challenge_id):
+        """Mark a challenge as completed."""
+        result = repository.complete_challenge(challenge_id, current_user.id)
+        
+        if result is None:
+            return jsonify({'error': 'Not joined or already completed'}), 400
+        
+        return jsonify(result)
+    
+    
+    @app.route('/api/challenges/<int:challenge_id>', methods=['DELETE'])
+    @login_required
+    def delete_challenge(challenge_id):
+        """Delete a challenge (only creator can delete)."""
+        success = repository.delete_challenge(challenge_id, current_user.id)
+        
+        if not success:
+            return jsonify({'error': 'Not authorized or challenge not found'}), 403
+        
+        return jsonify({'message': 'Challenge deleted'})
