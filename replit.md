@@ -136,7 +136,6 @@ Only 4 fixed accounts can log in (no registration):
 - `DELETE /api/cart/:id` - Remove item from cart
 - `DELETE /api/cart/clear` - Clear entire cart
 - `POST /api/checkout` - Process checkout (simulated payment)
-- `GET /api/orders` - Get user's order history
 
 ### File Upload
 - `POST /api/upload/photo` - Upload photo
@@ -154,8 +153,14 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
+- December 11, 2025: Code cleanup
+  - Removed unused API routes (/api/books/all, /api/orders)
+  - Removed unused repository function (get_user_orders)
+  - Removed unused MusicDetail page (no navigation links to it)
+  - All prices now come from database, removed hardcoded fallbacks
+
 - December 8, 2025: Code cleanup
-  - Removed unused legacy functions from repository.py (640 lines now)
+  - Removed unused legacy functions from repository.py
   - Cleaned up deprecated functions (load_data, save_data, etc.)
 
 - December 8, 2025: Full static data migration to PostgreSQL
@@ -166,16 +171,9 @@ This project uses **student-friendly** code patterns:
   - Updated repository.py with helper functions (get_all_emotions, get_music_by_emotion, get_books_by_tags, etc.)
   - All recommendation logic now queries database instead of in-memory lists
 
-- December 8, 2025: Database simplification
-  - Removed CustomBook and CustomMusic models (no admin-managed custom content)
-  - Added MusicFavorite model for user music favorites
-  - Users can add/remove items from favorites (BookFavorite, MusicFavorite)
-  - Simplified routes.py - removed admin custom book/music endpoints
-  - Added music favorites API endpoints
-
 - December 8, 2025: PostgreSQL database migration
   - Changed from JSON file storage to PostgreSQL database
-  - Created models.py with SQLAlchemy models (User, Task, EmotionHistory, BookFavorite, MusicFavorite)
+  - Created models.py with SQLAlchemy models
   - Updated app.py with database configuration
   - Updated repository.py to use SQLAlchemy queries
   - Demo users are seeded on application startup
