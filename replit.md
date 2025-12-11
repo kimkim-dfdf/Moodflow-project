@@ -155,7 +155,7 @@ This project uses **student-friendly** code patterns:
 
 - December 11, 2025: Code cleanup
   - Removed unused API routes (/api/books/all, /api/orders)
-  - Removed unused repository function (get_user_orders)
+  - Removed unused repository functions (get_user_orders, get_user_review_for_book)
   - Removed unused MusicDetail page (no navigation links to it)
   - All prices now come from database, removed hardcoded fallbacks
 

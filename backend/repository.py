@@ -662,17 +662,6 @@ def get_reviews_for_book(book_id):
     return result
 
 
-def get_user_review_for_book(user_id, book_id):
-    """
-    Get a specific user's review for a book.
-    Returns None if no review exists.
-    """
-    review = BookReview.query.filter_by(user_id=user_id, book_id=book_id).first()
-    if review:
-        return review.to_dict()
-    return None
-
-
 def create_book_review(user_id, book_id, rating, content):
     """
     Create a new book review.
