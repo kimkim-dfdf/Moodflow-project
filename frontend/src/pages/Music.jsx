@@ -142,7 +142,6 @@ function MusicDetailView(props) {
   var [isSubmitting, setIsSubmitting] = useState(false);
   var [hasUserReview, setHasUserReview] = useState(false);
   var [listeningTags, setListeningTags] = useState([]);
-  var [tagLoading, setTagLoading] = useState(false);
   
   useEffect(function() {
     if (music) {
@@ -188,25 +187,14 @@ function MusicDetailView(props) {
   }
   
   function handleTagClick(tag) {
-    if (tagLoading) {
-      return;
-    }
-    setTagLoading(true);
-    
     if (tag.user_tagged) {
       api.delete('/music/' + music.id + '/tags/' + tag.id).then(function() {
         loadTags();
-        setTagLoading(false);
-      }).catch(function() {
-        setTagLoading(false);
-      });
+      }).catch(function() {});
     } else {
       api.post('/music/' + music.id + '/tags/' + tag.id).then(function() {
         loadTags();
-        setTagLoading(false);
-      }).catch(function() {
-        setTagLoading(false);
-      });
+      }).catch(function() {});
     }
   }
   
