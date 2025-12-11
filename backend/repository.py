@@ -789,30 +789,21 @@ def get_reviews_for_music(music_id):
     return result
 
 
-def create_music_review(user_id, music_id, emotion, content, similar_music_ids):
+def create_music_review(user_id, music_id, rating, content):
     """
     Create a new music review.
     Each user can only have one review per music track.
-    Users select an emotion tag and up to 3 similar music tracks.
     """
     from models import MusicReview
     existing = MusicReview.query.filter_by(user_id=user_id, music_id=music_id).first()
     if existing:
         return None
     
-    similar_ids_str = ''
-    if similar_music_ids:
-        str_ids = []
-        for mid in similar_music_ids:
-            str_ids.append(str(mid))
-        similar_ids_str = ','.join(str_ids)
-    
     review = MusicReview()
     review.user_id = user_id
     review.music_id = music_id
-    review.emotion = emotion
+    review.rating = rating
     review.content = content
-    review.similar_music_ids = similar_ids_str
     review.created_at = datetime.utcnow()
     
     db.session.add(review)
