@@ -461,7 +461,7 @@ function Books() {
       <div className="book-search-section">
         <div className="search-input-wrapper">
           <Search size={20} className="search-icon" />
-          <input type="text" className="book-search-input" placeholder="Search books..." value={searchQuery} onChange={function(e) { handleSearch(e.target.value); }} />
+          <input type="text" className="books-search-input" placeholder="Search books..." value={searchQuery} onChange={function(e) { handleSearch(e.target.value); }} />
           {searchQuery && <button className="search-clear-btn" onClick={clearSearch}><X size={18} /></button>}
         </div>
       </div>
