@@ -187,14 +187,31 @@ function MusicDetailView(props) {
   }
   
   function handleTagClick(tag) {
+    var newTags = [];
+    for (var i = 0; i < listeningTags.length; i++) {
+      var t = listeningTags[i];
+      if (t.id === tag.id) {
+        var updatedTag = {
+          id: t.id,
+          name: t.name,
+          count: tag.user_tagged ? t.count - 1 : t.count + 1,
+          user_tagged: !tag.user_tagged
+        };
+        newTags.push(updatedTag);
+      } else {
+        newTags.push(t);
+      }
+    }
+    setListeningTags(newTags);
+    
     if (tag.user_tagged) {
-      api.delete('/music/' + music.id + '/tags/' + tag.id).then(function() {
+      api.delete('/music/' + music.id + '/tags/' + tag.id).catch(function() {
         loadTags();
-      }).catch(function() {});
+      });
     } else {
-      api.post('/music/' + music.id + '/tags/' + tag.id).then(function() {
+      api.post('/music/' + music.id + '/tags/' + tag.id).catch(function() {
         loadTags();
-      }).catch(function() {});
+      });
     }
   }
   
