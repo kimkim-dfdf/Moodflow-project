@@ -153,6 +153,13 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
+- December 11, 2025: Frontend code refactoring
+  - Books.jsx: 1144줄 → 538줄로 축소 (53% 감소)
+  - Music.jsx: 679줄 → 376줄로 축소 (45% 감소)
+  - Reduced JSX duplication and simplified event handlers
+  - Added Korean comments for educational purposes
+  - Maintained student-friendly code patterns (var declarations, explicit for loops)
+
 - December 11, 2025: Backend code refactoring
   - repository.py: 1078줄 → 788줄로 축소 (27% 감소)
   - routes.py: 1005줄 → 717줄로 축소 (29% 감소)

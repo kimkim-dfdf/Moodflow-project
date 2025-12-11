@@ -106,12 +106,18 @@ function BookDetailModal(props) {
     });
   }
   
+  // 별점 클릭 핸들러 생성 함수
+  function createStarClickHandler(starValue) {
+    return function() {
+      setReviewRating(starValue);
+    };
+  }
+  
   function renderStars(rating, interactive) {
     var stars = [];
     for (var i = 1; i <= 5; i++) {
       if (interactive) {
-        var val = i;
-        stars.push(<button key={i} type="button" className="star-btn" onClick={function() { setReviewRating(val); }.bind(null, val)}><Star size={20} fill={i <= reviewRating ? '#fbbf24' : 'none'} color={i <= reviewRating ? '#fbbf24' : '#d1d5db'} /></button>);
+        stars.push(<button key={i} type="button" className="star-btn" onClick={createStarClickHandler(i)}><Star size={20} fill={i <= reviewRating ? '#fbbf24' : 'none'} color={i <= reviewRating ? '#fbbf24' : '#d1d5db'} /></button>);
       } else {
         stars.push(<Star key={i} size={16} fill={i <= rating ? '#fbbf24' : 'none'} color={i <= rating ? '#fbbf24' : '#d1d5db'} />);
       }
