@@ -617,13 +617,6 @@ def register_routes(app):
         return jsonify(repository.get_all_book_tags())
     
     
-    @app.route('/api/admin/orders', methods=['GET'])
-    @admin_required
-    def get_all_orders_admin():
-        """관리자 - 모든 주문"""
-        return jsonify(repository.get_all_orders_admin())
-    
-    
     # ==========================================
     # Dashboard Routes (대시보드)
     # ==========================================
@@ -656,62 +649,3 @@ def register_routes(app):
         })
     
     
-    # ==========================================
-    # Cart Routes (장바구니)
-    # ==========================================
-    
-    @app.route('/api/cart', methods=['GET'])
-    @login_required
-    def get_cart():
-        """장바구니 목록"""
-        return jsonify(repository.get_cart_items(current_user.id))
-    
-    
-    @app.route('/api/cart', methods=['POST'])
-    @login_required
-    def add_to_cart():
-        """장바구니에 추가"""
-        data = get_json_or_error()
-        if not data or not data.get('book_id'):
-            return jsonify({'error': 'Book ID required'}), 400
-        return jsonify(repository.add_to_cart(current_user.id, data['book_id'])), 201
-    
-    
-    @app.route('/api/cart/<int:item_id>', methods=['DELETE'])
-    @login_required
-    def remove_from_cart(item_id):
-        """장바구니에서 제거"""
-        if not repository.remove_from_cart(current_user.id, item_id):
-            return jsonify({'error': 'Not found'}), 404
-        return jsonify({'message': 'Removed'})
-    
-    
-    @app.route('/api/cart/clear', methods=['DELETE'])
-    @login_required
-    def clear_cart():
-        """장바구니 비우기"""
-        repository.clear_cart(current_user.id)
-        return jsonify({'message': 'Cart cleared'})
-    
-    
-    @app.route('/api/checkout', methods=['POST'])
-    @login_required
-    def checkout():
-        """결제 처리 (시뮬레이션)"""
-        data = request.get_json()
-        cart_items = repository.get_cart_items(current_user.id)
-        
-        if len(cart_items) == 0:
-            return jsonify({'error': 'Cart is empty'}), 400
-        
-        total = 0
-        for item in cart_items:
-            total = total + (item.get('price', 0) * item.get('quantity', 1))
-        
-        order = repository.create_order(
-            current_user.id, cart_items, total,
-            data.get('card_last_four', '0000')
-        )
-        repository.clear_cart(current_user.id)
-        
-        return jsonify({'message': 'Order completed', 'order': order, 'total': total})

@@ -61,10 +61,10 @@ backend/
 ### 4. Books
 - Tag-based filtering with 10 emotion tags
 - AND logic for multi-tag filtering
-- 15 curated books with 3 tags each and prices
+- 15 curated books with 3 tags each
 - Popular Books section (top 5 most reviewed)
 - Book reviews with ratings
-- Shopping cart with simulated checkout (mock payment for school project)
+- Favorites with localStorage persistence
 
 ### 5. Music
 - Dedicated music page with full music library
@@ -130,13 +130,6 @@ Only 4 fixed accounts can log in (no registration):
 - `PUT /api/user/profile` - Update profile
 - `GET /api/dashboard/summary` - Get dashboard summary
 
-### Cart
-- `GET /api/cart` - Get user's cart items
-- `POST /api/cart` - Add book to cart
-- `DELETE /api/cart/:id` - Remove item from cart
-- `DELETE /api/cart/clear` - Clear entire cart
-- `POST /api/checkout` - Process checkout (simulated payment)
-
 ### File Upload
 - `POST /api/upload/photo` - Upload photo
 - `GET /api/uploads/<filename>` - Serve uploaded file
@@ -152,6 +145,12 @@ This project uses **student-friendly** code patterns:
 - Comprehensive comments
 
 ## Recent Changes
+
+- December 13, 2025: Removed book purchase feature
+  - Removed shopping cart, checkout, and order functionality
+  - Removed CartItem, Order, OrderItem database models
+  - Removed price display from books (pure recommendation app now)
+  - Books page now focuses on recommendations, reviews, and favorites
 
 - December 11, 2025: Frontend code refactoring
   - Books.jsx: 1144줄 → 538줄로 축소 (53% 감소)

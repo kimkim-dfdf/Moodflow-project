@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import api from '../api/axios';
 import { 
   BarChart3, Users, Music, BookOpen, Plus, Trash2, Edit2, X, Save,
-  CheckCircle2, Clock, TrendingUp, ShoppingCart
+  CheckCircle2, TrendingUp
 } from 'lucide-react';
 
 function Admin() {
@@ -14,7 +14,6 @@ function Admin() {
   const [music, setMusic] = useState([]);
   const [books, setBooks] = useState([]);
   const [tags, setTags] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMusicModal, setShowMusicModal] = useState(false);
   const [showBookModal, setShowBookModal] = useState(false);
@@ -35,14 +34,12 @@ function Admin() {
       api.get('/admin/stats'),
       api.get('/admin/music'),
       api.get('/admin/books'),
-      api.get('/admin/tags'),
-      api.get('/admin/orders')
+      api.get('/admin/tags')
     ]).then(function(results) {
       setStats(results[0].data);
       setMusic(results[1].data);
       setBooks(results[2].data);
       setTags(results[3].data);
-      setOrders(results[4].data);
       setLoading(false);
     }).catch(function() {
       setLoading(false);
@@ -124,12 +121,6 @@ function Admin() {
           onClick={function() { setActiveTab('books'); }}
         >
           <BookOpen size={18} /> Books
-        </button>
-        <button 
-          className={activeTab === 'orders' ? 'tab-btn active' : 'tab-btn'}
-          onClick={function() { setActiveTab('orders'); }}
-        >
-          <ShoppingCart size={18} /> Orders
         </button>
       </div>
 
@@ -235,7 +226,6 @@ function Admin() {
                   <th>Author</th>
                   <th>Genre</th>
                   <th>Emotion</th>
-                  <th>Price</th>
                   <th>Tags</th>
                   <th>Actions</th>
                 </tr>
@@ -248,7 +238,6 @@ function Admin() {
                       <td>{b.author}</td>
                       <td>{b.genre}</td>
                       <td><span className="emotion-badge">{b.emotion}</span></td>
-                      <td>${(b.price || 15.99).toFixed(2)}</td>
                       <td>
                         <div className="tag-list">
                           {(b.tags || []).slice(0, 2).map(function(t) {
@@ -275,62 +264,6 @@ function Admin() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {activeTab === 'orders' && (
-        <div className="content-section">
-          <div className="section-header">
-            <h3>Purchase History ({orders.length})</h3>
-          </div>
-          {orders.length === 0 ? (
-            <p className="no-data">No orders yet.</p>
-          ) : (
-            <div className="content-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Order ID</th>
-                    <th>User</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Card</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map(function(order) {
-                    return (
-                      <tr key={order.id}>
-                        <td>#{order.id}</td>
-                        <td>
-                          <div className="user-info-cell">
-                            <span className="user-name">{order.user ? order.user.username : 'Unknown'}</span>
-                            <span className="user-email">{order.user ? order.user.email : ''}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="order-items">
-                            {order.items.map(function(item, idx) {
-                              return (
-                                <div key={idx} className="order-item-row">
-                                  <span className="item-title">{item.book_title || 'Book #' + item.book_id}</span>
-                                  <span className="item-price">${item.price.toFixed(2)} x {item.quantity}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </td>
-                        <td className="total-amount">${order.total_amount.toFixed(2)}</td>
-                        <td>**** {order.card_last_four || '----'}</td>
-                        <td>{order.created_at ? new Date(order.created_at).toLocaleDateString() : '-'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
       )}
 
@@ -454,8 +387,7 @@ function BookModal({ book, emotions, tags, onSave, onClose }) {
     genre: book ? book.genre : '',
     emotion: book ? book.emotion : 'Happy',
     description: book ? book.description : '',
-    tags: book ? getTagSlugs(book.tags) : [],
-    price: book ? book.price : 15.99
+    tags: book ? getTagSlugs(book.tags) : []
   });
 
   function handleSubmit(e) {
@@ -518,19 +450,6 @@ function BookModal({ book, emotions, tags, onSave, onClose }) {
                 })}
               </select>
             </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Price ($)</label>
-              <input 
-                type="number" 
-                step="0.01"
-                min="0"
-                value={form.price} 
-                onChange={function(e) { setForm({...form, price: parseFloat(e.target.value) || 0}); }}
-              />
-            </div>
-            <div className="form-group"></div>
           </div>
           <div className="form-group">
             <label>Description</label>
