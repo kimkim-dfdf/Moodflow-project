@@ -28,7 +28,7 @@ function Layout() {
     <div className="app-container">
       <nav className="sidebar">
         <div className="sidebar-header">
-          <h1 className="logo">MoodFlow</h1>
+          <h1 className="logo"><img src="/logo-icon.png" alt="" className="logo-icon" />MoodFlow</h1>
         </div>
         
         <ul className="nav-menu">
