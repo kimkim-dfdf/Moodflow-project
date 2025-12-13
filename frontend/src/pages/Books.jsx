@@ -100,38 +100,10 @@ function BookDetailModal(props) {
   
   function handleShare() {
     var text = book.title + ' by ' + book.author + ' - ' + book.genre;
-    
-    // 클립보드 복사 시도 (fallback 포함)
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function() {
-        setShareMessage('Copied!');
-        setTimeout(function() { setShareMessage(''); }, 2000);
-      }).catch(function() {
-        // 클립보드 API 실패시 fallback
-        copyWithFallback(text);
-      });
-    } else {
-      copyWithFallback(text);
-    }
-  }
-  
-  // 클립보드 API가 안될 때 사용하는 fallback 함수
-  function copyWithFallback(text) {
-    var textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.left = '-9999px';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-      document.execCommand('copy');
+    navigator.clipboard.writeText(text).then(function() {
       setShareMessage('Copied!');
       setTimeout(function() { setShareMessage(''); }, 2000);
-    } catch (err) {
-      setShareMessage('Copy failed');
-      setTimeout(function() { setShareMessage(''); }, 2000);
-    }
-    document.body.removeChild(textarea);
+    });
   }
   
   // 별점 클릭 핸들러 생성 함수
