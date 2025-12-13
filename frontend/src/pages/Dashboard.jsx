@@ -46,7 +46,7 @@ function Dashboard() {
       var tasksRes = results[2].data;
       
       setTaskSummary(summary.task_summary);
-      setMoodStats(summary.weekly_mood_stats);
+      setMoodStats(summary.emotion_stats);
       
       var titles = new Set();
       for (var i = 0; i < tasksRes.length; i++) {
