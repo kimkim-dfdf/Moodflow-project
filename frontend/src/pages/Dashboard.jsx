@@ -194,20 +194,20 @@ function Dashboard() {
               <section className="card">
                 <div className="section-header"><h3>Suggested for {selectedEmotion.name}</h3></div>
                 <div className="suggestions-grid">
-                  {suggestedTasks.map(function(s, i) {
-                    var isAdded = addedTasks.has(s.title);
+                  {suggestedTasks.filter(function(s) { return !addedTasks.has(s.title); }).map(function(s, i) {
                     return (
                       <div key={i} className="suggestion-card">
                         <p>{s.title}</p>
                         <div className="suggestion-meta">
                           <span className="category">{s.category}</span>
-                          <button className={'add-btn ' + (isAdded ? 'added' : '')} onClick={function() { handleAddTask(s); }} disabled={isAdded}>
-                            {isAdded ? 'Added' : 'Add'}
-                          </button>
+                          <button className="add-btn" onClick={function() { handleAddTask(s); }}>Add</button>
                         </div>
                       </div>
                     );
                   })}
+                  {suggestedTasks.filter(function(s) { return !addedTasks.has(s.title); }).length === 0 && (
+                    <p className="empty-state">All tasks added!</p>
+                  )}
                 </div>
               </section>
 
