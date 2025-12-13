@@ -53,7 +53,6 @@ function BookDetailModal(props) {
   var [hasUserReview, setHasUserReview] = useState(false);
   var [modalImgError, setModalImgError] = useState(false);
   var [addedToCart, setAddedToCart] = useState(false);
-  var [shareMessage, setShareMessage] = useState('');
   
   useEffect(function() {
     if (book) {
@@ -99,11 +98,9 @@ function BookDetailModal(props) {
   }
   
   function handleShare() {
-    var text = book.title + ' by ' + book.author + ' - ' + book.genre;
-    navigator.clipboard.writeText(text).then(function() {
-      setShareMessage('Copied!');
-      setTimeout(function() { setShareMessage(''); }, 2000);
-    });
+    var text = 'Check out this book!\n\n' + book.title + ' by ' + book.author + '\nGenre: ' + book.genre + '\nPrice: $' + book.price.toFixed(2);
+    var whatsappUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+    window.open(whatsappUrl, '_blank');
   }
   
   // 별점 클릭 핸들러 생성 함수
@@ -201,9 +198,8 @@ function BookDetailModal(props) {
           <button className={'modal-cart-btn ' + (addedToCart ? 'added' : '')} onClick={function() { props.onAddToCart(book); setAddedToCart(true); setTimeout(function() { setAddedToCart(false); }, 2000); }}>
             {addedToCart ? <><Check size={20} />Added!</> : <><ShoppingCart size={20} />Add to Cart - ${book.price.toFixed(2)}</>}
           </button>
-          <button className="modal-share-btn" onClick={handleShare}><Share2 size={20} />Share</button>
+          <button className="modal-share-btn" onClick={handleShare}><Share2 size={20} />WhatsApp</button>
         </div>
-        {shareMessage && <div className="share-message">{shareMessage}</div>}
       </div>
     </div>
   );
