@@ -50,67 +50,49 @@ EMOTION_WEIGHTS = {
 }
 
 
-# Task suggestions for each emotion (8 per emotion)
+# Task suggestions for each emotion
 TASK_SUGGESTIONS = {
     'Happy': [
         {'title': 'Start a new creative project', 'category': 'Personal', 'priority': 'High'},
         {'title': 'Tackle that challenging work task', 'category': 'Work', 'priority': 'High'},
         {'title': 'Learn something new', 'category': 'Study', 'priority': 'Medium'},
         {'title': 'Go for an energetic workout', 'category': 'Health', 'priority': 'Medium'},
-        {'title': 'Connect with friends or family', 'category': 'Personal', 'priority': 'Low'},
-        {'title': 'Take on a leadership role in a group project', 'category': 'Work', 'priority': 'High'},
-        {'title': 'Try a new hobby or skill', 'category': 'Personal', 'priority': 'Medium'},
-        {'title': 'Help someone with their tasks', 'category': 'Personal', 'priority': 'Low'}
+        {'title': 'Connect with friends or family', 'category': 'Personal', 'priority': 'Low'}
     ],
     'Sad': [
         {'title': 'Take a gentle walk outside', 'category': 'Health', 'priority': 'Low'},
         {'title': 'Journal your feelings', 'category': 'Personal', 'priority': 'Low'},
         {'title': 'Watch a comforting movie', 'category': 'Personal', 'priority': 'Low'},
         {'title': 'Do some light stretching', 'category': 'Health', 'priority': 'Low'},
-        {'title': 'Call a supportive friend', 'category': 'Personal', 'priority': 'Medium'},
-        {'title': 'Listen to your favorite music', 'category': 'Personal', 'priority': 'Low'},
-        {'title': 'Make yourself a warm drink', 'category': 'Health', 'priority': 'Low'},
-        {'title': 'Read a comforting book', 'category': 'Personal', 'priority': 'Low'}
+        {'title': 'Call a supportive friend', 'category': 'Personal', 'priority': 'Medium'}
     ],
     'Tired': [
         {'title': 'Take a power nap (20 min)', 'category': 'Health', 'priority': 'High'},
         {'title': 'Do simple, routine tasks', 'category': 'Work', 'priority': 'Low'},
         {'title': 'Drink water and have a healthy snack', 'category': 'Health', 'priority': 'Medium'},
         {'title': 'Review notes instead of active learning', 'category': 'Study', 'priority': 'Low'},
-        {'title': 'Light organizing or cleaning', 'category': 'Personal', 'priority': 'Low'},
-        {'title': 'Prepare tomorrow clothes and bag', 'category': 'Personal', 'priority': 'Low'},
-        {'title': 'Reply to easy emails or messages', 'category': 'Work', 'priority': 'Low'},
-        {'title': 'Watch a relaxing video', 'category': 'Personal', 'priority': 'Low'}
+        {'title': 'Light organizing or cleaning', 'category': 'Personal', 'priority': 'Low'}
     ],
     'Angry': [
         {'title': 'Intense workout to release energy', 'category': 'Health', 'priority': 'High'},
         {'title': 'Write out your frustrations', 'category': 'Personal', 'priority': 'Medium'},
         {'title': 'Physical activity like running or boxing', 'category': 'Health', 'priority': 'High'},
         {'title': 'Deep breathing exercises', 'category': 'Health', 'priority': 'Low'},
-        {'title': 'Channel energy into productive work', 'category': 'Work', 'priority': 'Medium'},
-        {'title': 'Clean or organize something vigorously', 'category': 'Personal', 'priority': 'Medium'},
-        {'title': 'Go for a fast-paced walk', 'category': 'Health', 'priority': 'Medium'},
-        {'title': 'Punch a pillow or stress ball', 'category': 'Health', 'priority': 'Low'}
+        {'title': 'Channel energy into productive work', 'category': 'Work', 'priority': 'Medium'}
     ],
     'Stressed': [
         {'title': 'Practice meditation (10 min)', 'category': 'Health', 'priority': 'High'},
         {'title': 'Make a prioritized to-do list', 'category': 'Personal', 'priority': 'Medium'},
         {'title': 'Take a relaxing bath or shower', 'category': 'Health', 'priority': 'Low'},
         {'title': 'Break big tasks into smaller steps', 'category': 'Work', 'priority': 'High'},
-        {'title': 'Go for a calming walk', 'category': 'Health', 'priority': 'Medium'},
-        {'title': 'Do a 5-minute breathing exercise', 'category': 'Health', 'priority': 'Medium'},
-        {'title': 'Talk to someone about your worries', 'category': 'Personal', 'priority': 'Medium'},
-        {'title': 'Take a short break from screens', 'category': 'Health', 'priority': 'Low'}
+        {'title': 'Go for a calming walk', 'category': 'Health', 'priority': 'Medium'}
     ],
     'Neutral': [
         {'title': 'Plan your week ahead', 'category': 'Personal', 'priority': 'Medium'},
         {'title': 'Work on medium-priority tasks', 'category': 'Work', 'priority': 'Medium'},
         {'title': 'Study or read for 30 minutes', 'category': 'Study', 'priority': 'Medium'},
         {'title': 'Light exercise or yoga', 'category': 'Health', 'priority': 'Medium'},
-        {'title': 'Organize your workspace', 'category': 'Personal', 'priority': 'Low'},
-        {'title': 'Catch up on pending emails', 'category': 'Work', 'priority': 'Medium'},
-        {'title': 'Review your goals and progress', 'category': 'Personal', 'priority': 'Medium'},
-        {'title': 'Do a quick room tidying', 'category': 'Personal', 'priority': 'Low'}
+        {'title': 'Organize your workspace', 'category': 'Personal', 'priority': 'Low'}
     ]
 }
 

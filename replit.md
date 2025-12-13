@@ -146,10 +146,6 @@ This project uses **student-friendly** code patterns:
 
 ## Recent Changes
 
-- December 13, 2025: Added more task suggestions
-  - Added 3 more task suggestions per emotion (now 8 per emotion, 48 total)
-  - File: backend/recommendation_engine.py (TASK_SUGGESTIONS dict)
-
 - December 13, 2025: Removed book purchase feature
   - Removed shopping cart, checkout, and order functionality
   - Removed CartItem, Order, OrderItem database models
