@@ -643,7 +643,7 @@ def register_routes(app):
             client = genai.Client(api_key=api_key)
             
             prompt = f"""You are a caring friend. The user "{username}" is feeling "{emotion}" today.
-Write a short, warm comfort or encouragement message in Korean (2-3 sentences max).
+Write a short, warm comfort or encouragement message in English (2-3 sentences max).
 Be genuine and supportive. Don't use emojis. Just plain text."""
             
             response = client.models.generate_content(
@@ -664,16 +664,16 @@ Be genuine and supportive. Don't use emojis. Just plain text."""
     
     
     def get_fallback_message(emotion):
-        """AI 실패 시 기본 메시지"""
+        """Fallback message when AI is unavailable"""
         messages = {
-            'Happy': '오늘 기분이 좋으시군요! 이 에너지를 유지해보세요.',
-            'Sad': '힘든 하루였군요. 괜찮아요, 내일은 더 나아질 거예요.',
-            'Tired': '많이 지치셨군요. 잠시 쉬어가도 괜찮아요.',
-            'Angry': '화가 나는 일이 있었군요. 잠시 깊은 숨을 쉬어보세요.',
-            'Stressed': '스트레스 받는 하루였군요. 당신은 잘 하고 있어요.',
-            'Neutral': '오늘 하루도 수고하셨어요.'
+            'Happy': "You're feeling great today! Keep that positive energy going.",
+            'Sad': "It's okay to feel down sometimes. Tomorrow will be a brighter day.",
+            'Tired': "You've been working hard. It's okay to take a break and rest.",
+            'Angry': "Take a deep breath. It's okay to feel frustrated sometimes.",
+            'Stressed': "You're doing your best, and that's enough. Take things one step at a time.",
+            'Neutral': "Thank you for checking in today. You're doing great."
         }
-        return messages.get(emotion, '오늘 하루도 수고하셨어요.')
+        return messages.get(emotion, "Thank you for checking in today. You're doing great.")
     
     
     # ==========================================
