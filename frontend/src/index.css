@@ -84,6 +84,10 @@ body { font-family: 'Inter', sans-serif; background: var(--background); color: v
 .emotion-header { margin-bottom: 16px; }
 .emotion-header h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
 .emotion-hint { font-size: 13px; color: var(--text-light); }
+.ai-message-box { margin-top: 16px; padding: 16px; background: linear-gradient(135deg, #f0f9ff 0%, #e8f4fd 100%); border-radius: 8px; border-left: 4px solid var(--primary); }
+.ai-message-box p { font-size: 14px; line-height: 1.6; color: var(--text); margin: 0; }
+.ai-message-box.loading { background: #f8f9fa; border-left-color: #ccc; }
+.ai-message-box.loading p { color: var(--text-light); font-style: italic; }
 .dashboard-grid { display: grid; grid-template-columns: 1fr 360px; gap: 24px; }
 .dashboard-main, .dashboard-sidebar { display: flex; flex-direction: column; gap: 24px; }
 .section-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 16px; }

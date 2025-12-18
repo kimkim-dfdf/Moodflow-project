@@ -22,6 +22,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [addedTasks, setAddedTasks] = useState(new Set());
   const [calendarKey, setCalendarKey] = useState(0);
+  const [aiMessage, setAiMessage] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(function() {
     fetchData();
@@ -61,6 +63,7 @@ function Dashboard() {
         setRecommendedTasks([]);
         setSuggestedTasks([]);
         setMusicList([]);
+        setAiMessage('');
       }
       setLoading(false);
     }).catch(function(error) {
@@ -124,12 +127,24 @@ function Dashboard() {
 
   function handleEmotionSelect(emotion) {
     setSelectedEmotion(emotion);
+    setAiMessage('');
+    setAiLoading(true);
+    
     api.post('/emotions/record', {
       emotion_id: emotion.id,
       date: format(selectedDate, 'yyyy-MM-dd')
     }).then(function() {
       setCalendarKey(calendarKey + 1);
     });
+    
+    api.post('/ai/comfort-message', { emotion: emotion.name })
+      .then(function(res) {
+        setAiMessage(res.data.message);
+        setAiLoading(false);
+      })
+      .catch(function() {
+        setAiLoading(false);
+      });
   }
 
   function getGreeting() {
@@ -174,6 +189,18 @@ function Dashboard() {
               {!selectedEmotion && <p className="emotion-hint">Select your mood</p>}
             </div>
             <EmotionSelector selectedEmotion={selectedEmotion} onSelect={handleEmotionSelect} selectedDate={selectedDate} />
+            
+            {aiLoading && (
+              <div className="ai-message-box loading">
+                <p>AI가 메시지를 생성 중...</p>
+              </div>
+            )}
+            
+            {aiMessage && !aiLoading && (
+              <div className="ai-message-box">
+                <p>{aiMessage}</p>
+              </div>
+            )}
           </section>
 
           {selectedEmotion && (

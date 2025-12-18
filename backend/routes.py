@@ -618,6 +618,65 @@ def register_routes(app):
     
     
     # ==========================================
+    # AI Message Routes (AI 메시지)
+    # ==========================================
+    
+    @app.route('/api/ai/comfort-message', methods=['POST'])
+    @login_required
+    def get_ai_comfort_message():
+        """감정에 따른 AI 위로/격려 메시지 생성"""
+        data = get_json_or_error()
+        if not data or not data.get('emotion'):
+            return jsonify({'error': 'Emotion required'}), 400
+        
+        emotion = data.get('emotion')
+        username = current_user.username
+        
+        # Gemini API 호출
+        try:
+            from google import genai
+            
+            api_key = os.environ.get('GOOGLE_API_KEY')
+            if not api_key:
+                return jsonify({'message': get_fallback_message(emotion)})
+            
+            client = genai.Client(api_key=api_key)
+            
+            prompt = f"""You are a caring friend. The user "{username}" is feeling "{emotion}" today.
+Write a short, warm comfort or encouragement message in Korean (2-3 sentences max).
+Be genuine and supportive. Don't use emojis. Just plain text."""
+            
+            response = client.models.generate_content(
+                model='gemini-2.0-flash-lite',
+                contents=prompt
+            )
+            
+            message = response.text
+            if message:
+                message = message.strip()
+            else:
+                message = get_fallback_message(emotion)
+            return jsonify({'message': message})
+            
+        except Exception as e:
+            print(f"AI Error: {e}")
+            return jsonify({'message': get_fallback_message(emotion)})
+    
+    
+    def get_fallback_message(emotion):
+        """AI 실패 시 기본 메시지"""
+        messages = {
+            'Happy': '오늘 기분이 좋으시군요! 이 에너지를 유지해보세요.',
+            'Sad': '힘든 하루였군요. 괜찮아요, 내일은 더 나아질 거예요.',
+            'Tired': '많이 지치셨군요. 잠시 쉬어가도 괜찮아요.',
+            'Angry': '화가 나는 일이 있었군요. 잠시 깊은 숨을 쉬어보세요.',
+            'Stressed': '스트레스 받는 하루였군요. 당신은 잘 하고 있어요.',
+            'Neutral': '오늘 하루도 수고하셨어요.'
+        }
+        return messages.get(emotion, '오늘 하루도 수고하셨어요.')
+    
+    
+    # ==========================================
     # Dashboard Routes (대시보드)
     # ==========================================
     

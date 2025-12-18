@@ -41,6 +41,7 @@ backend/
 ### 1. Dashboard
 - User greeting with current date
 - Emotion selection (Happy, Sad, Tired, Angry, Stressed, Neutral)
+- **AI Comfort Message**: Gemini AI가 감정에 따른 위로/격려 메시지 생성
 - Personalized task recommendations based on mood
 - Music recommendations with YouTube links
 - Mini calendar with emotion tracking
@@ -134,6 +135,9 @@ Only 4 fixed accounts can log in (no registration):
 - `POST /api/upload/photo` - Upload photo
 - `GET /api/uploads/<filename>` - Serve uploaded file
 
+### AI
+- `POST /api/ai/comfort-message` - Get AI comfort/encouragement message (requires GOOGLE_API_KEY)
+
 ## Code Style Guidelines
 
 This project uses **student-friendly** code patterns:
@@ -145,6 +149,13 @@ This project uses **student-friendly** code patterns:
 - Comprehensive comments
 
 ## Recent Changes
+
+- December 18, 2025: Added AI comfort message feature
+  - Added Gemini AI integration for generating comfort/encouragement messages
+  - Dashboard shows AI message when user selects an emotion
+  - Uses gemini-2.0-flash-lite model via Google AI Studio API
+  - Fallback messages when AI is unavailable
+  - New API endpoint: POST /api/ai/comfort-message
 
 - December 13, 2025: Removed book purchase feature
   - Removed shopping cart, checkout, and order functionality
