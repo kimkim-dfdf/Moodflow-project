@@ -3,6 +3,7 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { Music as MusicIcon, Search, Heart, Play, X, User, Trash2, Tag } from 'lucide-react';
 
+
 // YouTube URL에서 비디오 ID 추출
 function getYoutubeVideoId(url) {
   if (!url) return null;
@@ -369,6 +370,7 @@ function Music() {
           )}
         </div>
       )}
+
     </div>
   );
 }

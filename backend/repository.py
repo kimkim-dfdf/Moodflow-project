@@ -6,6 +6,10 @@
 # ==============================================
 
 from datetime import datetime
+import logging
+import bcrypt
+from sqlalchemy.exc import SQLAlchemyError
+
 from models import db, User, Task, EmotionHistory, Emotion, Music, BookTag, Book, BookReview
 
 
@@ -24,6 +28,26 @@ def to_dict_list(records):
     return result
 
 
+# Logger + DB helper
+logger = logging.getLogger(__name__)
+
+def safe_commit(on_error=None):
+    """Attempt to commit DB session. On failure rollback, log and return `on_error`.
+    Returns True on success, otherwise returns the provided `on_error` value.
+    """
+    try:
+        db.session.commit()
+        return True
+    except SQLAlchemyError:
+        db.session.rollback()
+        logger.exception("Database commit failed")
+        return on_error
+    except Exception:
+        db.session.rollback()
+        logger.exception("Unexpected error during DB commit")
+        return on_error
+
+
 # ==============================================
 # User Operations (사용자 관련)
 # ==============================================
@@ -33,11 +57,18 @@ def get_user_by_email(email):
     return User.query.filter_by(email=email).first()
 
 
+def hash_password(password):
+    """비밀번호를 bcrypt로 해싱"""
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+
 def check_user_password(user, password):
-    """비밀번호 확인 (데모용 - 단순 비교)"""
-    if user.password == password:
-        return True
-    return False
+    """해싱된 비밀번호 확인"""
+    try:
+        return bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8'))
+    except:
+        return False
 
 
 def user_to_dict(user):
@@ -50,12 +81,45 @@ def get_user_by_username(username):
     return User.query.filter_by(username=username).first()
 
 
+def create_user(email, username, password):
+    """새 사용자 생성 (회원가입)"""
+    # 이메일 중복 확인
+    if get_user_by_email(email):
+        return None, 'Email already exists'
+    
+    # 사용자명 중복 확인
+    if get_user_by_username(username):
+        return None, 'Username already exists'
+    
+    # 비밀번호 해싱
+    hashed_password = hash_password(password)
+    
+    # 새 사용자 생성
+    user = User()
+    user.email = email
+    user.username = username
+    user.password = hashed_password
+    user.created_at = datetime.utcnow()
+    user.is_admin = False
+    
+    try:
+        db.session.add(user)
+        if safe_commit(on_error=None):
+            return user, None
+        else:
+            return None, 'Failed to create user'
+    except Exception as e:
+        logger.exception("Error creating user")
+        return None, str(e)
+
+
 def update_user(user_id, new_username):
     """사용자명 업데이트"""
     user = db.session.get(User, int(user_id))
     if user:
         user.username = new_username
-        db.session.commit()
+        if not safe_commit(on_error=None):
+            return None
         return user
     return None
 
@@ -77,7 +141,8 @@ def create_task(user_id, title, category, priority, task_date, recommended_for_e
     task.recommended_for_emotion = recommended_for_emotion
     
     db.session.add(task)
-    db.session.commit()
+    if not safe_commit(on_error=None):
+        return None
     return task.to_dict()
 
 
@@ -128,7 +193,8 @@ def update_task(task_id, user_id, is_completed):
             task.completed_at = datetime.utcnow()
         else:
             task.completed_at = None
-        db.session.commit()
+        if not safe_commit(on_error=None):
+            return None
         return task.to_dict()
     return None
 
@@ -138,7 +204,8 @@ def delete_task(task_id, user_id):
     task = Task.query.filter_by(id=task_id, user_id=user_id).first()
     if task:
         db.session.delete(task)
-        db.session.commit()
+        if not safe_commit(on_error=False):
+            return False
         return True
     return False
 
@@ -184,7 +251,8 @@ def create_emotion_entry(user_id, emotion_id, date, notes, photo_url):
             existing.notes = notes
         if photo_url:
             existing.photo_url = photo_url
-        db.session.commit()
+        if not safe_commit(on_error=None):
+            return None
         return existing.to_dict()
     
     entry = EmotionHistory()
@@ -196,7 +264,8 @@ def create_emotion_entry(user_id, emotion_id, date, notes, photo_url):
     entry.recorded_at = datetime.utcnow()
     
     db.session.add(entry)
-    db.session.commit()
+    if not safe_commit(on_error=None):
+        return None
     return entry.to_dict()
 
 

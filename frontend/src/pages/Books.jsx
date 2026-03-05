@@ -44,6 +44,9 @@ function BookDetailModal(props) {
   var [reviewError, setReviewError] = useState('');
   var [hasUserReview, setHasUserReview] = useState(false);
   var [modalImgError, setModalImgError] = useState(false);
+  var [aiEmotion, setAiEmotion] = useState('');
+  var [aiLoading, setAiLoading] = useState(false);
+  var [aiError, setAiError] = useState(false);
   
   useEffect(function() {
     if (book) {
@@ -58,6 +61,16 @@ function BookDetailModal(props) {
         }
         setHasUserReview(hasReview);
       }).catch(function() { setReviews([]); });
+
+      // Fetch AI emotion summary for this book
+      setAiEmotion(''); setAiError(false); setAiLoading(true);
+      api.get('/books/' + book.id + '/ai-emotion').then(function(res) {
+        setAiEmotion(res.data?.ai_emotion || '');
+        setAiLoading(false);
+      }).catch(function() {
+        setAiError(true);
+        setAiLoading(false);
+      });
     }
   }, [book]);
   
@@ -167,6 +180,12 @@ function BookDetailModal(props) {
             </div>
           </div>
           
+          {aiLoading ? <div className="modal-ai-emotion"><h4>Reader Emotions</h4><p>Loading AI summary...</p></div> : (
+            aiError ? <div className="modal-ai-emotion"><h4>Reader Emotions</h4><p>Unavailable</p></div> : (
+              aiEmotion ? <div className="modal-ai-emotion"><h4>Reader Emotions</h4><p>{aiEmotion}</p></div> : null
+            )
+          )}
+
           {book.description && <div className="modal-description"><h4>Description</h4><p>{book.description}</p></div>}
           
           {book.tags && book.tags.length > 0 && (

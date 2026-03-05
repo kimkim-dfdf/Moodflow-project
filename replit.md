@@ -153,7 +153,7 @@ This project uses **student-friendly** code patterns:
 - December 18, 2025: Added AI comfort message feature
   - Added Gemini AI integration for generating comfort/encouragement messages
   - Dashboard shows AI message when user selects an emotion
-  - Uses gemini-2.0-flash-lite model via Google AI Studio API
+  - Uses gemini-2.5-flash model via Google AI Studio API
   - Fallback messages when AI is unavailable
   - New API endpoint: POST /api/ai/comfort-message
 

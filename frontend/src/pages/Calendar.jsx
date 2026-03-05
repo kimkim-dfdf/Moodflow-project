@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, startOfWeek, endOfWeek } from 'date-fns';
 import { ChevronLeft, ChevronRight, X, Camera, Image, Trash2 } from 'lucide-react';
 import api from '../api/axios';
 
 function Calendar() {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [emotionData, setEmotionData] = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
@@ -13,6 +15,9 @@ function Calendar() {
   const [formData, setFormData] = useState({ emotion_id: null, notes: '', photo_url: '' });
   const [photoPreview, setPhotoPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [analysis, setAnalysis] = useState(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
 
   useEffect(function() {
     fetchData();
@@ -89,6 +94,22 @@ function Calendar() {
     });
   }
 
+  function toggleAnalysis() {
+    if (showAnalysis) {
+      setShowAnalysis(false);
+    } else {
+      setAnalysisLoading(true);
+      api.get('/ai/monthly-analysis').then(function(res) {
+        setAnalysis(res.data);
+        setShowAnalysis(true);
+        setAnalysisLoading(false);
+      }).catch(function() {
+        alert('Failed to load analysis');
+        setAnalysisLoading(false);
+      });
+    }
+  }
+
   var monthStart = startOfMonth(currentDate);
   var monthEnd = endOfMonth(currentDate);
   var days = eachDayOfInterval({ start: startOfWeek(monthStart), end: endOfWeek(monthEnd) });
@@ -101,10 +122,15 @@ function Calendar() {
   }
 
   return (
+
     <div className="calendar-page">
-      <header className="page-header">
-        <h1>Mood Diary</h1>
-        <p className="page-subtitle">Click a date to record</p>
+      <header className="page-header" style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700 }}>Emotion Diary</h1>
+            <span style={{ fontSize: 15, color: '#888', marginTop: 4, fontWeight: 400 }}>Click a date to record your mood and notes</span>
+          </div>
+        </div>
       </header>
 
       <div className="calendar-container card">
@@ -113,6 +139,44 @@ function Calendar() {
           <h2>{format(currentDate, 'MMMM yyyy')}</h2>
           <button onClick={function() { if (!isCurrentMonth) setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1)); }} className={'nav-btn ' + (isCurrentMonth ? 'disabled' : '')} disabled={isCurrentMonth}><ChevronRight size={24} /></button>
         </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <button onClick={toggleAnalysis} className="btn-analysis" style={{ width: '100%', padding: '12px 16px', backgroundColor: '#f0e8ff', color: '#5b6ee1', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 15, transition: 'all 0.2s' }}>
+            {showAnalysis ? 'Hide Monthly Analysis' : 'View AI Monthly Analysis'}
+          </button>
+        </div>
+
+        {showAnalysis && (
+          <div className="analysis-section" style={{ backgroundColor: '#faf9ff', border: '1px solid #e8e0ff', borderRadius: 8, padding: 20, marginBottom: 16 }}>
+            {analysisLoading ? (
+              <div style={{ textAlign: 'center', padding: 20, color: '#999' }}>Loading analysis...</div>
+            ) : analysis ? (
+              <div>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: 16, fontWeight: 600, color: '#5b6ee1' }}>AI Monthly Summary</h3>
+                <p style={{ fontSize: 14, color: '#555', lineHeight: 1.6, marginBottom: 20, fontWeight: 400 }}>{analysis.summary}</p>
+                
+                {analysis.keywords && analysis.keywords.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 600, color: '#888', textTransform: 'uppercase' }}>Top Keywords</h4>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {analysis.keywords.map(function(kw, idx) {
+                        return (
+                          <span key={idx} style={{ backgroundColor: '#e8e0ff', color: '#5b6ee1', padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 500 }}>
+                            {kw}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
+                <div style={{ padding: '12px 16px', backgroundColor: '#f0e8ff', borderRadius: 8, borderLeft: '3px solid #5b6ee1' }}>
+                  <p style={{ margin: 0, fontSize: 13, color: '#555', lineHeight: 1.5, fontStyle: 'italic' }}>💭 {analysis.next_month_message}</p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        )}
 
         <div className="calendar-weekdays">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(function(d) { return <div key={d} className="weekday">{d}</div>; })}
@@ -149,7 +213,7 @@ function Calendar() {
         <div className="modal-overlay" onClick={function() { setShowModal(false); }}>
           <div className="modal diary-modal" onClick={function(e) { e.stopPropagation(); }}>
             <div className="modal-header">
-              <h2>Diary - {format(selectedDate, 'MMM d, yyyy')}</h2>
+              <h2>Emotion Diary - {format(selectedDate, 'MMM d, yyyy')}</h2>
               <button className="close-btn" onClick={function() { setShowModal(false); }}><X size={20} /></button>
             </div>
 
@@ -189,7 +253,7 @@ function Calendar() {
 
                 <div className="diary-section">
                   <label className="section-label">Notes</label>
-                  <textarea className="diary-notes" placeholder="How was your day?" value={formData.notes} onChange={function(e) { setFormData({ ...formData, notes: e.target.value }); }} rows={4} />
+                  <textarea className="diary-notes" placeholder="Write about your day, thoughts, or feelings..." value={formData.notes} onChange={function(e) { setFormData({ ...formData, notes: e.target.value }); }} rows={4} />
                 </div>
 
                 <div className="modal-actions">

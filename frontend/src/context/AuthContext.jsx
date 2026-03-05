@@ -28,13 +28,19 @@ export const AuthProvider = ({ children }) => {
     return response.data;
   };
 
+  const signup = async (email, username, password) => {
+    const response = await api.post('/auth/signup', { email, username, password });
+    setUser(response.data.user);
+    return response.data;
+  };
+
   const logout = async () => {
     await api.post('/auth/logout');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, setUser }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );

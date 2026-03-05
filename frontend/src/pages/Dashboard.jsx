@@ -135,6 +135,15 @@ function Dashboard() {
       date: format(selectedDate, 'yyyy-MM-dd')
     }).then(function() {
       setCalendarKey(calendarKey + 1);
+      
+      // 감정 클릭 후 Weekly Mood 차트 업데이트
+      api.get('/emotions/statistics', { params: { days: 7 } })
+        .then(function(res) {
+          setMoodStats(res.data);
+        });
+      
+      // 감정이 저장된 후 추천 데이터 가져오기
+      fetchRecommendations(emotion.name);
     });
     
     api.post('/ai/comfort-message', { emotion: emotion.name })
@@ -142,7 +151,17 @@ function Dashboard() {
         setAiMessage(res.data.message);
         setAiLoading(false);
       })
-      .catch(function() {
+      .catch(function(err) {
+        console.error('AI comfort message error:', err);
+        var fallbackMessages = {
+          'Happy': "You're feeling great today! Keep that positive energy going.",
+          'Sad': "It's okay to feel down sometimes. Tomorrow will be a brighter day.",
+          'Tired': "You've been working hard. It's okay to take a break and rest.",
+          'Angry': "Take a deep breath. It's okay to feel frustrated sometimes.",
+          'Stressed': "You're doing your best, and that's enough. Take things one step at a time.",
+          'Neutral': "Thank you for checking in today. You're doing great."
+        };
+        setAiMessage(fallbackMessages[emotion.name] || "Thank you for checking in today. You're doing great.");
         setAiLoading(false);
       });
   }
@@ -192,7 +211,7 @@ function Dashboard() {
             
             {aiLoading && (
               <div className="ai-message-box loading">
-                <p>AI가 메시지를 생성 중...</p>
+                <p>💭 AI가 위로 메시지를 생성 중입니다... (최대 10초)</p>
               </div>
             )}
             
@@ -281,10 +300,21 @@ function Dashboard() {
               <>
                 <ResponsiveContainer width="100%" height={180}>
                   <PieChart>
-                    <Pie data={Object.entries(moodStats.counts).map(function(e) { return { name: e[0], value: e[1] }; })} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value">
-                      {Object.keys(moodStats.counts).map(function(name, i) {
-                        var colors = { Happy: '#FFD93D', Sad: '#6B7FD7', Tired: '#A8A8A8', Angry: '#FF6B6B', Stressed: '#FF9F43', Neutral: '#95A5A6' };
-                        return <Cell key={i} fill={colors[name] || '#95A5A6'} />;
+                    <Pie 
+                      data={Object.entries(moodStats.counts).map(function(e) { 
+                        return { name: e[0], value: e[1] }; 
+                      })} 
+                      cx="50%" 
+                      cy="50%" 
+                      innerRadius={40} 
+                      outerRadius={60} 
+                      dataKey="value"
+                      label={false}
+                    >
+                      {Object.entries(moodStats.counts).map(function(e, i) {
+                        var emotionName = e[0];
+                        var colors = { Happy: '#FFD93D', Sad: '#6B7FD7', Tired: '#8B4513', Angry: '#FF6B6B', Stressed: '#FF9F43', Neutral: '#95A5A6' };
+                        return <Cell key={i} fill={colors[emotionName] || '#95A5A6'} />;
                       })}
                     </Pie>
                     <Tooltip />

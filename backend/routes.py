@@ -12,9 +12,61 @@ from functools import wraps
 from datetime import datetime
 import os
 import uuid
+import time
+import logging
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
+
+# Optional Google GenAI import (may be unavailable in some envs)
+try:
+    from google import genai
+    _HAS_GENAI = True
+except Exception as e:
+    genai = None
+    _HAS_GENAI = False
 
 import repository
 import recommendation_engine
+
+# GenAI client singleton + executor (initialized if API key present)
+logger = logging.getLogger(__name__)
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+_genai_client = None
+_executor = ThreadPoolExecutor(max_workers=4)
+
+# Log GenAI initialization status (use print for guaranteed output)
+print(f"[GenAI] Module available: {_HAS_GENAI}")
+print(f"[GenAI] API Key present: {bool(GOOGLE_API_KEY)}")
+
+if GOOGLE_API_KEY and _HAS_GENAI:
+    try:
+        _genai_client = genai.Client(api_key=GOOGLE_API_KEY)
+        print("✅ [GenAI] Client successfully initialized!")
+    except Exception as e:
+        print(f"❌ [GenAI] Failed to initialize: {str(e)}")
+        _genai_client = None
+else:
+    if not GOOGLE_API_KEY:
+        print("⚠️ [GenAI] API Key not set - GenAI features disabled")
+    if not _HAS_GENAI:
+        print("⚠️ [GenAI] Module not available - GenAI features disabled")
+    if not _HAS_GENAI:
+        print("⚠️ [GenAI] Module not available - GenAI features disabled")
+
+
+
+
+def _call_genai(prompt, model='gemini-2.5-flash'):
+    """Synchronous call to GenAI client (meant to be run in executor)."""
+    if not _genai_client:
+        raise RuntimeError("GenAI client not initialized")
+    try:
+        print(f"[GenAI] Calling model: {model}")
+        response = _genai_client.models.generate_content(model=model, contents=prompt)
+        print(f"[GenAI] Success! Response received")
+        return response
+    except Exception as e:
+        print(f"[GenAI] Error in _call_genai: {str(e)}")
+        raise
 
 
 # ==============================================
@@ -84,6 +136,37 @@ def register_routes(app):
         
         login_user(user)
         return jsonify({'message': 'Login successful', 'user': repository.user_to_dict(user)})
+    
+    
+    @app.route('/api/auth/signup', methods=['POST'])
+    def signup():
+        """회원가입"""
+        data = get_json_or_error()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        email = data.get('email', '').strip()
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        
+        # 입력값 검증
+        if not email or not username or not password:
+            return jsonify({'error': 'Email, username, and password required'}), 400
+        
+        if len(username) < 2:
+            return jsonify({'error': 'Username must be at least 2 characters'}), 400
+        
+        if len(password) < 6:
+            return jsonify({'error': 'Password must be at least 6 characters'}), 400
+        
+        # 사용자 생성
+        user, error = repository.create_user(email, username, password)
+        if error:
+            return jsonify({'error': error}), 400
+        
+        # 자동 로그인
+        login_user(user)
+        return jsonify({'message': 'Account created successfully', 'user': repository.user_to_dict(user)}), 201
     
     
     @app.route('/api/auth/logout', methods=['POST'])
@@ -275,6 +358,60 @@ def register_routes(app):
         return jsonify(repository.get_all_music())
     
     
+    @app.route('/api/music/chat', methods=['POST'])
+    def music_chat():
+        """AI Music Recommendation Chatbot"""
+        if not _genai_client:
+            return jsonify({'error': 'AI feature is not available'}), 503
+        
+        data = get_json_or_error()
+        if not data or not data.get('message'):
+            return jsonify({'error': 'Message required'}), 400
+        
+        user_message = data.get('message', '').strip()
+        
+        try:
+            prompt = f"""You are a music recommendation assistant. Your ONLY task is to recommend 5 real, popular songs based on the user's emotion.
+
+User's current emotion: "{user_message}"
+
+IMPORTANT RULES:
+1. ONLY recommend real songs that actually exist
+2. Use real artist names (famous songs from Spotify, YouTube, etc.)
+3. Format EXACTLY like this - NO OTHER TEXT:
+Song Title - Artist Name
+Song Title - Artist Name
+Song Title - Artist Name
+Song Title - Artist Name
+Song Title - Artist Name
+
+Examples of good recommendations:
+- If emotion is "sad": "Someone Like You - Adele", "The Night We Met - Lord Huron"
+- If emotion is "happy": "Walking on Sunshine - Katrina & The Waves", "Good as Hell - Lizzo"
+- If emotion is "energetic": "Blinding Lights - The Weeknd", "Don't Stop Me Now - Queen"
+- If emotion is "stressed": "Weightless - Marconi Union", "Calm - Johnny Lang"
+
+NOW RECOMMEND 5 SONGS FOR THIS EMOTION: "{user_message}"
+Do not add any explanation. Only list the 5 songs."""
+            
+            def call_genai():
+                return _call_genai(prompt)
+            
+            response = _executor.submit(call_genai).result(timeout=15)
+            reply_text = response.text if hasattr(response, 'text') else str(response)
+            
+            return jsonify({
+                'reply': reply_text,
+                'recommendations': []
+            })
+            
+        except TimeoutError:
+            return jsonify({'error': 'Response timeout'}), 504
+        except Exception as e:
+            logger.error(f"Music chat error: {str(e)}")
+            return jsonify({'error': 'Chatbot error occurred'}), 500
+    
+    
     @app.route('/api/music/<int:music_id>', methods=['GET'])
     def get_music_by_id(music_id):
         """음악 상세 정보"""
@@ -421,6 +558,67 @@ def register_routes(app):
         if len(result) > limit:
             result = result[:limit]
         return jsonify(result)
+
+
+    # ==========================================
+    # AI Book Emotion Summary (책 감정 요약)
+    # ==========================================
+
+    # Simple in-memory TTL cache for AI summaries: {book_id: (timestamp, summary)}
+    _ai_summary_cache = {}
+    _AI_CACHE_TTL = 60 * 60  # 1 hour
+
+    @app.route('/api/books/<int:book_id>/ai-emotion', methods=['GET'])
+    def get_book_ai_emotion(book_id):
+        """Return a short emotion-summary for a book using GenAI (cached)."""
+        # Try cache
+        now = time.time()
+        cached = _ai_summary_cache.get(book_id)
+        if cached:
+            ts, text = cached
+            if now - ts < _AI_CACHE_TTL:
+                return jsonify({'ai_emotion': text, 'cached': True})
+            else:
+                _ai_summary_cache.pop(book_id, None)
+
+        # Find book
+        all_books = repository.get_all_books()
+        book = next((b for b in all_books if b.get('id') == book_id), None)
+        if not book:
+            return jsonify({'error': 'Book not found'}), 404
+
+        # If GenAI not available, return fallback based on genre/title
+        if not _genai_client:
+            fallback = f"Readers may feel reflective or moved by {book.get('title')} ({book.get('genre', 'Unknown')})."
+            _ai_summary_cache[book_id] = (now, fallback)
+            return jsonify({'ai_emotion': fallback, 'cached': False})
+
+        # Compose prompt
+        prompt = (
+            f"Given the following book metadata, list 2-3 emotions a typical reader might feel when reading it,"
+            f" and give a one-sentence reason. Keep it short and friendly.\n\n"
+            f"Title: {book.get('title')}\n"
+            f"Author: {book.get('author')}\n"
+            f"Genre: {book.get('genre')}\n"
+            f"Description: {book.get('description', '')}\n"
+        )
+
+        future = _executor.submit(_call_genai, prompt)
+        try:
+            response = future.result(timeout=7.0)  # Increased timeout from 3.0 to 7.0 seconds
+            text = getattr(response, 'text', '') or ''
+            text = text.strip()
+        except TimeoutError:
+            future.cancel()
+            logger.warning('GenAI timeout for book_id=%s', book_id)
+            text = f"Reading {book.get('title')} might evoke curiosity and empathy."
+        except Exception:
+            logger.exception('GenAI failure for book_id=%s', book_id)
+            text = f"Reading {book.get('title')} might evoke curiosity and empathy."
+
+        # Cache and return
+        _ai_summary_cache[book_id] = (now, text)
+        return jsonify({'ai_emotion': text, 'cached': False})
     
     
     # ==========================================
@@ -632,35 +830,41 @@ def register_routes(app):
         emotion = data.get('emotion')
         username = current_user.username
         
-        # Gemini API 호출
-        try:
-            from google import genai
-            
-            api_key = os.environ.get('GOOGLE_API_KEY')
-            if not api_key:
-                return jsonify({'message': get_fallback_message(emotion)})
-            
-            client = genai.Client(api_key=api_key)
-            
-            prompt = f"""You are a caring friend. The user "{username}" is feeling "{emotion}" today.
+        fallback_msg = get_fallback_message(emotion)
+        
+        # Check if GenAI is available
+        if not _genai_client:
+            print(f"⚠️ [GenAI] Not available (API key: {bool(GOOGLE_API_KEY)}, genai module: {_HAS_GENAI})")
+            logger.info(f"GenAI not available (API key: {bool(GOOGLE_API_KEY)}, genai module: {_HAS_GENAI})")
+            return jsonify({'message': fallback_msg})
+
+        prompt = f"""You are a caring friend. The user "{username}" is feeling "{emotion}" today.
 Write a short, warm comfort or encouragement message in English (2-3 sentences max).
 Be genuine and supportive. Don't use emojis. Just plain text."""
-            
-            response = client.models.generate_content(
-                model='gemini-2.0-flash-lite',
-                contents=prompt
-            )
-            
-            message = response.text
-            if message:
-                message = message.strip()
-            else:
-                message = get_fallback_message(emotion)
-            return jsonify({'message': message})
-            
+
+        print(f"[GenAI] Starting AI request for emotion: {emotion}")
+        start = time.time()
+        future = _executor.submit(_call_genai, prompt)
+        try:
+            response = future.result(timeout=10.0)
+            duration = time.time() - start
+            print(f"✅ [GenAI] Success! Response time: {duration:.3f}s")
+            logger.info("GenAI response time: %.3f s", duration)
+            message = getattr(response, 'text', None) or fallback_msg
+            print(f"[GenAI] Message: {message[:50]}...")
+        except TimeoutError:
+            future.cancel()
+            print(f"❌ [GenAI] Timeout! (10.0s exceeded)")
+            logger.warning("GenAI request timed out for user=%s emotion=%s", username, emotion)
+            message = fallback_msg
         except Exception as e:
-            print(f"AI Error: {e}")
-            return jsonify({'message': get_fallback_message(emotion)})
+            print(f"❌ [GenAI] Error: {str(e)}")
+            logger.exception("GenAI request failed for user=%s emotion=%s: %s", username, emotion, str(e))
+            message = fallback_msg
+
+        if message:
+            message = message.strip()
+        return jsonify({'message': message})
     
     
     def get_fallback_message(emotion):
@@ -674,6 +878,198 @@ Be genuine and supportive. Don't use emojis. Just plain text."""
             'Neutral': "Thank you for checking in today. You're doing great."
         }
         return messages.get(emotion, "Thank you for checking in today. You're doing great.")
+    
+    
+    @app.route('/api/ai/monthly-analysis', methods=['GET'])
+    @login_required
+    def get_monthly_analysis():
+        """월간 분석: Gemini AI로 일기 데이터 기반 분석 생성"""
+        from datetime import datetime
+        
+        # Get current month's emotion data
+        today = datetime.now()
+        month_start = today.replace(day=1).strftime('%Y-%m-%d')
+        
+        # Get all emotions this month
+        entries = repository.get_emotion_history_since(current_user.id, month_start)
+        
+        if not entries:
+            return jsonify({
+                'summary': "No emotion data recorded this month yet. Start recording your emotions to see insights!",
+                'keywords': [],
+                'next_month_message': "Looking forward to building more insights about your emotions!"
+            })
+        
+        # Count emotions and extract notes
+        emotion_counts = {}
+        all_notes = []
+        all_emotions = repository.get_all_emotions()
+        emotion_map = {e['id']: e for e in all_emotions}
+        
+        for entry in entries:
+            emotion_id = entry.get('emotion_id')
+            if emotion_id in emotion_map:
+                emotion_name = emotion_map[emotion_id]['name']
+                emotion_counts[emotion_name] = emotion_counts.get(emotion_name, 0) + 1
+            
+            if entry.get('notes'):
+                all_notes.append(entry['notes'])
+        
+        # Extract top keywords (simple word frequency from notes)
+        keywords = extract_keywords_from_notes(all_notes)
+        
+        # Generate summary with Gemini AI
+        total_entries = len(entries)
+        most_common_emotion = max(emotion_counts.items(), key=lambda x: x[1])[0] if emotion_counts else 'Neutral'
+        
+        # Prepare data for AI prompt
+        emotion_stats = ''
+        for emotion_name in emotion_counts:
+            count = emotion_counts[emotion_name]
+            emotion_stats = emotion_stats + emotion_name + ' (' + str(count) + ' times), '
+        emotion_stats = emotion_stats.rstrip(', ')
+        
+        notes_summary = ' | '.join(all_notes[:10])
+        if len(all_notes) > 10:
+            notes_summary = notes_summary + '...'
+        
+        # Call Gemini AI for analysis
+        summary = generate_ai_monthly_summary(current_user.username, total_entries, most_common_emotion, emotion_stats, notes_summary, keywords)
+        
+        # Generate next month message with AI
+        next_month_message = generate_ai_next_month_message(most_common_emotion, current_user.username)
+        
+        return jsonify({
+            'summary': summary,
+            'keywords': keywords,
+            'next_month_message': next_month_message
+        })
+    
+    
+    def extract_keywords_from_notes(notes_list):
+        """일기 노트에서 주요 키워드 추출"""
+        if not notes_list:
+            return []
+        
+        # Common words to skip
+        stopwords = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'is', 'are', 'was', 'were', 'i', 'me', 'you', 'he', 'she', 'it', 'we', 'they', 'my', 'your', 'his', 'her', 'its', 'our', 'their', 'that', 'this', 'these', 'those', 'be', 'have', 'do', 'with', 'from', 'as', 'by', 'about', 'so', 'not', 'just', 'can', 'will', 'had', 'been', 'being', 'did', 'does', 'having', 'may', 'should', 'would', 'could', 'might', 'must'}
+        
+        word_freq = {}
+        all_text = ' '.join(notes_list).lower()
+        
+        # Simple word extraction (split by spaces and punctuation)
+        import re
+        words = re.findall(r'\b[a-z]+\b', all_text)
+        
+        for word in words:
+            if len(word) > 3 and word not in stopwords:
+                word_freq[word] = word_freq.get(word, 0) + 1
+        
+        # Sort by frequency and return top 5
+        sorted_keywords = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:5]
+        return [kw[0] for kw in sorted_keywords]
+    
+    
+    def generate_ai_monthly_summary(username, total_entries, most_common_emotion, emotion_stats, notes_summary, keywords):
+        """Gemini AI로 월간 요약 생성"""
+        fallback_summary = f"This month, you recorded {total_entries} emotion entries. Your most frequent emotion was {most_common_emotion}. Keep tracking your emotional journey!"
+        
+        if not _genai_client:
+            print(f"⚠️ [GenAI] Not available for monthly analysis")
+            return fallback_summary
+        
+        prompt = f"""Analyze this month's emotional journey for {username}:
+- Total entries: {total_entries}
+- Most common emotion: {most_common_emotion}
+- Emotion distribution: {emotion_stats}
+- Notable entries: {notes_summary}
+
+Write a warm, personalized 3-4 sentence summary about their emotional journey this month. 
+Be empathetic, encouraging, and specific to their data.
+Focus on patterns, growth, and positive aspects.
+Write in plain English, no emojis."""
+        
+        print(f"[GenAI] Calling AI for monthly summary analysis")
+        start = time.time()
+        future = _executor.submit(_call_genai, prompt, 'gemini-2.5-flash')
+        try:
+            response = future.result(timeout=15.0)
+            duration = time.time() - start
+            print(f"✅ [GenAI] Monthly analysis success! ({duration:.3f}s)")
+            summary = getattr(response, 'text', None) or fallback_summary
+        except TimeoutError:
+            future.cancel()
+            print(f"❌ [GenAI] Monthly analysis timeout")
+            summary = fallback_summary
+        except Exception as e:
+            print(f"❌ [GenAI] Monthly analysis error: {str(e)}")
+            summary = fallback_summary
+        
+        if summary:
+            summary = summary.strip()
+        return summary
+    
+    
+    def generate_ai_next_month_message(emotion, username):
+        """Gemini AI로 다음 달 격려 메시지 생성"""
+        fallback_msg = f"Keep tracking your emotions next month, {username}! Your awareness is the first step to growth."
+        
+        if not _genai_client:
+            return fallback_msg
+        
+        prompt = f"""Write a short, personalized, and encouraging message for {username} for next month.
+They were feeling mostly {emotion} this month.
+Make it warm, hopeful, and 1-2 sentences max.
+No emojis, just genuine encouragement about their emotional journey and growth."""
+        
+        print(f"[GenAI] Calling AI for next month message")
+        start = time.time()
+        future = _executor.submit(_call_genai, prompt, 'gemini-2.5-flash')
+        try:
+            response = future.result(timeout=10.0)
+            duration = time.time() - start
+            print(f"✅ [GenAI] Next month message success! ({duration:.3f}s)")
+            message = getattr(response, 'text', None) or fallback_msg
+        except TimeoutError:
+            future.cancel()
+            print(f"❌ [GenAI] Next month message timeout")
+            message = fallback_msg
+        except Exception as e:
+            print(f"❌ [GenAI] Next month message error: {str(e)}")
+            message = fallback_msg
+        
+        if message:
+            message = message.strip()
+        return message
+    
+    
+    def generate_monthly_summary(most_common_emotion, total_entries, emotion_counts, username):
+        """[DEPRECATED] Use generate_ai_monthly_summary instead"""
+        if total_entries == 0:
+            return f"Hello {username}! You haven't recorded any emotions this month yet."
+        
+        emotion_desc = {
+            'Happy': 'enjoying positive moments',
+            'Sad': 'navigating some challenging feelings',
+            'Tired': 'managing your energy and rest',
+            'Angry': 'processing strong emotions',
+            'Stressed': 'working through stressful times',
+            'Neutral': 'staying balanced'
+        }
+        
+        description = emotion_desc.get(most_common_emotion, 'recording your emotional journey')
+        summary = f"This month, you recorded {total_entries} emotion entries, with {most_common_emotion} being your most frequent mood. You've been {description}. "
+        
+        # Add encouragement based on emotion balance
+        emotion_variety = len(emotion_counts)
+        if emotion_variety >= 5:
+            summary += "Your diverse emotional range shows growth and self-awareness!"
+        elif emotion_variety >= 3:
+            summary += "You're experiencing a healthy mix of emotions."
+        else:
+            summary += "Keep exploring and expressing your feelings."
+        
+        return summary
     
     
     # ==========================================
